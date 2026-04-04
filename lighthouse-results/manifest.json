@@ -1,0 +1,38 @@
+[
+  {
+    "url": "https://klasiz.fun/",
+    "isRepresentativeRun": false,
+    "htmlPath": "/Users/mikelast/Downloads/Animated icons/class-maybe/lighthouse-results/klasiz_fun--2026_04_01_12_55_32.report.html",
+    "jsonPath": "/Users/mikelast/Downloads/Animated icons/class-maybe/lighthouse-results/klasiz_fun--2026_04_01_12_55_32.report.json",
+    "summary": {
+      "performance": 0.57,
+      "accessibility": 0.86,
+      "best-practices": 0.96,
+      "seo": 1
+    }
+  },
+  {
+    "url": "https://klasiz.fun/",
+    "isRepresentativeRun": false,
+    "htmlPath": "/Users/mikelast/Downloads/Animated icons/class-maybe/lighthouse-results/klasiz_fun--2026_04_01_12_56_08.report.html",
+    "jsonPath": "/Users/mikelast/Downloads/Animated icons/class-maybe/lighthouse-results/klasiz_fun--2026_04_01_12_56_08.report.json",
+    "summary": {
+      "performance": 0.58,
+      "accessibility": 0.86,
+      "best-practices": 0.96,
+      "seo": 1
+    }
+  },
+  {
+    "url": "https://klasiz.fun/",
+    "isRepresentativeRun": true,
+    "htmlPath": "/Users/mikelast/Downloads/Animated icons/class-maybe/lighthouse-results/klasiz_fun--2026_04_01_12_55_51.report.html",
+    "jsonPath": "/Users/mikelast/Downloads/Animated icons/class-maybe/lighthouse-results/klasiz_fun--2026_04_01_12_55_51.report.json",
+    "summary": {
+      "performance": 0.59,
+      "accessibility": 0.86,
+      "best-practices": 0.96,
+      "seo": 1
+    }
+  }
+]

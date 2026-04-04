@@ -1,0 +1,126 @@
+[
+  {
+    "id": "class_students_col",
+    "name": "class_students",
+    "type": "base",
+    "system": false,
+    "schema": [
+      {
+        "system": false,
+        "id": "class_id_field",
+        "name": "class_id",
+        "type": "text",
+        "required": true
+      },
+      {
+        "system": false,
+        "id": "student_data_field",
+        "name": "student_data",
+        "type": "json",
+        "required": true
+      },
+      {
+        "system": false,
+        "id": "student_id_field",
+        "name": "student_id",
+        "type": "text",
+        "required": true
+      }
+    ]
+  },
+  {
+    "id": "class_tasks_col",
+    "name": "class_tasks",
+    "type": "base",
+    "system": false,
+    "schema": [
+      {
+        "system": false,
+        "id": "class_id_field",
+        "name": "class_id",
+        "type": "text",
+        "required": true
+      },
+      {
+        "system": false,
+        "id": "task_data_field",
+        "name": "task_data",
+        "type": "json",
+        "required": true
+      }
+    ]
+  },
+  {
+    "id": "class_assignments_col",
+    "name": "class_assignments",
+    "type": "base",
+    "system": false,
+    "schema": [
+      {
+        "system": false,
+        "id": "class_id_field",
+        "name": "class_id",
+        "type": "text",
+        "required": true
+      },
+      {
+        "system": false,
+        "id": "assignment_data_field",
+        "name": "assignment_data",
+        "type": "json",
+        "required": true
+      }
+    ]
+  },
+  {
+    "id": "class_access_codes_col",
+    "name": "class_access_codes",
+    "type": "base",
+    "system": false,
+    "schema": [
+      {
+        "system": false,
+        "id": "class_id_field",
+        "name": "class_id",
+        "type": "text",
+        "required": true
+      },
+      {
+        "system": false,
+        "id": "student_id_field",
+        "name": "student_id",
+        "type": "text",
+        "required": true
+      },
+      {
+        "system": false,
+        "id": "codes_data_field",
+        "name": "codes_data",
+        "type": "json",
+        "required": true
+      }
+    ]
+  },
+  {
+    "id": "class_sticky_notes_col",
+    "name": "class_sticky_notes",
+    "type": "base",
+    "system": false,
+    "schema": [
+      {
+        "system": false,
+        "id": "class_id_field",
+        "name": "class_id",
+        "type": "text",
+        "required": true
+      },
+      {
+        "system": false,
+        "id": "note_data_field",
+        "name": "note_data",
+        "type": "json",
+        "required": true
+      }
+    ]
+  }
+]

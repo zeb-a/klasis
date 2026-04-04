@@ -1,0 +1,445 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import { ArrowRight, ArrowLeft, GaugeCircle, Dices, BarChart3, QrCode, Timer, Bell, Layout, Settings, Heart, BookOpen, Star, GraduationCap, Users, MessageSquare, Trophy, MoreVertical, LogIn, Sparkles, Quote, Moon, Sun } from 'lucide-react';
+---
+
+<MainLayout title="Klasiz.fun - Modern Classroom Management" description="Transform your classroom with gamification, real-time tracking, and parent engagement. The all-in-one platform for modern teachers.">
+    <div x-data="landingPage()" class="relative">
+        <!-- FIXED NAVBAR -->
+        <nav x-data="{ mobileMenuOpen: false }" class="fixed top-0 left-0 right-0 z-50 bg-white/85 dark:bg-gray-900/85 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
+            <div class="px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <img src="/icons/icon-192.png" alt="Klasiz.fun" class="h-8 w-8 rounded" />
+                    <span class="ml-2 text-xl font-bold text-green-600">Klasiz.fun</span>
+                </div>
+                
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-4">
+                    <button @click="darkMode = !darkMode" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700">
+                        <Moon x-show="!darkMode" class="w-4 h-4" />
+                        <Sun x-show="darkMode" class="w-4 h-4" />
+                    </button>
+                    <button @click="showDonateOverlay = true" class="px-3 py-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/30">
+                        <Heart class="w-3.5 h-3.5 mr-1" /> Donate
+                    </button>
+                    <button @click="showModal('login')" class="px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium">
+                        Login
+                    </button>
+                    <button @click="showModal('signup')" class="px-4 py-2 rounded-lg bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 font-medium flex items-center">
+                        <Sparkles class="w-3.5 h-3.5 mr-1" /> Sign Up
+                    </button>
+                </div>
+                
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden relative">
+                    <button @click="mobileMenuOpen = !mobileMenuOpen" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                        <MoreVertical class="w-5 h-5" />
+                    </button>
+                    <div x-show="mobileMenuOpen" @click.away="mobileMenuOpen = false" class="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-2">
+                        <button @click="showModal('signup'); mobileMenuOpen = false" class="w-full px-3 py-2 rounded-lg bg-gradient-to-r from-green-600 to-green-700 text-white flex items-center">
+                            <Sparkles class="w-4 h-4 mr-2" /> Sign Up
+                        </button>
+                        <button @click="showModal('login'); mobileMenuOpen = false" class="w-full px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 flex items-center">
+                            <LogIn class="w-4 h-4 mr-2" /> Login
+                        </button>
+                        <div class="h-px bg-gray-200 dark:bg-gray-700 my-2"></div>
+                        <button @click="showDonateOverlay = true; mobileMenuOpen = false" class="w-full px-3 py-2 rounded-lg text-red-600 dark:text-red-400 flex items-center">
+                            <Heart class="w-4 h-4 mr-2" /> Donate
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- RIGHT NAV DOTS (Desktop) -->
+        <div class="hidden md:flex fixed right-6 top-1/2 -translate-y-1/2 flex-col gap-2.5 z-40">
+            <template x-for="(label, i) in ['Home', 'Features', 'Games', 'Reviews', 'Start']" x-bind:key="i">
+                <button @click="scrollToSlide(i)" x-bind:title="label" class="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600 hover:bg-green-500 transition-all" x-bind:class="activeSlide === i ? 'w-7 bg-green-500' : ''"></button>
+            </template>
+        </div>
+
+        <!-- SCROLL-SNAP CONTAINER -->
+        <div class="h-screen overflow-y-scroll scroll-snap-y-mandatory" x-ref="scrollContainer">
+            
+            <!-- SLIDE 1: HERO -->
+            <section class="h-screen scroll-snap-start flex md:flex-row items-center justify-center gap-8 md:gap-20 relative overflow-hidden bg-gradient-to-br from-gray-50 to-green-50 dark:from-gray-900 dark:to-green-900 pt-20 px-6 md:px-20 pb-10">
+                <div class="absolute top-1/2 left-1/3 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-green-500/10 rounded-full pointer-events-none"></div>
+                
+                <div class="relative z-10 flex-1 max-w-md md:max-w-lg text-center md:text-left">
+                    <div class="inline-flex items-center gap-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-4 py-2 rounded-full text-sm font-bold mb-6 border border-green-200 dark:border-green-800">
+                        <Star class="w-3 h-3 fill-current" /> 🌟 Modern Classroom Platform
+                    </div>
+                    <h1 class="text-4xl md:text-6xl font-black tracking-tight mb-5 text-gray-900 dark:text-white">
+                        Modern Classroom<br />
+                        <span class="bg-gradient-to-r from-green-600 to-blue-600 text-transparent bg-clip-text">Made Simple</span>
+                    </h1>
+                    <p class="text-lg text-gray-600 dark:text-gray-300 mb-8 max-w-sm md:max-w-md">
+                        Transform your classroom with gamification, real-time student tracking, and parent engagement. The all-in-one platform for modern teachers.
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
+                        <button @click="showModal('signup')" class="bg-gradient-to-r from-green-600 to-green-700 text-white px-7 py-3 rounded-xl font-bold hover:from-green-700 hover:to-green-800 flex items-center justify-center shadow-lg">
+                            <Sparkles class="w-4 h-4 mr-2" /> Create Free Class <ArrowRight class="w-4 h-4 ml-1" />
+                        </button>
+                        <button @click="showModal('login')" class="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-7 py-3 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center border border-gray-200 dark:border-gray-600">
+                            <LogIn class="w-4 h-4 mr-2" /> Login
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="relative z-10 flex-1 w-full max-w-sm md:max-w-md">
+                    <div class="bg-white rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+                        <div class="flex">
+                            <div class="hidden md:block w-16 bg-green-50 flex flex-col items-center pt-5 gap-3.5">
+                                <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
+                                    <Layout class="w-5 h-5 text-white" />
+                                </div>
+                                <div class="w-10 h-10 bg-gray-200 rounded-xl flex items-center justify-center">
+                                    <Trophy class="w-5 h-5 text-gray-500" />
+                                </div>
+                                <div class="w-10 h-10 bg-gray-200 rounded-xl flex items-center justify-center">
+                                    <Settings class="w-5 h-5 text-gray-500" />
+                                </div>
+                            </div>
+                            <div class="flex-1 p-3 md:p-4 flex flex-col gap-2.5">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm md:text-base font-extrabold text-gray-900">Class 3A Mathematics</span>
+                                    <div class="bg-green-100 border border-green-300 rounded-full px-2.5 py-0.5 text-xs font-bold text-green-700">🥚 Progress 85%</div>
+                                </div>
+                                <div class="grid grid-cols-3 gap-1.5 md:gap-2">
+                                    <template x-for="student in displayStudents" x-bind:key="student.init">
+                                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-2 md:p-3 flex flex-col items-center gap-1">
+                                            <div class="w-8 h-8 md:w-9 md:h-9 rounded-full bg-gray-300 flex items-center justify-center text-xs md:text-sm font-bold text-gray-600" x-text="student.init"></div>
+                                            <span class="text-xs font-bold text-gray-900" x-text="student.name"></span>
+                                            <div class="bg-green-100 rounded-full px-1.5 py-0.5 text-xs font-bold text-green-700" x-text="student.pts"></div>
+                                        </div>
+                                    </template>
+                                </div>
+                                <div class="flex justify-end">
+                                    <div class="w-9 h-9 md:w-10 md:h-10 rounded-full bg-gray-900 flex items-center justify-center">
+                                        <QrCode class="w-4 h-4 md:w-4.5 md:h-4.5 text-white" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Scroll Indicator -->
+                <div class="absolute bottom-5 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5">
+                    <div class="w-5.5 h-8.5 border-2 border-gray-300 dark:border-gray-600 rounded-full flex items-start justify-center pt-1.5">
+                        <div class="w-0.5 h-1.5 bg-gray-400 dark:bg-gray-500 rounded-full"></div>
+                    </div>
+                    <span class="text-xs text-gray-400 dark:text-gray-500 font-bold tracking-wider uppercase">Scroll</span>
+                </div>
+            </section>
+
+            <!-- SLIDE 2: FEATURES -->
+            <section class="h-screen scroll-snap-start flex flex-col items-center justify-center bg-white dark:bg-gray-900 pt-20 px-5 md:px-12 pb-6">
+                <div class="text-center mb-4 md:mb-6">
+                    <h2 class="text-3xl md:text-5xl font-black tracking-tight mb-2 text-gray-900 dark:text-white">
+                        Everything You Need in One Platform
+                    </h2>
+                    <p class="text-base md:text-lg text-gray-600 dark:text-gray-400 max-w-lg">
+                        Powerful features designed for modern classrooms
+                    </p>
+                </div>
+                
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3.5 md:gap-4 max-w-5xl w-full">
+                    <template x-for="(feature, i) in [
+                        { icon: '⚡', bg: 'bg-orange-100 dark:bg-orange-900/30', title: 'Speed Meter', desc: 'Track student response times and engagement levels' },
+                        { icon: '🎲', bg: 'bg-blue-100 dark:bg-blue-900/30', title: 'Lucky Draw', desc: 'Randomized student selection for fair participation' },
+                        { icon: '📊', bg: 'bg-green-100 dark:bg-green-900/30', title: 'Reports', desc: 'Detailed analytics and progress tracking' },
+                        { icon: '📱', bg: 'bg-purple-100 dark:bg-purple-900/30', title: 'QR Codes', desc: 'Quick student access with scannable codes' },
+                        { icon: '📚', bg: 'bg-yellow-100 dark:bg-yellow-900/30', title: 'Lesson Planner', desc: 'Create and organize engaging lesson plans' },
+                        { icon: '💬', bg: 'bg-red-100 dark:bg-red-900/30', title: 'Grading', desc: 'Streamlined assessment and feedback system' }
+                    ]" x-bind:key="i">
+                        <div class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-5 hover:shadow-lg transition-all hover:-translate-y-1">
+                            <div class="w-12 h-12 bg-white dark:bg-gray-900 rounded-xl flex items-center justify-center mb-3.5 text-2xl" x-bind:class="feature.bg">
+                                <span x-text="feature.icon"></span>
+                            </div>
+                            <h3 class="text-sm md:text-base font-extrabold mb-1.5 text-gray-900 dark:text-white" x-text="feature.title"></h3>
+                            <p class="text-xs md:text-sm text-gray-600 dark:text-gray-400 leading-relaxed" x-text="feature.desc"></p>
+                        </div>
+                    </template>
+                </div>
+            </section>
+
+            <!-- SLIDE 3: GAMES -->
+            <section class="h-screen scroll-snap-start flex md:flex-row items-center justify-center gap-8 md:gap-20 bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-blue-900 pt-20 px-6 md:px-20 pb-10">
+                <div class="flex-1 max-w-md">
+                    <div class="inline-flex items-center gap-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-4 py-2 rounded-full text-sm font-bold mb-6 border border-purple-200 dark:border-purple-800">
+                        <Dices class="w-3 h-3" /> 🎮 Interactive Learning Games
+                    </div>
+                    <h2 class="text-4xl md:text-6xl font-black tracking-tight mb-4 text-gray-900 dark:text-white">
+                        Learning<br /><span class="bg-gradient-to-r from-purple-600 to-blue-600 text-transparent bg-clip-text">through play</span>
+                    </h2>
+                    <p class="text-lg text-gray-600 dark:text-gray-300 mb-8">
+                        Engage students with fun, educational games that make learning exciting and memorable.
+                    </p>
+                    <button @click="showModal('signup')" class="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-7 py-3 rounded-xl font-bold hover:from-purple-700 hover:to-purple-800 flex items-center shadow-lg">
+                        🎮 Try Games Now <ArrowRight class="w-4 h-4 ml-1" />
+                    </button>
+                </div>
+                
+                <div class="flex-1 max-w-lg grid grid-cols-2 gap-3">
+                    <template x-for="(game, i) in [
+                        { emoji: '🎯', name: 'Lucky Draw', color: 'bg-orange-500' },
+                        { emoji: '🏁', name: 'Moto Race', color: 'bg-blue-500' },
+                        { emoji: '🌪️', name: 'Tornado', color: 'bg-purple-500' },
+                        { emoji: '🏆', name: 'Leaderboard', color: 'bg-yellow-500' },
+                        { emoji: '🎲', name: 'Random Pick', color: 'bg-green-500' },
+                        { emoji: '⏱️', name: 'Timer', color: 'bg-pink-500' }
+                    ]" x-bind:key="i">
+                        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 flex flex-col items-center gap-2 hover:shadow-lg transition-all hover:-translate-y-1">
+                            <div class="text-4xl" x-text="game.emoji"></div>
+                            <div class="text-sm font-bold text-gray-900 dark:text-white text-center" x-text="game.name"></div>
+                            <div class="w-5 h-0.5 rounded-full" x-bind:class="game.color"></div>
+                        </div>
+                    </template>
+                </div>
+            </section>
+
+            <!-- SLIDE 4: SOCIAL PROOF -->
+            <section class="h-screen scroll-snap-start flex flex-col items-center justify-center bg-white dark:bg-gray-900 pt-20 px-5 md:px-12 pb-6">
+                <div class="text-center mb-4 md:mb-6">
+                    <h2 class="text-3xl md:text-5xl font-black tracking-tight mb-1.5 text-gray-900 dark:text-white">
+                        Trusted by Teachers Worldwide
+                    </h2>
+                    <p class="text-base md:text-lg text-gray-600 dark:text-gray-400">Join thousands of educators transforming their classrooms</p>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-2 md:gap-3.5 max-w-3xl w-full mb-3 md:mb-4">
+                    <template x-for="(stat, i) in [
+                        { value: '50K+', label: 'Students', color: 'text-green-500', icon: '👥' },
+                        { value: '5000+', label: 'Classrooms', color: 'text-purple-500', icon: '🏫' },
+                        { value: '4.9★', label: 'Rating', color: 'text-yellow-500', icon: '⭐' }
+                    ]" x-bind:key="i">
+                        <div class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 text-center">
+                            <div class="text-2xl md:text-4xl font-black" x-bind:class="stat.color" x-text="stat.value"></div>
+                            <div class="text-xs md:text-sm font-bold text-gray-600 dark:text-gray-400" x-text="stat.label"></div>
+                        </div>
+                    </template>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5 max-w-4xl w-full">
+                    <template x-for="(testimonial, i) in [
+                        { quote: "Klasiz.fun transformed my classroom management. Students are more engaged than ever!", name: "Sarah Johnson", role: "Grade 4 Teacher", initials: 'SJ', color: 'bg-green-500' },
+                        { quote: "The gamification features make learning fun. My students actually look forward to class activities.", name: "Michael Chen", role: "Grade 5 Teacher", initials: 'MC', color: 'bg-blue-500' },
+                        { quote: "Finally, a platform that understands what teachers actually need. Simple, powerful, effective.", name: "Emma Rodriguez", role: "Grade 3 Teacher", initials: 'ER', color: 'bg-purple-500' }
+                    ]" x-bind:key="i">
+                        <div class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-5 md:p-6 flex flex-col gap-3">
+                            <Quote class="w-5 h-5 opacity-50" x-bind:class="testimonial.color" />
+                            <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed" x-text="testimonial.quote"></p>
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white text-sm font-bold" x-text="testimonial.initials"></div>
+                                <div>
+                                    <div class="font-bold text-sm text-gray-900 dark:text-white" x-text="testimonial.name"></div>
+                                    <div class="text-xs text-gray-600 dark:text-gray-400" x-text="testimonial.role"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </section>
+
+            <!-- SLIDE 5: CTA + FOOTER -->
+            <section class="h-screen scroll-snap-start flex flex-col items-center justify-center relative bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-blue-900 pt-20 px-6 md:px-20 pb-10 overflow-hidden">
+                <div class="absolute bottom-0 right-0 w-96 h-96 bg-green-500/10 rounded-full -translate-x-1/2 translate-y-1/2"></div>
+                <div class="absolute top-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full translate-x-1/2 -translate-y-1/2"></div>
+                
+                <div class="text-center z-10 max-w-3xl">
+                    <h2 class="text-4xl md:text-6xl font-black tracking-tight mb-5 text-gray-900 dark:text-white">
+                        Ready to Transform Your Classroom?
+                    </h2>
+                    <p class="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-10 max-w-lg mx-auto">
+                        Join thousands of teachers already using Klasiz.fun to create engaging, effective learning environments.
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-3.5 justify-center mb-16">
+                        <button @click="showModal('signup')" class="bg-gradient-to-r from-green-600 to-green-700 text-white px-8 py-4 rounded-xl font-bold hover:from-green-700 hover:to-green-800 flex items-center justify-center shadow-xl">
+                            <Sparkles class="w-5 h-5 mr-2" /> Create Free Account <ArrowRight class="w-5 h-5 ml-1" />
+                        </button>
+                    </div>
+                    
+                    <div class="flex flex-wrap justify-center items-center gap-4 mb-6">
+                        <button @click="showPrivacy = true" class="text-gray-600 dark:text-gray-400 text-sm font-medium hover:text-gray-900 dark:hover:text-white">Privacy</button>
+                        <button @click="showTerms = true" class="text-gray-600 dark:text-gray-400 text-sm font-medium hover:text-gray-900 dark:hover:text-white">Terms</button>
+                        <button @click="showFAQ = true" class="text-gray-600 dark:text-gray-400 text-sm font-medium hover:text-gray-900 dark:hover:text-white">FAQ</button>
+                        <button @click="showGuide = true" class="text-gray-600 dark:text-gray-400 text-sm font-medium hover:text-gray-900 dark:hover:text-white">Guide</button>
+                        <button @click="showAbout = true" class="text-gray-600 dark:text-gray-400 text-sm font-medium hover:text-gray-900 dark:hover:text-white">About</button>
+                    </div>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 font-medium">
+                        © 2024 Klasiz.fun - Modern Classroom Management Platform
+                    </p>
+                </div>
+            </section>
+        </div>
+
+        <!-- MODAL SYSTEM -->
+        <div x-show="modalMode" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" @click.self="modalMode = null">
+            <div class="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-md shadow-2xl border border-gray-200 dark:border-gray-700">
+                <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                    <h2 class="text-2xl font-black text-gray-900 dark:text-white">
+                        <span x-show="modalMode === 'role'">Who are you?</span>
+                        <span x-show="modalMode === 'student-login'">Student Login</span>
+                        <span x-show="modalMode === 'signup'">Create Account</span>
+                        <span x-show="modalMode === 'login'">Teacher Login</span>
+                    </h2>
+                    <button @click="modalMode = null" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <X class="w-5 h-5 text-gray-500" />
+                    </button>
+                </div>
+                
+                <div class="p-6">
+                    <!-- Role Selection -->
+                    <div x-show="modalMode === 'role'" class="space-y-3">
+                        <button @click="modalMode = 'login'" class="w-full p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-4">
+                            <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
+                                <GraduationCap class="w-6 h-6 text-green-600 dark:text-green-400" />
+                            </div>
+                            <div class="text-left">
+                                <h4 class="font-bold text-gray-900 dark:text-white">Teacher</h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Manage classes and track progress</p>
+                            </div>
+                        </button>
+                        <button @click="portalView = 'parent'" class="w-full p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-4">
+                            <div class="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center">
+                                <Heart class="w-6 h-6 text-red-600 dark:text-red-400" />
+                            </div>
+                            <div class="text-left">
+                                <h4 class="font-bold text-gray-900 dark:text-white">Parent</h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Monitor your child's progress</p>
+                            </div>
+                        </button>
+                        <button @click="modalMode = 'student-login'" class="w-full p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-4">
+                            <div class="w-12 h-12 bg-teal-100 dark:bg-teal-900/30 rounded-xl flex items-center justify-center">
+                                <BookOpen class="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                            </div>
+                            <div class="text-left">
+                                <h4 class="font-bold text-gray-900 dark:text-white">Student</h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Access your learning portal</p>
+                            </div>
+                        </button>
+                    </div>
+                    
+                    <!-- Student Login -->
+                    <form x-show="modalMode === 'student-login'" @submit.prevent="handleStudentLogin" class="space-y-4">
+                        <p class="text-gray-600 dark:text-gray-400 text-sm">Enter your 5-digit access code</p>
+                        <input type="text" maxlength="5" placeholder="0 0 0 0 0" x-model="accessCode" 
+                            class="w-full px-4 py-3 text-2xl font-bold text-center tracking-widest border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent" />
+                        <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700">
+                            Enter Portal
+                        </button>
+                        <button type="button" @click="modalMode = 'role'" class="w-full text-gray-600 dark:text-gray-400 text-sm hover:text-gray-900 dark:hover:text-white">
+                            ← Back
+                        </button>
+                    </form>
+                    
+                    <!-- Teacher Login/Signup -->
+                    <form x-show="modalMode === 'login' || modalMode === 'signup'" @submit.prevent="modalMode === 'signup' ? handleSignup() : handleLogin()" class="space-y-4">
+                        <div x-show="modalMode === 'signup'" class="flex gap-2">
+                            <select x-model="title" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                                <option value="">Title</option>
+                                <option value="Mr.">Mr.</option>
+                                <option value="Mrs.">Mrs.</option>
+                                <option value="Miss">Miss</option>
+                                <option value="Ms.">Ms.</option>
+                            </select>
+                            <input type="text" placeholder="Full Name" x-model="name" class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white" />
+                        </div>
+                        <input type="email" placeholder="Email" x-model="email" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white" />
+                        <input type="password" placeholder="Password" x-model="password" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white" />
+                        <input x-show="modalMode === 'signup'" type="password" placeholder="Confirm Password" x-model="confirmPassword" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white" />
+                        
+                        <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700">
+                            <span x-show="modalMode === 'signup'">Create Account</span>
+                            <span x-show="modalMode === 'login'">Login</span>
+                        </button>
+                        
+                        <button type="button" @click="modalMode = modalMode === 'signup' ? 'login' : 'signup'" class="w-full text-gray-600 dark:text-gray-400 text-sm hover:text-gray-900 dark:hover:text-white">
+                            <span x-show="modalMode === 'signup'">Already have an account? Login</span>
+                            <span x-show="modalMode === 'login'">Need an account? Sign up</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function landingPage() {
+            return {
+                modalMode: null,
+                portalView: null,
+                darkMode: false,
+                activeSlide: 0,
+                accessCode: '',
+                email: '',
+                password: '',
+                name: '',
+                title: '',
+                confirmPassword: '',
+                error: '',
+                
+                get displayStudents() {
+                    const allStudents = [
+                        { name: 'Pablo', pts: '+6', init: 'P' },
+                        { name: 'Marie', pts: '+9', init: 'M' },
+                        { name: 'Albert', pts: '+12', init: 'A' },
+                        { name: 'Frida', pts: '+15', init: 'F' },
+                        { name: 'Leo', pts: '+18', init: 'L' },
+                        { name: 'Ada', pts: '+21', init: 'A' }
+                    ];
+                    
+                    // Simple responsive logic - show 3 on mobile, 6 on desktop
+                    return allStudents.slice(0, window.innerWidth > 640 ? 6 : 3);
+                },
+                
+                init() {
+                    // Intersection Observer for slide tracking
+                    const observer = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                const slides = this.$refs.scrollContainer.children;
+                                for (let i = 0; i < slides.length; i++) {
+                                    if (slides[i] === entry.target) {
+                                        this.activeSlide = i;
+                                        break;
+                                    }
+                                }
+                            }
+                        });
+                    }, { threshold: 0.5, root: this.$refs.scrollContainer });
+                    
+                    setTimeout(() => {
+                        this.$refs.scrollContainer.children.forEach(slide => observer.observe(slide));
+                    }, 100);
+                },
+                
+                showModal(mode) {
+                    this.modalMode = mode;
+                    this.error = '';
+                },
+                
+                scrollToSlide(index) {
+                    this.$refs.scrollContainer.children[index].scrollIntoView({ behavior: 'smooth' });
+                },
+                
+                handleLogin() {
+                    // Handle login logic
+                    console.log('Login:', this.email, this.password);
+                },
+                
+                handleSignup() {
+                    // Handle signup logic
+                    console.log('Signup:', this.email, this.password, this.name);
+                },
+                
+                handleStudentLogin() {
+                    // Handle student login logic
+                    console.log('Student login:', this.accessCode);
+                }
+            }
+        }
+    </script>
+</MainLayout>

@@ -1,0 +1,14 @@
+[
+  {
+    "url": "https://klasiz.fun/",
+    "isRepresentativeRun": true,
+    "htmlPath": "/Users/mikelast/Downloads/Animated icons/class-maybe/lighthouse-results-after/klasiz_fun--2026_04_01_13_16_19.report.html",
+    "jsonPath": "/Users/mikelast/Downloads/Animated icons/class-maybe/lighthouse-results-after/klasiz_fun--2026_04_01_13_16_19.report.json",
+    "summary": {
+      "performance": 0.59,
+      "accessibility": 0.86,
+      "best-practices": 0.96,
+      "seo": 1
+    }
+  }
+]

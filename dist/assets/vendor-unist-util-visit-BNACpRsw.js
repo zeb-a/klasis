@@ -1,0 +1,1 @@
+import{v as n}from"./vendor-unist-util-visit-parents-BBKox_ow.js";function t(t,i,o,e){let f,r,u;"function"==typeof i&&"function"!=typeof o?(r=void 0,u=i,f=o):(r=i,u=o,f=e),n(t,r,function(n,t){const i=t[t.length-1],o=i?i.children.indexOf(n):void 0;return u(n,o,i)},f)}export{t as v};

@@ -1,0 +1,219 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import { BookOpen, Users, Trophy, Plus, Search, Filter, MoreVertical } from 'lucide-react';
+---
+
+<MainLayout title="Classes - Klasiz.fun">
+    <div x-data="classesDashboard()" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">My Classes</h1>
+                <p class="text-gray-600 mt-2">Manage your classes and track student progress</p>
+            </div>
+            <button class="mt-4 sm:mt-0 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                <Plus class="w-5 h-5 mr-2" />
+                Create New Class
+            </button>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="flex flex-col sm:flex-row gap-4 mb-8">
+            <div class="flex-1 relative">
+                <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input 
+                    type="text" 
+                    placeholder="Search classes..."
+                    x-model="searchQuery"
+                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                >
+            </div>
+            <div class="flex gap-2">
+                <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center">
+                    <Filter class="w-5 h-5 mr-2" />
+                    Filter
+                </button>
+                <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    <option>All Grades</option>
+                    <option>Grade 1</option>
+                    <option>Grade 2</option>
+                    <option>Grade 3</option>
+                    <option>Grade 4</option>
+                    <option>Grade 5</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Classes Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <template x-for="classItem in filteredClasses" :key="classItem.id">
+                <div class="bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-shadow">
+                    <!-- Class Header -->
+                    <div class="p-6 border-b border-gray-200">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <h3 class="text-lg font-semibold text-gray-900" x-text="classItem.name"></h3>
+                                <p class="text-sm text-gray-500" x-text="classItem.grade"></p>
+                                <p class="text-sm text-gray-500" x-text="classItem.subject"></p>
+                            </div>
+                            <button class="text-gray-400 hover:text-gray-600">
+                                <MoreVertical class="w-5 h-5" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Class Stats -->
+                    <div class="p-6">
+                        <div class="grid grid-cols-3 gap-4 mb-4">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-gray-900" x-text="classItem.students"></div>
+                                <div class="text-xs text-gray-500">Students</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-gray-900" x-text="classItem.gamesPlayed"></div>
+                                <div class="text-xs text-gray-500">Games</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-gray-900" x-text="classItem.avgScore + '%'"></div>
+                                <div class="text-xs text-gray-500">Avg Score</div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Activity -->
+                        <div class="mb-4">
+                            <h4 class="text-sm font-medium text-gray-900 mb-2">Recent Activity</h4>
+                            <div class="space-y-2">
+                                <template x-for="activity in classItem.recentActivities.slice(0, 2)" :key="activity.id">
+                                    <div class="flex items-center text-sm">
+                                        <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                                        <span class="text-gray-600" x-text="activity.description"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex gap-2">
+                            <button class="flex-1 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm">
+                                View Class
+                            </button>
+                            <button class="flex-1 border border-gray-300 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm">
+                                Start Game
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Empty State -->
+        <div x-show="filteredClasses.length === 0" class="text-center py-12">
+            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <BookOpen class="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No classes found</h3>
+            <p class="text-gray-500 mb-4">Get started by creating your first class</p>
+            <button class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                Create New Class
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function classesDashboard() {
+            return {
+                searchQuery: '',
+                classes: [
+                    {
+                        id: 1,
+                        name: 'Mathematics 3A',
+                        grade: 'Grade 3',
+                        subject: 'Mathematics',
+                        students: 28,
+                        gamesPlayed: 156,
+                        avgScore: 85,
+                        recentActivities: [
+                            { id: 1, description: 'Tornado Challenge completed' },
+                            { id: 2, description: 'New student joined' }
+                        ]
+                    },
+                    {
+                        id: 2,
+                        name: 'English 4B',
+                        grade: 'Grade 4',
+                        subject: 'English',
+                        students: 32,
+                        gamesPlayed: 203,
+                        avgScore: 92,
+                        recentActivities: [
+                            { id: 1, description: 'Spell The Word tournament' },
+                            { id: 2, description: 'Progress reports sent' }
+                        ]
+                    },
+                    {
+                        id: 3,
+                        name: 'Science 5A',
+                        grade: 'Grade 5',
+                        subject: 'Science',
+                        students: 26,
+                        gamesPlayed: 178,
+                        avgScore: 88,
+                        recentActivities: [
+                            { id: 1, description: 'Science quiz completed' },
+                            { id: 2, description: 'Lab activity scheduled' }
+                        ]
+                    },
+                    {
+                        id: 4,
+                        name: 'Mathematics 2C',
+                        grade: 'Grade 2',
+                        subject: 'Mathematics',
+                        students: 24,
+                        gamesPlayed: 134,
+                        avgScore: 79,
+                        recentActivities: [
+                            { id: 1, description: 'Number games played' },
+                            { id: 2, description: 'Homework assigned' }
+                        ]
+                    },
+                    {
+                        id: 5,
+                        name: 'English 3B',
+                        grade: 'Grade 3',
+                        subject: 'English',
+                        students: 30,
+                        gamesPlayed: 167,
+                        avgScore: 86,
+                        recentActivities: [
+                            { id: 1, description: 'Reading comprehension test' },
+                            { id: 2, description: 'Story writing activity' }
+                        ]
+                    },
+                    {
+                        id: 6,
+                        name: 'Social Studies 4A',
+                        grade: 'Grade 4',
+                        subject: 'Social Studies',
+                        students: 29,
+                        gamesPlayed: 145,
+                        avgScore: 83,
+                        recentActivities: [
+                            { id: 1, description: 'Geography quiz' },
+                            { id: 2, description: 'Project presentations' }
+                        ]
+                    }
+                ],
+                get filteredClasses() {
+                    if (!this.searchQuery) return this.classes;
+                    
+                    const query = this.searchQuery.toLowerCase();
+                    return this.classes.filter(cls => 
+                        cls.name.toLowerCase().includes(query) ||
+                        cls.grade.toLowerCase().includes(query) ||
+                        cls.subject.toLowerCase().includes(query)
+                    );
+                }
+            }
+        }
+    </script>
+</MainLayout>

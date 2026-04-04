@@ -1,0 +1,495 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import { Edit2, Plus, X, RefreshCw, Trash2, Save, Minus, Volume2, VolumeX, Music, Smile, AlertTriangle } from 'lucide-react';
+
+// Audio Clips Data
+const AUDIO_CLIPS = [
+  { id: 'none', name: 'No Sound', category: 'none', file: 'none', emoji: '🔇' },
+  { id: 'amazing', name: 'Amazing!', category: 'positive', file: 'amazing.mp3', emoji: '🌟' },
+  { id: 'awesome', name: 'Awesome!', category: 'positive', file: 'awesome.mp3', emoji: '⚡' },
+  { id: 'rockstar', name: 'Rockstar!', category: 'positive', file: 'rockstar.mp3', emoji: '🎸' },
+  { id: 'superstar', name: 'Superstar!', category: 'positive', file: 'superstar.mp3', emoji: '👑' },
+  { id: 'excellent', name: 'Excellent!', category: 'positive', file: 'excellent.mp3', emoji: '✨' },
+  { id: 'bravo', name: 'Bravo!', category: 'positive', file: 'bravo.mp3', emoji: '👏' },
+  { id: 'fantastic', name: 'Fantastic!', category: 'positive', file: 'fantastic.mp3', emoji: '🎉' },
+  { id: 'goodjob', name: 'Good Job!', category: 'positive', file: 'goodjob.mp3', emoji: '👍' },
+  { id: 'wellplayed', name: 'Well Played!', category: 'positive', file: 'wellplayed.mp3', emoji: '🏆' },
+  { id: 'winner', name: 'Winner!', category: 'positive', file: 'winner.mp3', emoji: '🥇' },
+  { id: 'yes', name: 'Yes!', category: 'positive', file: 'yes.mp3', emoji: '✅' },
+  { id: 'ding', name: 'Ding!', category: 'positive', file: 'ding.mp3', emoji: '🔔' },
+  { id: 'cheer', name: 'Cheer!', category: 'positive', file: 'cheer.mp3', emoji: '📣' },
+  { id: 'woohoo', name: 'Woohoo!', category: 'positive', file: 'woohoo.mp3', emoji: '🙌' },
+  { id: 'highfive', name: 'High Five!', category: 'positive', file: 'highfive.mp3', emoji: '✋' },
+  { id: 'applause', name: 'Applause!', category: 'positive', file: 'applause.mp3', emoji: '👏' },
+  { id: 'perfect', name: 'Perfect!', category: 'positive', file: 'perfect.mp3', emoji: '💯' },
+  { id: 'tryagain', name: 'Try Again', category: 'negative', file: 'try_again.mp3', emoji: '🔄' },
+  { id: 'oops', name: 'Oops', category: 'negative', file: 'oops.mp3', emoji: '😅' },
+  { id: 'hmm', name: 'Hmm', category: 'negative', file: 'hmm.mp3', emoji: '🤔' },
+  { id: 'payattention', name: 'Pay Attention', category: 'negative', file: 'payattention.mp3', emoji: '👀' },
+  { id: 'notyet', name: 'Not Yet', category: 'negative', file: 'notyet.mp3', emoji: '⏳' },
+  { id: 'frowny', name: 'Frowny', category: 'negative', file: 'cry.mp3', emoji: '😔' },
+  { id: 'buzzer', name: 'Buzzer', category: 'negative', file: 'buzzer.mp3', emoji: '🔔' },
+  { id: 'uhoh', name: 'Uh-oh', category: 'negative', file: 'uhoh.mp3', emoji: '😬' },
+  { id: 'careful', name: 'Be Careful', category: 'negative', file: 'careful.mp3', emoji: '⚠️' },
+  { id: 'boing', name: 'Boing!', category: 'fun', file: 'boing.mp3', emoji: '🌀' },
+  { id: 'pop', name: 'Pop!', category: 'fun', file: 'pop.mp3', emoji: '💥' },
+  { id: 'whoosh', name: 'Whoosh!', category: 'fun', file: 'whoosh.mp3', emoji: '💨' },
+  { id: 'magic', name: 'Magic!', category: 'fun', file: 'magic.mp3', emoji: '🪄' },
+  { id: 'tada', name: 'Tada!', category: 'fun', file: 'tada.mp3', emoji: '🎺' },
+  { id: 'laugh', name: 'Laugh!', category: 'fun', file: 'laugh.mp3', emoji: '😄' },
+  { id: 'giggle', name: 'Giggle!', category: 'fun', file: 'giggle.mp3', emoji: '😊' },
+  { id: 'snort', name: 'Snort', category: 'fun', file: 'snort.mp3', emoji: '🤭' }
+];
+
+const DEFAULT_BEHAVIORS = [
+  { label: 'Helped Friend', pts: 1, type: 'wow' },
+  { label: 'Great Work', pts: 2, type: 'wow' },
+  { label: 'On Task', pts: 1, type: 'wow' },
+  { label: 'Kindness', pts: 1, type: 'wow' },
+  { label: 'Noisy', pts: -1, type: 'nono' },
+  { label: 'Disruptive', pts: -2, type: 'nono' }
+];
+---
+
+<MainLayout title="Settings - Klasiz.fun" description="Manage your classroom settings and behavior cards">
+    <div x-data="settingsPage()" class="min-h-screen bg-gray-50">
+        <!-- Header -->
+        <div class="bg-white border-b border-gray-200 px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <button @click="window.history.back()" class="p-2 rounded-lg hover:bg-gray-100">
+                        <X class="w-5 h-5" />
+                    </button>
+                    <h1 class="text-2xl font-bold text-gray-900">Settings</h1>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button @click="resetToDefaults()" :disabled="isResetting" 
+                            class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 flex items-center gap-2">
+                        <RefreshCw class="w-4 h-4" :class="isResetting ? 'animate-spin' : ''" />
+                        Reset to Defaults
+                    </button>
+                    <button @click="saveBehaviors()" :disabled="isSaving"
+                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2">
+                        <Save class="w-4 h-4" />
+                        <span x-text="isSaving ? 'Saving...' : 'Save Changes'"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="p-6">
+            <!-- Tabs -->
+            <div class="bg-white rounded-xl border border-gray-200 mb-6">
+                <div class="flex border-b border-gray-200">
+                    <button @click="activeTab = 'cards'" 
+                            class="px-6 py-3 font-medium border-b-2 transition-colors"
+                            :class="activeTab === 'cards' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700'">
+                        Behavior Cards
+                    </button>
+                    <button @click="activeTab = 'audio'" 
+                            class="px-6 py-3 font-medium border-b-2 transition-colors"
+                            :class="activeTab === 'audio' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700'">
+                        Audio Settings
+                    </button>
+                </div>
+            </div>
+
+            <!-- Behavior Cards Tab -->
+            <div x-show="activeTab === 'cards'" class="space-y-6">
+                <!-- Search and Filter -->
+                <div class="bg-white rounded-xl border border-gray-200 p-4">
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <input type="text" x-model="cardQuery" placeholder="Search behavior cards..." 
+                               class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <select x-model="cardFilterType" class="px-4 py-2 border border-gray-300 rounded-lg">
+                            <option value="all">All Types</option>
+                            <option value="wow">Positive</option>
+                            <option value="nono">Negative</option>
+                        </select>
+                        <button @click="showAddCardModal = true" 
+                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2">
+                            <Plus class="w-4 h-4" />
+                            Add Card
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Behavior Cards Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <template x-for="card in filteredCards" :key="card.id">
+                        <div class="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
+                            <div class="flex justify-between items-start mb-3">
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-gray-900" x-text="card.label"></h3>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="px-2 py-1 text-xs font-medium rounded-full"
+                                              :class="card.type === 'wow' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+                                              x-text="card.type === 'wow' ? 'Positive' : 'Negative'"></span>
+                                        <span class="text-lg font-bold" 
+                                              :class="card.pts > 0 ? 'text-green-600' : 'text-red-600'"
+                                              x-text="(card.pts > 0 ? '+' : '') + card.pts + ' pts'"></span>
+                                    </div>
+                                </div>
+                                <div class="flex gap-1">
+                                    <button @click="editCard(card)" class="p-1 rounded hover:bg-gray-100">
+                                        <Edit2 class="w-4 h-4 text-gray-500" />
+                                    </button>
+                                    <button @click="deleteCard(card.id)" class="p-1 rounded hover:bg-gray-100">
+                                        <Trash2 class="w-4 h-4 text-red-500" />
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Audio and Sticker Display -->
+                            <div class="flex items-center justify-between text-sm text-gray-500">
+                                <div class="flex items-center gap-1">
+                                    <Volume2 class="w-3 h-3" />
+                                    <span x-text="getAudioName(card.audio)"></span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <Smile class="w-3 h-3" />
+                                    <span x-text="card.stickerId ? 'Has Sticker' : 'No Sticker'"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Empty State -->
+                <div x-show="filteredCards.length === 0" class="bg-white rounded-xl border border-gray-200 p-8 text-center">
+                    <div class="text-gray-400 mb-4">
+                        <AlertTriangle class="w-12 h-12 mx-auto" />
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No behavior cards found</h3>
+                    <p class="text-gray-500 mb-4">Get started by adding your first behavior card</p>
+                    <button @click="showAddCardModal = true" 
+                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                        Add Your First Card
+                    </button>
+                </div>
+            </div>
+
+            <!-- Audio Settings Tab -->
+            <div x-show="activeTab === 'audio'" class="space-y-6">
+                <div class="bg-white rounded-xl border border-gray-200 p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Audio Management</h2>
+                    <p class="text-gray-600 mb-6">Manage custom audio files and test sounds</p>
+                    
+                    <!-- Audio Upload Section -->
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                        <Music class="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Upload Custom Audio</h3>
+                        <p class="text-gray-500 mb-4">Upload MP3 files under 3 seconds for behavior sounds</p>
+                        <button class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                            Choose Files
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add/Edit Card Modal -->
+        <div x-show="showAddCardModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-xl p-6 w-full max-w-md">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-900">Add Behavior Card</h2>
+                    <button @click="showAddCardModal = false" class="p-1 rounded hover:bg-gray-100">
+                        <X class="w-5 h-5" />
+                    </button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Label</label>
+                        <input type="text" x-model="addCardModalData.label" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Points</label>
+                        <div class="flex items-center gap-2">
+                            <button @click="addCardModalData.pts = Math.max(-10, addCardModalData.pts - 1)" 
+                                    class="w-8 h-8 rounded border border-gray-300 hover:bg-gray-100">
+                                <Minus class="w-4 h-4" />
+                            </button>
+                            <input type="number" x-model="addCardModalData.pts" 
+                                   class="w-20 px-2 py-1 text-center border border-gray-300 rounded">
+                            <button @click="addCardModalData.pts = Math.min(10, addCardModalData.pts + 1)" 
+                                    class="w-8 h-8 rounded border border-gray-300 hover:bg-gray-100">
+                                <Plus class="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                        <select x-model="addCardModalData.type" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <option value="wow">Positive</option>
+                            <option value="nono">Negative</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Sound</label>
+                        <button @click="showAudioPickerFor = 'add'" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-left flex items-center justify-between">
+                            <span x-text="getAudioName(addCardModalData.audio)"></span>
+                            <Volume2 class="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="flex gap-3 mt-6">
+                    <button @click="showAddCardModal = false" 
+                            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button @click="addCard()" 
+                            class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                        Add Card
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audio Picker Modal -->
+        <div x-show="showAudioPickerFor" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-900">Choose Sound</h2>
+                    <button @click="showAudioPickerFor = null" class="p-1 rounded hover:bg-gray-100">
+                        <X class="w-5 h-5" />
+                    </button>
+                </div>
+                
+                <!-- Audio Filter Tabs -->
+                <div class="flex gap-2 mb-4 flex-wrap">
+                    <button @click="audioFilter = 'all'" 
+                            class="px-3 py-1 rounded-full text-sm font-medium transition-colors"
+                            :class="audioFilter === 'all' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'">
+                        All
+                    </button>
+                    <button @click="audioFilter = 'positive'" 
+                            class="px-3 py-1 rounded-full text-sm font-medium transition-colors"
+                            :class="audioFilter === 'positive' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'">
+                        Positive
+                    </button>
+                    <button @click="audioFilter = 'negative'" 
+                            class="px-3 py-1 rounded-full text-sm font-medium transition-colors"
+                            :class="audioFilter === 'negative' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'">
+                        Negative
+                    </button>
+                    <button @click="audioFilter = 'fun'" 
+                            class="px-3 py-1 rounded-full text-sm font-medium transition-colors"
+                            :class="audioFilter === 'fun' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'">
+                        Fun
+                    </button>
+                </div>
+                
+                <!-- Audio List -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <template x-for="clip in filteredAudioClips" :key="clip.id">
+                        <button @click="selectAudio(clip.id)" 
+                                class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 text-left">
+                            <span class="text-2xl" x-text="clip.emoji"></span>
+                            <div class="flex-1">
+                                <div class="font-medium text-gray-900" x-text="clip.name"></div>
+                                <div class="text-sm text-gray-500" x-text="clip.category"></div>
+                            </div>
+                            <button @click.stop="previewAudio(clip.file)" class="p-1 rounded hover:bg-gray-100">
+                                <Volume2 class="w-4 h-4" />
+                            </button>
+                        </button>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script is:inline>
+        function settingsPage() {
+            return {
+                activeTab: 'cards',
+                cards: [],
+                showAddCardModal: false,
+                showAudioPickerFor: null,
+                audioFilter: 'all',
+                cardFilterType: 'all',
+                cardQuery: '',
+                isSaving: false,
+                isResetting: false,
+                addCardModalData: {
+                    label: 'New Card',
+                    pts: 1,
+                    type: 'wow',
+                    audio: 'none',
+                    stickerId: null
+                },
+                editingCardId: null,
+                audioClips: AUDIO_CLIPS,
+                
+                get filteredCards() {
+                    let filtered = this.cards;
+                    
+                    // Filter by type
+                    if (this.cardFilterType !== 'all') {
+                        filtered = filtered.filter(card => card.type === this.cardFilterType);
+                    }
+                    
+                    // Filter by search
+                    if (this.cardQuery) {
+                        filtered = filtered.filter(card => 
+                            card.label.toLowerCase().includes(this.cardQuery.toLowerCase())
+                        );
+                    }
+                    
+                    return filtered;
+                },
+                
+                get filteredAudioClips() {
+                    if (this.audioFilter === 'all') return this.audioClips;
+                    return this.audioClips.filter(clip => clip.category === this.audioFilter);
+                },
+                
+                init() {
+                    // Load behaviors from localStorage or use defaults
+                    const saved = localStorage.getItem('classABC_behaviors');
+                    if (saved) {
+                        try {
+                            this.cards = JSON.parse(saved);
+                        } catch (e) {
+                            this.cards = this.getDefaultBehaviors();
+                        }
+                    } else {
+                        this.cards = this.getDefaultBehaviors();
+                    }
+                },
+                
+                getDefaultBehaviors() {
+                    return DEFAULT_BEHAVIORS.map((b, idx) => ({
+                        id: `default_${Date.now()}_${idx}`,
+                        ...b,
+                        audio: 'none',
+                        stickerId: null
+                    }));
+                },
+                
+                getAudioName(audioId) {
+                    const clip = this.audioClips.find(c => c.id === audioId);
+                    return clip ? clip.name : 'No Sound';
+                },
+                
+                addCard() {
+                    const newCard = {
+                        id: `custom_${Date.now()}`,
+                        ...this.addCardModalData
+                    };
+                    
+                    this.cards.push(newCard);
+                    this.showAddCardModal = false;
+                    this.resetAddCardForm();
+                    this.saveToLocalStorage();
+                },
+                
+                editCard(card) {
+                    this.editingCardId = card.id;
+                    this.addCardModalData = { ...card };
+                    this.showAddCardModal = true;
+                },
+                
+                deleteCard(cardId) {
+                    if (confirm('Are you sure you want to delete this behavior card?')) {
+                        this.cards = this.cards.filter(card => card.id !== cardId);
+                        this.saveToLocalStorage();
+                    }
+                },
+                
+                selectAudio(audioId) {
+                    if (this.showAudioPickerFor === 'add') {
+                        this.addCardModalData.audio = audioId;
+                    }
+                    this.showAudioPickerFor = null;
+                },
+                
+                previewAudio(file) {
+                    if (file === 'none') return;
+                    const audio = new Audio(`/audio/${file}`);
+                    audio.play().catch(e => console.log('Audio preview failed:', e));
+                },
+                
+                resetAddCardForm() {
+                    this.addCardModalData = {
+                        label: 'New Card',
+                        pts: 1,
+                        type: 'wow',
+                        audio: 'none',
+                        stickerId: null
+                    };
+                    this.editingCardId = null;
+                },
+                
+                saveToLocalStorage() {
+                    try {
+                        localStorage.setItem('classABC_behaviors', JSON.stringify(this.cards));
+                    } catch (e) {
+                        console.warn('Failed to save behaviors:', e);
+                    }
+                },
+                
+                async saveBehaviors() {
+                    this.isSaving = true;
+                    try {
+                        this.saveToLocalStorage();
+                        // Show success message (you could add a toast system here)
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    } catch (e) {
+                        console.error('Save failed:', e);
+                    } finally {
+                        this.isSaving = false;
+                    }
+                },
+                
+                async resetToDefaults() {
+                    if (!confirm('Are you sure you want to reset all behavior cards to defaults?')) {
+                        return;
+                    }
+                    
+                    this.isResetting = true;
+                    try {
+                        this.cards = this.getDefaultBehaviors();
+                        this.saveToLocalStorage();
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    } catch (e) {
+                        console.error('Reset failed:', e);
+                    } finally {
+                        this.isResetting = false;
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Tooltip styles */
+        .abc-tip { position: relative; display: inline-block; }
+        .abc-tip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: 50%;
+            top: calc(100% + 8px);
+            transform: translateX(-50%);
+            background: #333;
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            white-space: nowrap;
+            z-index: 9999;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+        .abc-tip:hover::after { opacity: 1; }
+    </style>
+</MainLayout>

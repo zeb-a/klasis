@@ -1,0 +1,789 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import { Dices, Trophy, Settings, Award, Home, Camera, SmilePlus, Sliders, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, ArrowUpDown, CheckSquare, BarChart2, ClipboardList, Maximize, Minimize, MessageSquare, Clock, CheckCircle, Siren, Zap, MoreVertical, X, Check, Users, Crown, Gamepad2, LogOut, User, Heart, Sun, Moon, Plus, Edit2, Trash2, Presentation, Star, Target, Activity } from 'lucide-react';
+---
+
+<MainLayout title="Class Dashboard - Klasiz.fun" description="Manage your classroom and students">
+    <style>
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            50% {
+                opacity: 1;
+                transform: translate(-50%, -150%) scale(1.2);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -250%) scale(1);
+            }
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        
+        .animate-bounce-in {
+            animation: bounceIn 0.6s ease-out;
+        }
+        
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0.3);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            70% {
+                transform: scale(0.9);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+    </style>
+    <div x-data="classDashboard()" class="min-h-screen bg-gray-50">
+        <!-- Loading State -->
+        <div x-show="loading" class="fixed inset-0 bg-white flex items-center justify-center z-50">
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+                <p class="text-gray-600">Loading classroom data...</p>
+            </div>
+        </div>
+        
+        <!-- Error State -->
+        <div x-show="error" class="fixed inset-0 bg-white flex items-center justify-center z-50">
+            <div class="text-center max-w-md p-6">
+                <div class="text-red-500 text-6xl mb-4">⚠️</div>
+                <h2 class="text-xl font-bold text-gray-900 mb-2">Error Loading Data</h2>
+                <p class="text-gray-600 mb-4" x-text="error"></p>
+                <button @click="window.location.reload()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                    Try Again
+                </button>
+            </div>
+        </div>
+        <!-- Header -->
+        <header class="bg-white border-b border-gray-200 px-4 py-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <button @click="window.history.back()" class="p-2 rounded-lg hover:bg-gray-100">
+                        <Home class="w-5 h-5" />
+                    </button>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900" x-text="currentClass ? currentClass.name : 'Loading Class...'"></h1>
+                        <p class="text-sm text-gray-500" x-text="`students: ${students.length}`"></p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <!-- Display Size Toggle -->
+                    <div class="flex items-center bg-gray-100 rounded-lg p-1">
+                        <button @click="setDisplaySize('compact')" 
+                                class="px-3 py-1 rounded text-sm font-medium transition-colors"
+                                :class="displaySize === 'compact' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'">
+                            Compact
+                        </button>
+                        <button @click="setDisplaySize('regular')" 
+                                class="px-3 py-1 rounded text-sm font-medium transition-colors"
+                                :class="displaySize === 'regular' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'">
+                            Regular
+                        </button>
+                        <button @click="setDisplaySize('spacious')" 
+                                class="px-3 py-1 rounded text-sm font-medium transition-colors"
+                                :class="displaySize === 'spacious' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'">
+                            Spacious
+                        </button>
+                    </div>
+                    
+                    <!-- Theme Toggle -->
+                    <button @click="darkMode = !darkMode" class="p-2 rounded-lg hover:bg-gray-100">
+                        <Sun x-show="!darkMode" class="w-5 h-5" />
+                        <Moon x-show="darkMode" class="w-5 h-5" />
+                    </button>
+                    
+                    <!-- User Menu -->
+                    <div class="relative" x-data="{ userMenuOpen: false }">
+                        <button @click="userMenuOpen = !userMenuOpen" class="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100">
+                            <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
+                                <span x-text="user ? user.name.charAt(0).toUpperCase() : 'T'"></span>
+                            </div>
+                            <ChevronDown class="w-4 h-4" />
+                        </button>
+                        
+                        <div x-show="userMenuOpen" @click.away="userMenuOpen = false" 
+                             class="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                            <div class="px-4 py-2 border-b border-gray-200">
+                                <div class="text-sm font-medium text-gray-900" x-text="user ? user.name : 'Loading...'"></div>
+                                <div class="text-xs text-gray-500" x-text="user ? user.email : ''"></div>
+                            </div>
+                            <a href="/settings" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                <Settings class="w-4 h-4" />
+                                Settings
+                            </a>
+                            <button @click="logout()" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 w-full text-left">
+                                <LogOut class="w-4 h-4" />
+                                Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="bg-white border-b border-gray-200 px-4 py-2">
+            <div class="flex gap-1 overflow-x-auto">
+                <button @click="setActiveTab('students')" 
+                        class="px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-colors"
+                        :class="activeTab === 'students' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:text-gray-900'">
+                    <Users class="w-4 h-4 inline mr-1" />
+                    Students
+                </button>
+                <button @click="setActiveTab('assignments')" 
+                        class="px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-colors"
+                        :class="activeTab === 'assignments' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:text-gray-900'">
+                    <ClipboardList class="w-4 h-4 inline mr-1" />
+                    Assignments
+                </button>
+                <button @click="setActiveTab('reports')" 
+                        class="px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-colors"
+                        :class="activeTab === 'reports' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:text-gray-900'">
+                    <BarChart2 class="w-4 h-4 inline mr-1" />
+                    Reports
+                </button>
+                <button @click="setActiveTab('messages')" 
+                        class="px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-colors"
+                        :class="activeTab === 'messages' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:text-gray-900'">
+                    <MessageSquare class="w-4 h-4 inline mr-1" />
+                    Messages
+                </button>
+                <button @click="setActiveTab('codes')" 
+                        class="px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-colors"
+                        :class="activeTab === 'codes' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:text-gray-900'">
+                    <Crown class="w-4 h-4 inline mr-1" />
+                    Access Codes
+                </button>
+                <button @click="setActiveTab('games')" 
+                        class="px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-colors"
+                        :class="activeTab === 'games' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:text-gray-900'">
+                    <Gamepad2 class="w-4 h-4 inline mr-1" />
+                    Games
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="p-4">
+            <!-- Students Tab -->
+            <div x-show="activeTab === 'students'" class="space-y-4">
+                <!-- Action Bar -->
+                <div class="bg-white rounded-xl border border-gray-200 p-4">
+                    <div class="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <button @click="showAddStudentMenu = !showAddStudentMenu" 
+                                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2">
+                                <Plus class="w-4 h-4" />
+                                Add Student
+                            </button>
+                            <button @click="startAttendance()" 
+                                    class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                                <CheckSquare class="w-4 h-4" />
+                                Take Attendance
+                            </button>
+                            <button @click="openBehaviorModal()" 
+                                    class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                                <Award class="w-4 h-4" />
+                                Give Points
+                            </button>
+                        </div>
+                        
+                        <!-- Search -->
+                        <div class="relative">
+                            <input type="text" x-model="searchQuery" placeholder="Search students..." 
+                                   class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent w-full md:w-64">
+                            <Users class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                        </div>
+                    </div>
+                    
+                    <!-- Add Student Dropdown -->
+                    <div x-show="showAddStudentMenu" @click.away="showAddStudentMenu = false" 
+                         class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <button @click="showAddSingleModal = true" class="p-3 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 text-left">
+                                <User class="w-5 h-5 text-green-600 mb-1" />
+                                <div class="font-medium">Add Single</div>
+                                <div class="text-sm text-gray-500">Add one student</div>
+                            </button>
+                            <button @click="showBulkAddModal = true" class="p-3 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 text-left">
+                                <Users class="w-5 h-5 text-blue-600 mb-1" />
+                                <div class="font-medium">Bulk Add</div>
+                                <div class="text-sm text-gray-500">Add multiple</div>
+                            </button>
+                            <button class="p-3 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 text-left">
+                                <Camera class="w-5 h-5 text-purple-600 mb-1" />
+                                <div class="font-medium">Scan QR</div>
+                                <div class="text-sm text-gray-500">QR code entry</div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Students Grid -->
+                <div class="grid gap-4" 
+                     :class="displaySize === 'compact' ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6' : 
+                            displaySize === 'regular' ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4' : 
+                            'grid-cols-1 sm:grid-cols-2 md:grid-cols-3'">
+                    <template x-for="student in filteredStudents" :key="student.id">
+                        <div class="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-all hover:-translate-y-1 group relative" 
+                             :data-student-id="student.id">
+                            <!-- Student Header -->
+                            <div class="flex justify-between items-start mb-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white text-xl font-bold">
+                                        <span x-text="student.avatar"></span>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold text-gray-900" x-text="student.name"></h3>
+                                        <div class="flex items-center gap-2 text-sm text-gray-500">
+                                            <span class="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                                                Level <span x-text="student.level"></span>
+                                            </span>
+                                            <span class="flex items-center gap-1">
+                                                <Zap class="w-3 h-3 text-yellow-500" />
+                                                <span x-text="student.streak"></span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Actions -->
+                                <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button @click="editStudent(student)" class="p-1 rounded hover:bg-gray-100">
+                                        <Edit2 class="w-4 h-4 text-gray-500" />
+                                    </button>
+                                    <button @click="deleteStudent(student.id)" class="p-1 rounded hover:bg-gray-100">
+                                        <Trash2 class="w-4 h-4 text-red-500" />
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Points Display -->
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-green-600" x-text="student.points"></div>
+                                <div class="text-sm text-gray-500">points</div>
+                            </div>
+                            
+                            <!-- Quick Actions -->
+                            <div class="flex gap-1 mt-3">
+                                <template x-for="behavior in quickBehaviors" :key="behavior.id">
+                                    <button @click="givePoints(student.id, behavior.pts, behavior.label)" 
+                                            class="flex-1 p-2 rounded-lg text-xs font-medium transition-colors"
+                                            :class="behavior.pts > 0 ? 'bg-green-50 text-green-700 hover:bg-green-100' : 'bg-red-50 text-red-700 hover:bg-red-100'">
+                                        <span x-text="behavior.icon"></span>
+                                        <span x-text="behavior.pts > 0 ? '+' : '' + behavior.pts"></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Other Tabs (Redirect to real pages) -->
+            <div x-show="activeTab === 'assignments'" class="bg-white rounded-xl border border-gray-200 p-8 text-center">
+                <div class="animate-bounce-in">
+                    <ClipboardList class="w-16 h-16 text-green-600 mx-auto mb-4" />
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Loading Assignments...</h3>
+                    <p class="text-gray-500 mb-4">Redirecting to assignments page</p>
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+                </div>
+            </div>
+
+            <div x-show="activeTab === 'reports'" class="bg-white rounded-xl border border-gray-200 p-8 text-center">
+                <div class="animate-bounce-in">
+                    <BarChart2 class="w-16 h-16 text-green-600 mx-auto mb-4" />
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Loading Reports...</h3>
+                    <p class="text-gray-500 mb-4">Redirecting to reports page</p>
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+                </div>
+            </div>
+
+            <div x-show="activeTab === 'messages'" class="bg-white rounded-xl border border-gray-200 p-8 text-center">
+                <MessageSquare class="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Messages</h3>
+                <p class="text-gray-500">Inbox and grading coming soon...</p>
+            </div>
+
+            <div x-show="activeTab === 'codes'" class="bg-white rounded-xl border border-gray-200 p-8 text-center">
+                <Crown class="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Access Codes</h3>
+                <p class="text-gray-500">Access code management coming soon...</p>
+            </div>
+
+            <div x-show="activeTab === 'games'" class="bg-white rounded-xl border border-gray-200 p-8 text-center">
+                <Gamepad2 class="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Games</h3>
+                <p class="text-gray-500">Games and activities coming soon...</p>
+            </div>
+        </main>
+
+        <!-- Add Student Modal -->
+        <div x-show="showAddSingleModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-xl p-6 w-full max-w-md">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-900">Add Student</h2>
+                    <button @click="showAddSingleModal = false" class="p-1 rounded hover:bg-gray-100">
+                        <X class="w-5 h-5" />
+                    </button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Student Name</label>
+                        <input type="text" x-model="newStudentName" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Avatar</label>
+                        <div class="grid grid-cols-6 gap-2">
+                            <template x-for="avatar in avatarOptions" :key="avatar">
+                                <button @click="selectedAvatar = avatar" 
+                                        class="w-12 h-12 rounded-lg border-2 flex items-center justify-center text-xl transition-colors"
+                                        :class="selectedAvatar === avatar ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'">
+                                    <span x-text="avatar"></span>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex gap-3 mt-6">
+                    <button @click="showAddSingleModal = false" 
+                            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button @click="addStudent()" 
+                            class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                        Add Student
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Behavior Modal -->
+        <div x-show="showBehaviorModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-xl p-6 w-full max-w-2xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-900">Give Points</h2>
+                    <button @click="showBehaviorModal = false" class="p-1 rounded hover:bg-gray-100">
+                        <X class="w-5 h-5" />
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <template x-for="behavior in behaviors" :key="behavior.id">
+                        <button @click="applyBehavior(behavior)" 
+                                class="p-4 rounded-xl border border-gray-200 hover:border-gray-300 transition-colors">
+                            <div class="text-2xl mb-2" x-text="behavior.icon"></div>
+                            <div class="font-medium text-gray-900" x-text="behavior.label"></div>
+                            <div class="text-sm font-bold mt-1" 
+                                 :class="behavior.pts > 0 ? 'text-green-600' : 'text-red-600'"
+                                 x-text="(behavior.pts > 0 ? '+' : '') + behavior.pts + ' pts'"></div>
+                        </button>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script is:inline>
+        function classDashboard() {
+            return {
+                activeTab: 'students',
+                displaySize: 'regular',
+                darkMode: false,
+                searchQuery: '',
+                showAddStudentMenu: false,
+                showAddSingleModal: false,
+                showBulkAddModal: false,
+                showBehaviorModal: false,
+                newStudentName: '',
+                selectedAvatar: '👦',
+                students: [],
+                behaviors: [],
+                classes: [],
+                currentClass: null,
+                user: null,
+                loading: true,
+                error: null,
+                avatarOptions: ['👦', '👧', '👨', '👩', '🧑', '👶', '👴', '👵', '🦸', '🦸‍♀️', '🧙', '🧙‍♀️'],
+                apiBaseUrl: 'http://localhost:3001/api',
+                
+                get filteredStudents() {
+                    if (!this.searchQuery) return this.students;
+                    return this.students.filter(student => 
+                        student.name.toLowerCase().includes(this.searchQuery.toLowerCase())
+                    );
+                },
+                
+                get quickBehaviors() {
+                    return this.behaviors.slice(0, 3);
+                },
+                
+                async init() {
+                    // Check authentication
+                    const token = localStorage.getItem('authToken');
+                    if (!token) {
+                        window.location.href = '/login';
+                        return;
+                    }
+                    
+                    // Load display size from localStorage
+                    const saved = localStorage.getItem('displaySize');
+                    if (saved) this.displaySize = saved;
+                    
+                    // Load data in sequence
+                    try {
+                        await this.loadUser();
+                        await this.loadClasses();
+                        await this.loadCurrentClass();
+                    } catch (error) {
+                        console.error('Init error:', error);
+                        this.error = 'Failed to initialize dashboard';
+                    }
+                    
+                    this.loading = false;
+                },
+                
+                async loadUser() {
+                    try {
+                        const token = localStorage.getItem('authToken');
+                        const response = await fetch(`${this.apiBaseUrl}/auth/me`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.user = data.user;
+                        } else {
+                            this.logout();
+                        }
+                    } catch (error) {
+                        this.error = 'Failed to load user data';
+                        console.error('Load user error:', error);
+                    }
+                },
+                
+                async loadClasses() {
+                    try {
+                        const token = localStorage.getItem('authToken');
+                        const response = await fetch(`${this.apiBaseUrl}/classes`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        
+                        if (response.ok) {
+                            this.classes = await response.json();
+                        } else {
+                            this.error = 'Failed to load classes';
+                        }
+                    } catch (error) {
+                        this.error = 'Failed to load classes';
+                        console.error('Load classes error:', error);
+                    }
+                },
+                
+                async loadCurrentClass() {
+                    try {
+                        const classId = new URLSearchParams(window.location.search).get('class');
+                        if (!classId) {
+                            // If no class specified, try to load the first class
+                            if (this.classes.length > 0) {
+                                const firstClass = this.classes[0];
+                                await this.loadClassData(firstClass.id);
+                            }
+                            return;
+                        }
+                        
+                        await this.loadClassData(classId);
+                    } catch (error) {
+                        this.error = 'Failed to load class data';
+                        console.error('Load class error:', error);
+                    }
+                },
+                
+                async loadClassData(classId) {
+                    try {
+                        const token = localStorage.getItem('authToken');
+                        const response = await fetch(`${this.apiBaseUrl}/classes/${classId}`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.currentClass = data;
+                            this.students = data.students || [];
+                            this.behaviors = data.behaviors || [];
+                        } else {
+                            this.error = 'Failed to load class data';
+                        }
+                    } catch (error) {
+                        this.error = 'Failed to load class data';
+                        console.error('Load class data error:', error);
+                    }
+                },
+                
+                setActiveTab(tab) {
+                    this.activeTab = tab;
+                    
+                    // Redirect to dedicated pages for certain tabs
+                    if (tab === 'assignments') {
+                        const classId = new URLSearchParams(window.location.search).get('class');
+                        window.location.href = `/dashboard/assignments?class=${classId}`;
+                        return;
+                    }
+                    
+                    if (tab === 'reports') {
+                        const classId = new URLSearchParams(window.location.search).get('class');
+                        window.location.href = `/dashboard/reports?class=${classId}`;
+                        return;
+                    }
+                    
+                    // Update URL for other tabs
+                    const url = new URL(window.location.href);
+                    if (tab === 'students') {
+                        url.searchParams.delete('tab');
+                    } else {
+                        url.searchParams.set('tab', tab);
+                    }
+                    window.history.pushState({}, '', url);
+                },
+                
+                setDisplaySize(size) {
+                    this.displaySize = size;
+                    localStorage.setItem('displaySize', size);
+                },
+                
+                startAttendance() {
+                    alert('Attendance mode coming soon!');
+                },
+                
+                openBehaviorModal() {
+                    this.showBehaviorModal = true;
+                },
+                
+                async addStudent() {
+                    if (!this.newStudentName.trim()) return;
+                    
+                    if (!this.currentClass || !this.currentClass.id) {
+                        alert('No class selected. Please refresh the page.');
+                        return;
+                    }
+                    
+                    try {
+                        const token = localStorage.getItem('authToken');
+                        const response = await fetch(`${this.apiBaseUrl}/students`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                classId: this.currentClass.id,
+                                name: this.newStudentName,
+                                avatar: this.selectedAvatar
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            const newStudent = await response.json();
+                            this.students.push(newStudent);
+                            this.showAddSingleModal = false;
+                            this.newStudentName = '';
+                            this.selectedAvatar = '👦';
+                        } else {
+                            const errorData = await response.json();
+                            alert(errorData.error || 'Failed to add student');
+                        }
+                    } catch (error) {
+                        alert('Error adding student');
+                        console.error('Add student error:', error);
+                    }
+                },
+                
+                async editStudent(student) {
+                    const newName = prompt('Edit student name:', student.name);
+                    if (!newName || newName === student.name) return;
+                    
+                    try {
+                        const token = localStorage.getItem('authToken');
+                        const response = await fetch(`${this.apiBaseUrl}/students/${student.id}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                name: newName,
+                                avatar: student.avatar
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            const updatedStudent = await response.json();
+                            const index = this.students.findIndex(s => s.id === student.id);
+                            if (index !== -1) {
+                                this.students[index] = updatedStudent;
+                            }
+                        } else {
+                            alert('Failed to update student');
+                        }
+                    } catch (error) {
+                        alert('Error updating student');
+                        console.error('Update student error:', error);
+                    }
+                },
+                
+                async deleteStudent(studentId) {
+                    if (!confirm('Are you sure you want to remove this student?')) return;
+                    
+                    try {
+                        const token = localStorage.getItem('authToken');
+                        const response = await fetch(`${this.apiBaseUrl}/students/${studentId}`, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        
+                        if (response.ok) {
+                            this.students = this.students.filter(s => s.id !== studentId);
+                        } else {
+                            alert('Failed to delete student');
+                        }
+                    } catch (error) {
+                        alert('Error deleting student');
+                        console.error('Delete student error:', error);
+                    }
+                },
+                
+                async givePoints(studentId, points, label) {
+                    try {
+                        const token = localStorage.getItem('authToken');
+                        const response = await fetch(`${this.apiBaseUrl}/points`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                studentId,
+                                points,
+                                label
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            const updatedStudent = await response.json();
+                            const index = this.students.findIndex(s => s.id === studentId);
+                            if (index !== -1) {
+                                // Animate the points change
+                                this.animatePoints(studentId, points);
+                                // Play sound effect
+                                this.playPointsSound(points);
+                                // Update student data
+                                this.students[index] = updatedStudent;
+                            }
+                        } else {
+                            alert('Failed to give points');
+                        }
+                    } catch (error) {
+                        alert('Error giving points');
+                        console.error('Give points error:', error);
+                    }
+                },
+                
+                animatePoints(studentId, points) {
+                    const studentCard = document.querySelector(`[data-student-id="${studentId}"]`);
+                    if (!studentCard) return;
+                    
+                    // Create floating points animation
+                    const pointsElement = document.createElement('div');
+                    pointsElement.className = `absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-2xl font-bold pointer-events-none z-50`;
+                    pointsElement.textContent = points > 0 ? `+${points}` : `${points}`;
+                    pointsElement.style.color = points > 0 ? '#10b981' : '#ef4444';
+                    
+                    // Add animation
+                    pointsElement.style.animation = 'floatUp 1.5s ease-out forwards';
+                    studentCard.appendChild(pointsElement);
+                    
+                    // Remove after animation
+                    setTimeout(() => {
+                        if (pointsElement.parentNode) {
+                            pointsElement.parentNode.removeChild(pointsElement);
+                        }
+                    }, 1500);
+                    
+                    // Add pulse effect to student card
+                    studentCard.style.animation = 'pulse 0.5s ease-out';
+                    setTimeout(() => {
+                        studentCard.style.animation = '';
+                    }, 500);
+                },
+                
+                playPointsSound(points) {
+                    try {
+                        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        const oscillator = audioContext.createOscillator();
+                        const gainNode = audioContext.createGain();
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioContext.destination);
+                        
+                        if (points > 0) {
+                            // Positive sound - ascending tones
+                            oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
+                            oscillator.frequency.exponentialRampToValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
+                            oscillator.frequency.exponentialRampToValueAtTime(783.99, audioContext.currentTime + 0.2); // G5
+                            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                        } else {
+                            // Negative sound - descending tones
+                            oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4
+                            oscillator.frequency.exponentialRampToValueAtTime(349.23, audioContext.currentTime + 0.1); // F4
+                            oscillator.frequency.exponentialRampToValueAtTime(293.66, audioContext.currentTime + 0.2); // D4
+                            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                        }
+                        
+                        oscillator.start(audioContext.currentTime);
+                        oscillator.stop(audioContext.currentTime + 0.3);
+                    } catch (error) {
+                        // Audio not supported, fail silently
+                        console.log('Audio not available');
+                    }
+                },
+                
+                applyBehavior(behavior) {
+                    // Apply to all selected students or show student selection
+                    alert(`Apply ${behavior.label} to students - Feature coming soon!`);
+                    this.showBehaviorModal = false;
+                },
+                
+                logout() {
+                    localStorage.removeItem('authToken');
+                    window.location.href = '/login';
+                }
+            }
+        }
+    </script>
+</MainLayout>

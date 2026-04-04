@@ -1,0 +1,327 @@
+/* Professional Glassmorphism Effect with Dark Mode Support */
+:root {
+  --mouse-x: 50%;
+  --mouse-y: 50%;
+
+  /* Light mode colors (default) */
+  --bg-beige: #F6F9F4;
+  --card-bg: #FFFFFF;
+  --bg-gray: #F1F1F1;
+  --bg-hover: #E5E7EB;
+  --text-dark: #111827;
+  --text-light: #FFFFFF;
+  --muted: #6B7280;
+  --border-color: #E2E8F0;
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --spotlight-inner: rgba(255, 255, 255, 0.5);
+  --spotlight-outer: rgba(255, 255, 255, 0.1);
+  --ring-color: #FFD700;
+  --ring-shadow: rgba(255, 215, 0, 0.15);
+  --hover-shadow-1: rgba(0, 0, 0, 0.15);
+  --hover-shadow-2: rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode colors - Global theme for entire project */
+[data-theme="dark"] {
+  --bg-beige: #1a1a1a;
+  --card-bg: #252525;
+  --bg-gray: #2e2e2e;
+  --bg-hover: #383838;
+  --text-dark: #e5e5e5;
+  --text-light: #f0f0f0;
+  --muted: #b0b0b0;
+  --border-color: #4a4a4a;
+  --glass-bg: rgba(37, 37, 37, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.15);
+  --spotlight-inner: rgba(255, 255, 255, 0.18);
+  --spotlight-outer: rgba(255, 255, 255, 0.08);
+  --ring-color: #4CAF50;
+  --ring-shadow: rgba(76, 175, 80, 0.35);
+  --hover-shadow-1: rgba(0, 0, 0, 0.35);
+  --hover-shadow-2: rgba(0, 0, 0, 0.25);
+  --hover-orange: #FF9500;
+}
+
+/* Base glassmorphism styles */
+button, .btn, [class*="card"], nav,
+[role="button"], select, option,
+[class*="menu"] {
+  position: relative;
+  overflow: visible;
+  isolation: isolate;
+  background: var(--glass-bg);
+
+  border: 1px solid var(--glass-border);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.25s ease,
+              background 0.25s ease;
+}
+
+/* THE GLOWING RING BORDER - Apple-style edge light */
+button::after, .btn::after, [class*="card"]::after, nav::after,
+[role="button"]::after, select::after, option::after,
+[class*="menu"]::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: radial-gradient(
+    200px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    var(--ring-color) 0%,
+    var(--ring-shadow) 20%,
+    transparent 60%
+  );
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: -1;
+  filter: blur(1px);
+}
+
+/* THE INNER SPOTLIGHT - Soft glow that follows mouse */
+button::before, .btn::before, [class*="card"]::before, nav::before,
+[role="button"]::before, select::before, option::before,
+[class*="menu"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+
+  opacity: 0;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* HOVER STATE - Pop up with dramatic ring glow */
+button:hover, .btn:hover, nav:hover,
+[role="button"]:hover, select:hover, option:hover,
+[class*="menu"]:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow:
+    0 20px 40px -10px var(--hover-shadow-1),
+    0 0 0 1px var(--ring-shadow),
+    0 0 20px var(--ring-shadow);
+  border-color: var(--ring-color);
+}
+
+/* Exclude behavior cards from hover effects */
+button[data-behavior-card="true"]:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  border-color: inherit !important;
+}
+
+button[data-behavior-card="true"]::after,
+button[data-behavior-card="true"]::before {
+  opacity: 0 !important;
+}
+
+/* Dark mode: white to orange hover with text scale */
+[data-theme="dark"] button:hover,
+[data-theme="dark"] .btn:hover,
+[data-theme="dark"] [role="button"]:hover {
+  color: var(--hover-orange) !important;
+}
+[data-theme="dark"] button:hover > *,
+[data-theme="dark"] .btn:hover > *,
+[data-theme="dark"] [role="button"]:hover > * {
+  transform: scale(1.05);
+}
+
+/* Prevent game emoji container from scaling on hover */
+[data-theme="dark"] button:hover > div[style*="border-radius: 50%"],
+[data-theme="dark"] .btn:hover > div[style*="border-radius: 50%"] {
+  transform: none;
+}
+
+/* Prevent game emoji container background change in light mode */
+button:hover > div[style*="border-radius: 50%"],
+.btn:hover > div[style*="border-radius: 50%"],
+[role="button"]:hover > div[style*="border-radius: 50%"] {
+  transform: none;
+  background-color: inherit !important;
+}
+
+/* Prevent games icon button color change on hover */
+.games-icon-button:hover svg {
+  color: white !important;
+}
+
+
+
+/* ACTIVE/CLICK STATE - Press down effect */
+button:active, .btn:active, nav:active,
+[role="button"]:active, select:active, option:active,
+[class*="menu"]:active {
+  transform: translateY(-2px) scale(0.98);
+  box-shadow:
+    0 10px 20px -5px var(--hover-shadow-2),
+    0 0 0 2px var(--ring-shadow),
+    0 0 15px var(--ring-shadow);
+}
+
+/* Exclude behavior cards from active state */
+button[data-behavior-card="true"]:active {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ACTIVATE THE RING AND SPOTLIGHT ON HOVER */
+button:hover::after, .btn:hover::after, nav:hover::after,
+[role="button"]:hover::after, select:hover::after, option:hover::after,
+[class*="menu"]:hover::after,
+button:hover::before, .btn:hover::before, nav:hover::before,
+[role="button"]:hover::before, select:hover::before, option:hover::before,
+[class*="menu"]:hover::before {
+  opacity: 1;
+}
+
+/* ACTIVATE ON TOUCH/MOBILE (pointerdown) */
+button:active::after, .btn:active::after,
+[role="button"]:active::after, select:active::after, option:active::after,
+[class*="menu"]:active::after,
+button:active::before, .btn:active::before,
+[role="button"]:active::before, select:active::before, option:active::before,
+[class*="menu"]:active::before {
+  opacity: 1;
+}
+
+/* Special override for nav to prevent layout shift */
+nav:hover, nav:active {
+  transform: none;
+}
+
+/* Ensure content stays above effects */
+button > *, .btn > *, [class*="card"] > *, nav > *,
+[role="button"] > *, select > *, option > *,
+[class*="menu"] > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* FIX: Ensure dropdown menus have proper z-index to appear above other elements */
+select, [class*="menu"] {
+  z-index: 100;
+}
+
+/* FIX: Ensure dropdown options and menu children appear above everything */
+option, [class*="menu"] > *,
+[class*="menu"] * > * {
+  z-index: 9999 !important;
+}
+
+/* FIX: For absolute positioned dropdowns/popovers */
+[class*="menu"][style*="position: absolute"],
+[class*="menu"][style*="position: fixed"] {
+  z-index: 100000 !important;
+}
+
+/* Smooth animation for spotlight tracking */
+@keyframes spotlightPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+/* Dark mode body background transition - SMOOTHER */
+body {
+  transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: var(--bg-beige);
+  color: var(--text-dark);
+}
+
+/* Add overlay for smooth theme transition */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: currentColor;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0s;
+  z-index: 9999;
+}
+
+/* Animate overlay during theme change */
+[data-theme="dark"] body::before,
+[data-theme="light"] body::before {
+  opacity: 0;
+  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+
+
+/* Dark mode inputs and form elements */
+input, textarea, select {
+  background-color: var(--card-bg);
+  color: var(--text-dark);
+  border-color: var(--glass-border);
+}
+
+/* Dark mode links */
+a {
+  color: var(--text-dark);
+}
+
+/* Dark mode headers and headings */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-dark);
+}
+
+/* Smooth transitions for all theme changes */
+* {
+  transition: color 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Exclude transitions for performance on specific elements */
+button, [role="button"], .btn {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.25s ease,
+              background 0.25s ease,
+              background-color 0.2s ease,
+              color 0.2s ease;
+}
+
+/* Dark mode overrides for hardcoded inline styles */
+[data-theme="dark"] {
+  /* Override common hardcoded backgrounds */
+  .class-card,
+  .card,
+  [style*="background: #fff"],
+  [style*="background: #FFF"],
+  [style*="background: #ffffff"],
+  [style*="background: #FFFFFF"] {
+    background: var(--card-bg) !important;
+  }
+
+  /* Override common gray backgrounds */
+  [style*="background: #f1f1f1"],
+  [style*="background: #F1F1F1"],
+  [style*="background: #E5E7EB"] {
+    background: var(--bg-gray) !important;
+  }
+
+  /* Override border colors */
+  [style*="border-color: #E2E8F0"],
+  [style*="border: 1px solid #E2E8F0"] {
+    border-color: var(--border-color) !important;
+  }
+
+  /* Override text colors */
+  [style*="color: #111827"],
+  [style*="color: #1A1A1A"],
+  [style*="color: #000"] {
+    color: var(--text-dark) !important;
+  }
+}

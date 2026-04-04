@@ -1,0 +1,1336 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import { Dices, Trophy, Settings, Award, Home, Camera, SmilePlus, Sliders, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, ArrowUpDown, CheckSquare, BarChart2, ClipboardList, Maximize, Minimize, MessageSquare, Clock, CheckCircle, Siren, Zap, MoreVertical, X, Check, Users, Crown, Gamepad2, LogOut, User, Heart, Sun, Moon, Plus, Edit2, Trash2, Presentation, Star, Target, Activity, SafeAvatar, ChevronRight as ChevronRightIcon, ChevronLeft as ChevronLeftIcon } from 'lucide-react';
+---
+
+<MainLayout title="Class Dashboard - Klasiz.fun" description="Manage your classroom and students">
+    <div x-data="classDashboardComplete()" class="min-h-screen" :style="dashboardStyles">
+        <!-- Loading State -->
+        <div x-show="loading" class="fixed inset-0 bg-white flex items-center justify-center z-50">
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+                <p class="text-gray-600">Loading classroom data...</p>
+            </div>
+        </div>
+        
+        <!-- Error State -->
+        <div x-show="error" class="fixed inset-0 bg-white flex items-center justify-center z-50">
+            <div class="text-center max-w-md p-6">
+                <div class="text-red-500 text-6xl mb-4">⚠️</div>
+                <h2 class="text-xl font-bold text-gray-900 mb-2">Error Loading Data</h2>
+                <p class="text-gray-600 mb-4" x-text="error"></p>
+                <button @click="window.location.reload()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                    Try Again
+                </button>
+            </div>
+        </div>
+
+        <!-- BUZZER OVERLAY -->
+        <div x-show="buzzerState !== 'idle'" class="fixed inset-0 z-[9999]" :style="buzzerOverlayStyles">
+            <div class="text-center text-white animate-scale-in">
+                <div x-show="buzzerState === 'counting'" class="space-y-4">
+                    <div class="text-[180px] font-black" style="text-shadow: 0 0 50px rgba(99, 102, 241, 0.5)">
+                        <span x-text="buzzerCount"></span>
+                    </div>
+                    <p class="text-2xl font-bold tracking-widest opacity-80">EYES ON ME</p>
+                </div>
+                <div x-show="buzzerState === 'buzzing'" class="space-y-8">
+                    <Zap class="w-24 h-24 text-yellow-400 mx-auto" />
+                    <h1 class="text-6xl font-black mb-10">ATTENTION!</h1>
+                    <button @click="stopBuzzer()" class="px-16 py-8 bg-white text-red-600 text-2xl font-black rounded-3xl hover:scale-105 transition-transform shadow-2xl">
+                        I'M LISTENING
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Layout -->
+        <div class="flex" :style="mainLayoutStyles">
+            <!-- Sidebar Navigation -->
+            <nav x-show="appSettings.showNavbar && !mergedWorkspace" 
+                 ref="sidebarRef"
+                 class="fixed left-0 top-0 h-full bg-indigo-50 border-r border-indigo-100 z-[99999] transition-transform duration-300 overflow-y-auto"
+                 :class="sidebarVisible ? 'translate-x-0' : '-translate-x-full'"
+                 :style="sidebarStyles">
+                
+                <!-- Home Button -->
+                <button @click="handleSidebarItemClick(() => { onBack(); setViewModeWithHistory('students'); if (isMobile) sidebarVisible = false; })"
+                        class="flex items-center gap-3 p-3 rounded-lg transition-all duration-200 hover:bg-indigo-100"
+                        :class="effectiveNavVariant === 'dock' ? 'w-12 h-12 justify-center' : 'w-full px-4 py-3'"
+                        :style="iconStyles">
+                    <Home class="w-5 h-5" />
+                    <span x-show="effectiveNavVariant === 'sidebar' || forceLabelRowInPanel" class="font-medium text-sm">Back</span>
+                </button>
+
+                <!-- Assignments -->
+                <button x-show="appSettings.showAssignments"
+                        @click="handleSidebarItemClick(() => { closeModal(); setViewModeWithHistory('assignments'); if (isMobile) sidebarVisible = false; })"
+                        class="flex items-center gap-3 p-3 rounded-lg transition-all duration-200 hover:bg-indigo-100"
+                        :class="effectiveNavVariant === 'dock' ? 'w-12 h-12 justify-center' : 'w-full px-4 py-3', viewMode === 'assignments' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:text-gray-900'">
+                    <ClipboardList class="w-5 h-5" />
+                    <span x-show="effectiveNavVariant === 'sidebar' || forceLabelRowInPanel" class="font-medium text-sm">Assignments</span>
+                </button>
+
+                <!-- Inbox/Grading -->
+                <button x-show="appSettings.showInbox"
+                        @click="handleSidebarItemClick(() => { closeModal(); setViewModeWithHistory('messages'); fetchFreshSubmissions(); if (isMobile) sidebarVisible = false; })"
+                        class="flex items-center gap-3 p-3 rounded-lg transition-all duration-200 hover:bg-indigo-100 relative"
+                        :class="effectiveNavVariant === 'dock' ? 'w-12 h-12 justify-center' : 'w-full px-4 py-3', viewMode === 'messages' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:text-gray-900'">
+                    <MessageSquare class="w-5 h-5" />
+                    <span x-show="effectiveNavVariant === 'sidebar' || forceLabelRowInPanel" class="font-medium text-sm">Inbox/Grading</span>
+                    <span x-show="submissions.filter(s => s.status === 'submitted').length > 0" 
+                          class="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
+                          x-text="submissions.filter(s => s.status === 'submitted').length">
+                    </span>
+                </button>
+
+                <!-- Lucky Draw -->
+                <button x-show="appSettings.showLuckyDraw"
+                        @click="handleSidebarItemClick(() => { closeModal(); openModalWithHistory('luckyDraw', () => isLuckyDrawOpen = true); if (isMobile) sidebarVisible = false; })"
+                        class="flex items-center gap-3 p-3 rounded-lg transition-all duration-200 hover:bg-indigo-100"
+                        :class="effectiveNavVariant === 'dock' ? 'w-12 h-12 justify-center' : 'w-full px-4 py-3', isLuckyDrawOpen ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:text-gray-900'"
+                        data-navbar-icon="lucky-draw">
+                    <Dices class="w-5 h-5" />
+                    <span x-show="effectiveNavVariant === 'sidebar' || forceLabelRowInPanel" class="font-medium text-sm">Lucky Draw</span>
+                </button>
+
+                <!-- Egg Road -->
+                <button x-show="appSettings.showEggRoad"
+                        @click="handleSidebarItemClick(() => { closeModal(); setViewModeWithHistory('eggroad'); if (isMobile) sidebarVisible = false; })"
+                        class="flex items-center gap-3 p-3 rounded-lg transition-all duration-200 hover:bg-indigo-100"
+                        :class="effectiveNavVariant === 'dock' ? 'w-12 h-12 justify-center' : 'w-full px-4 py-3', viewMode === 'eggroad' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:text-gray-900'"
+                        data-navbar-icon="egg-road">
+                    <Trophy class="w-5 h-5" />
+                    <span x-show="effectiveNavVariant === 'sidebar' || forceLabelRowInPanel" class="font-medium text-sm">Class Journey</span>
+                </button>
+
+                <!-- Attendance -->
+                <button x-show="appSettings.showAttendance"
+                        @click="handleSidebarItemClick(() => { closeModal(); if (!isAttendanceMode) { setViewModeWithHistory('students'); openAttendanceMode(); } else { cancelAttendanceMode(); } if (isMobile) sidebarVisible = false; })"
+                        class="flex items-center gap-3 p-3 rounded-lg transition-all duration-200 hover:bg-indigo-100"
+                        :class="effectiveNavVariant === 'dock' ? 'w-12 h-12 justify-center' : 'w-full px-4 py-3', isAttendanceMode ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:text-gray-900'"
+                        data-navbar-icon="attendance">
+                    <CheckSquare class="w-5 h-5" />
+                    <span x-show="effectiveNavVariant === 'sidebar' || forceLabelRowInPanel" class="font-medium text-sm">Attendance Mode</span>
+                </button>
+
+                <!-- Reports -->
+                <button x-show="appSettings.showReports"
+                        @click="handleSidebarItemClick(() => { closeModal(); setViewModeWithHistory('reports'); updateClasses(prev => prev.map(c => c.id === currentClass.id ? { ...c, isViewingReports: true } : c)); if (isMobile) sidebarVisible = false; })"
+                        class="flex items-center gap-3 p-3 rounded-lg transition-all duration-200 hover:bg-indigo-100"
+                        :class="effectiveNavVariant === 'dock' ? 'w-12 h-12 justify-center' : 'w-full px-4 py-3', viewMode === 'reports' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:text-gray-900'">
+                    <BarChart2 class="w-5 h-5" />
+                    <span x-show="effectiveNavVariant === 'sidebar' || forceLabelRowInPanel" class="font-medium text-sm">Reports</span>
+                </button>
+
+                <!-- Class Timer -->
+                <button x-show="appSettings.showTimer"
+                        @click="handleSidebarItemClick(() => { closeModal(); timerOpen = true; timerFloatingStage = 'setup'; if (isMobile) sidebarVisible = false; })"
+                        class="flex items-center gap-3 p-3 rounded-lg transition-all duration-200 hover:bg-indigo-100"
+                        :class="effectiveNavVariant === 'dock' ? 'w-12 h-12 justify-center' : 'w-full px-4 py-3', timerOpen ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:text-gray-900'">
+                    <Clock class="w-5 h-5" />
+                    <span x-show="effectiveNavVariant === 'sidebar' || forceLabelRowInPanel" class="font-medium text-sm">Class Timer</span>
+                </button>
+
+                <!-- Attention Buzzer -->
+                <button x-show="appSettings.showBuzzer"
+                        @click="() => { closeModal(); startBuzzerWithHistory(); if (isMobile) sidebarVisible = false; }"
+                        class="flex items-center gap-3 p-3 rounded-lg transition-all duration-200 hover:bg-indigo-100"
+                        :class="effectiveNavVariant === 'dock' ? 'w-12 h-12 justify-center' : 'w-full px-4 py-3', buzzerState !== 'idle' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:text-gray-900'"
+                        :style="buzzerState !== 'idle' ? { color: '#FF5252' } : {}">
+                    <Siren class="w-5 h-5" />
+                    <span x-show="effectiveNavVariant === 'sidebar' || forceLabelRowInPanel" class="font-medium text-sm">Attention Buzzer</span>
+                </button>
+
+                <!-- Whiteboard -->
+                <button x-show="appSettings.showWhiteboard"
+                        @click="() => { closeModal(); openModalWithHistory('whiteboard', () => showWhiteboard = true); if (isMobile) sidebarVisible = false; }"
+                        class="flex items-center gap-3 p-3 rounded-lg transition-all duration-200 hover:bg-indigo-100"
+                        :class="effectiveNavVariant === 'dock' ? 'w-12 h-12 justify-center' : 'w-full px-4 py-3', showWhiteboard ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:text-gray-900'">
+                    <Presentation class="w-5 h-5" />
+                    <span x-show="effectiveNavVariant === 'sidebar' || forceLabelRowInPanel" class="font-medium text-sm">Whiteboard</span>
+                </button>
+
+                <!-- Points & Cards -->
+                <button x-show="appSettings.showPointsCards"
+                        @click="() => { closeModal(); setViewModeWithHistory('settings'); if (isMobile) sidebarVisible = false; }"
+                        class="flex items-center gap-3 p-3 rounded-lg transition-all duration-200 hover:bg-indigo-100"
+                        :class="effectiveNavVariant === 'dock' ? 'w-12 h-12 justify-center' : 'w-full px-4 py-3', viewMode === 'settings' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:text-gray-900'"
+                        data-navbar-icon="settings">
+                    <Award class="w-5 h-5" />
+                    <span x-show="effectiveNavVariant === 'sidebar' || forceLabelRowInPanel" class="font-medium text-sm">Points & Cards</span>
+                </button>
+            </nav>
+
+            <!-- Hamburger Menu Toggle -->
+            <button x-show="appSettings.showNavbar && !mergedWorkspace"
+                    @click="sidebarVisible = !sidebarVisible"
+                    class="fixed z-[9999999] flex items-center justify-center cursor-pointer transition-all duration-300 bg-white/96 backdrop-blur-lg border border-gray-300 shadow-lg hover:shadow-xl"
+                    :class="isMobile ? 'w-12 h-12 left-6 top-1.5' : 'w-11 h-12 left-6 top-1.5'"
+                    :style="hamburgerStyles">
+                <div class="flex flex-col justify-center items-center gap-1">
+                    <div class="w-6 h-0.5 bg-gray-700 transition-transform" :class="sidebarVisible ? 'rotate-45 translate-y-1' : ''"></div>
+                    <div class="w-6 h-0.5 bg-gray-700 transition-opacity" :class="sidebarVisible ? 'opacity-0' : ''"></div>
+                    <div class="w-6 h-0.5 bg-gray-700 transition-transform" :class="sidebarVisible ? '-rotate-45 -translate-y-1' : ''"></div>
+                </div>
+            </button>
+
+            <!-- Main Content Area -->
+            <main class="flex-1 transition-all duration-300 overflow-x-hidden"
+                  :style="mainContentStyles">
+                
+                <!-- Header -->
+                <header class="sticky top-0 z-[999] bg-white border-b border-gray-200 flex items-center justify-between px-4 py-3"
+                          :style="headerStyles">
+                    
+                    <!-- Left Section -->
+                    <div class="flex items-center gap-4">
+                        <!-- Home Button (when no navbar) -->
+                        <button x-show="!appSettings.showNavbar" @click="onBack"
+                                class="w-11 h-11 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center text-white hover:shadow-lg transition-all">
+                            <Home class="w-5 h-5" />
+                        </button>
+                        
+                        <!-- Class Title -->
+                        <div class="flex-1">
+                            <h2 class="text-xl lg:text-2xl font-black text-gray-900" x-text="currentClass?.name"></h2>
+                            <div class="text-sm font-semibold text-gray-500 mt-1">
+                                <span x-text="currentClass?.students?.length || 0"></span>
+                                <span x-text="(currentClass?.students?.length || 0) === 1 ? ' student' : ' students'"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Center Section (Class Switcher) -->
+                    <div x-show="teacherClasses && teacherClasses.length > 1 && !mergedWorkspace" class="relative">
+                        <button @click="classSwitcherOpen = !classSwitcherOpen"
+                                class="relative w-14 h-11 border-none bg-transparent cursor-pointer p-0">
+                            <template x-for="(cls, i) in teacherClasses.filter(c => String(c.id) !== String(currentClass.id)).slice(0, 3)" :key="cls.id">
+                                <img :src="cls.avatar || `https://i.pravatar.cc/150?u=${cls.name}`"
+                                     :alt="cls.name"
+                                     class="absolute w-8 h-8 rounded-lg object-cover border-2 border-white shadow-md"
+                                     :style="`left: ${2 + i * 10}px; top: ${2 + i * 3}px; z-index: ${3 - i}; transform: rotate(${-10 + i * 10}deg)`">
+                            </template>
+                            <ChevronDown class="absolute right-0 bottom-0 w-4 h-4 text-gray-500" />
+                        </button>
+                        
+                        <!-- Class Switcher Dropdown -->
+                        <div x-show="classSwitcherOpen" @click.away="classSwitcherOpen = false"
+                             class="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-64 max-h-80 overflow-y-auto bg-white/96 backdrop-blur-lg rounded-2xl border border-gray-200 shadow-xl p-2 z-[10050]">
+                            <div class="text-xs font-black text-gray-500 text-center uppercase tracking-wider mb-3">Jump to another class</div>
+                            <template x-for="cls in teacherClasses" :key="cls.id">
+                                <button @click="switchClass(cls.id)"
+                                        class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                                        :class="String(cls.id) === String(currentClass.id) ? 'bg-green-50 border-2 border-green-500' : ''">
+                                    <img :src="cls.avatar || `https://i.pravatar.cc/150?u=${cls.name}`"
+                                         :alt="cls.name"
+                                         class="w-10 h-10 rounded-lg object-cover">
+                                    <span class="flex-1 text-left font-semibold text-gray-900 truncate" x-text="cls.name"></span>
+                                    <Check x-show="String(cls.id) === String(currentClass.id)" class="w-5 h-5 text-green-600" />
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Right Section -->
+                    <div class="flex items-center gap-2">
+                        <!-- Mobile Menu -->
+                        <div x-show="isMobile" class="relative">
+                            <button @click="showHeaderMenu = !showHeaderMenu" class="p-2 rounded-lg hover:bg-gray-100">
+                                <MoreVertical class="w-5 h-5" />
+                            </button>
+                            
+                            <!-- Mobile Dropdown Menu -->
+                            <div x-show="showHeaderMenu" @click.away="showHeaderMenu = false"
+                                 class="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                                <!-- Sort Options -->
+                                <div class="relative">
+                                    <button @click="showSortMenu = !showSortMenu" class="w-full px-4 py-2 text-left flex items-center justify-between hover:bg-gray-50">
+                                        <div class="flex items-center gap-2">
+                                            <ArrowUpDown class="w-4 h-4" />
+                                            <span>Sort Students</span>
+                                        </div>
+                                        <ChevronDown class="w-4 h-4" />
+                                    </button>
+                                    
+                                    <div x-show="showSortMenu" class="absolute right-full top-0 mr-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
+                                        <button @click="sortBy = 'name'; showSortMenu = false; showHeaderMenu = false"
+                                                class="w-full px-3 py-2 text-left hover:bg-gray-50"
+                                                :class="sortBy === 'name' ? 'bg-indigo-50 text-indigo-600' : ''">
+                                            Name A-Z
+                                        </button>
+                                        <button @click="sortBy = 'score'; showSortMenu = false; showHeaderMenu = false"
+                                                class="w-full px-3 py-2 text-left hover:bg-gray-50"
+                                                :class="sortBy === 'score' ? 'bg-indigo-50 text-indigo-600' : ''">
+                                            Highest Points
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Display Size -->
+                                <div class="relative">
+                                    <button @click="showGridMenu = !showGridMenu" class="w-full px-4 py-2 text-left flex items-center justify-between hover:bg-gray-50">
+                                        <div class="flex items-center gap-2">
+                                            <Sliders class="w-4 h-4" />
+                                            <span>Display Size</span>
+                                        </div>
+                                        <ChevronDown class="w-4 h-4" />
+                                    </button>
+                                    
+                                    <div x-show="showGridMenu" class="absolute right-full top-0 mr-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
+                                        <template x-for="size in ['compact', 'regular', 'spacious']" :key="size">
+                                            <button @click="displaySize = size; showGridMenu = false; showHeaderMenu = false"
+                                                    class="w-full px-3 py-2 text-left hover:bg-gray-50 capitalize"
+                                                    :class="displaySize === size ? 'bg-indigo-50 text-indigo-600' : ''"
+                                                    x-text="size">
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Content Area -->
+                <div class="p-4" :style="contentAreaStyles">
+                    <!-- Students View (Default) -->
+                    <div x-show="viewMode === 'students'" class="space-y-4">
+                        <!-- Action Bar -->
+                        <div class="bg-white rounded-xl border border-gray-200 p-4">
+                            <div class="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
+                                <div class="flex flex-col sm:flex-row gap-2">
+                                    <!-- Add Student Button -->
+                                    <button @click="showAddStudentMenu = !showAddStudentMenu" 
+                                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2">
+                                        <Plus class="w-4 h-4" />
+                                        Add Student
+                                    </button>
+                                    
+                                    <!-- Attendance Button -->
+                                    <button @click="isAttendanceMode ? cancelAttendanceMode() : openAttendanceMode()" 
+                                            class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                                        <CheckSquare class="w-4 h-4" />
+                                        <span x-text="isAttendanceMode ? 'Cancel Attendance' : 'Take Attendance'"></span>
+                                    </button>
+                                    
+                                    <!-- Give Points Button -->
+                                    <button @click="showClassBehaviorModal = true" 
+                                            class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                                        <Award class="w-4 h-4" />
+                                        Give Points
+                                    </button>
+                                </div>
+                                
+                                <!-- Search and Sort -->
+                                <div class="flex items-center gap-2">
+                                    <!-- Search -->
+                                    <div class="relative">
+                                        <input type="text" x-model="searchQuery" placeholder="Search students..." 
+                                               class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent w-48">
+                                        <Users class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                                    </div>
+                                    
+                                    <!-- Desktop Sort -->
+                                    <div x-show="!isMobile" class="relative">
+                                        <button @click="showSortMenu = !showSortMenu" class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                                            <ArrowUpDown class="w-4 h-4" />
+                                            <span x-text="sortBy === 'name' ? 'Name' : 'Points'"></span>
+                                            <ChevronDown class="w-4 h-4" />
+                                        </button>
+                                        
+                                        <div x-show="showSortMenu" @click.away="showSortMenu = false"
+                                             class="absolute right-0 top-full mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                                            <button @click="sortBy = 'name'; showSortMenu = false"
+                                                    class="w-full px-3 py-2 text-left hover:bg-gray-50"
+                                                    :class="sortBy === 'name' ? 'bg-indigo-50 text-indigo-600' : ''">
+                                                Name A-Z
+                                            </button>
+                                            <button @click="sortBy = 'score'; showSortMenu = false"
+                                                    class="w-full px-3 py-2 text-left hover:bg-gray-50"
+                                                    :class="sortBy === 'score' ? 'bg-indigo-50 text-indigo-600' : ''">
+                                                Highest Points
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Desktop Display Size -->
+                                    <div x-show="!isMobile" class="relative">
+                                        <button @click="showGridMenu = !showGridMenu" class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                                            <Sliders class="w-4 h-4" />
+                                            <span class="capitalize" x-text="displaySize"></span>
+                                            <ChevronDown class="w-4 h-4" />
+                                        </button>
+                                        
+                                        <div x-show="showGridMenu" @click.away="showGridMenu = false"
+                                             class="absolute right-0 top-full mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                                            <template x-for="size in ['compact', 'regular', 'spacious']" :key="size">
+                                                <button @click="displaySize = size; showGridMenu = false"
+                                                        class="w-full px-3 py-2 text-left hover:bg-gray-50 capitalize"
+                                                        :class="displaySize === size ? 'bg-indigo-50 text-indigo-600' : ''"
+                                                        x-text="size">
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Add Student Dropdown -->
+                            <div x-show="showAddStudentMenu" @click.away="showAddStudentMenu = false" 
+                                 class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                    <button @click="showSingleAddModal = true" class="p-3 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 text-left">
+                                        <User class="w-5 h-5 text-green-600 mb-1" />
+                                        <div class="font-medium">Add Single</div>
+                                        <div class="text-sm text-gray-500">Add one student</div>
+                                    </button>
+                                    <button @click="showBulkAddModal = true" class="p-3 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 text-left">
+                                        <Users class="w-5 h-5 text-blue-600 mb-1" />
+                                        <div class="font-medium">Bulk Add</div>
+                                        <div class="text-sm text-gray-500">Add multiple</div>
+                                    </button>
+                                    <button class="p-3 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 text-left">
+                                        <Camera class="w-5 h-5 text-purple-600 mb-1" />
+                                        <div class="font-medium">Scan QR</div>
+                                        <div class="text-sm text-gray-500">QR code entry</div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Attendance Mode Notice -->
+                        <div x-show="isAttendanceMode" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                    <CheckSquare class="w-4 h-4 text-yellow-600" />
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-yellow-800">Attendance Mode Active</h3>
+                                    <p class="text-sm text-yellow-600">Mark students as present or absent</p>
+                                </div>
+                                <button @click="saveAttendanceMode()" 
+                                        class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
+                                    Save
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Students Grid -->
+                        <div class="grid gap-4" 
+                             :class="gridClasses">
+                            <!-- Whole Class Card -->
+                            <div class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1"
+                                 @click="showClassBehaviorModal = true"
+                                 :class="displaySize === 'compact' ? 'aspect-square' : 'min-h-[200px]'">
+                                <SmilePlus class="w-12 h-12 text-white mb-4" />
+                                <div class="text-white font-bold text-lg mb-2">Whole Class</div>
+                                <div class="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 flex items-center gap-2 text-white font-semibold">
+                                    <Trophy class="w-4 h-4 text-yellow-400" />
+                                    <span x-text="totalClassPoints.toLocaleString()"></span>
+                                    <span class="text-sm">pts</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Student Cards -->
+                            <template x-for="student in filteredStudents" :key="student.id">
+                                <div class="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-all hover:-translate-y-1 group relative" 
+                                     :data-student-id="student.id"
+                                     @click="isAttendanceMode ? toggleAttendance(student.id) : selectStudent(student)">
+                                    
+                                    <!-- Attendance Checkbox (in attendance mode) -->
+                                    <div x-show="isAttendanceMode" class="absolute top-2 right-2 z-10">
+                                        <input type="checkbox" 
+                                               :checked="!absentStudents.has(student.id)"
+                                               @change="toggleAttendance(student.id)"
+                                               class="w-5 h-5 text-green-600 rounded focus:ring-green-500">
+                                    </div>
+                                    
+                                    <!-- Multi-select Checkbox -->
+                                    <div x-show="isMultiSelectMode && !isAttendanceMode" class="absolute top-2 right-2 z-10">
+                                        <input type="checkbox" 
+                                               :checked="multiSelectedStudents.has(student.id)"
+                                               @change="toggleMultiSelect(student.id)"
+                                               class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500">
+                                    </div>
+
+                                    <!-- Student Header -->
+                                    <div class="flex justify-between items-start mb-3">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white text-xl font-bold">
+                                                <span x-text="student.avatar || '👦'"></span>
+                                            </div>
+                                            <div>
+                                                <h3 class="font-semibold text-gray-900" x-text="student.name"></h3>
+                                                <div class="flex items-center gap-2 text-sm text-gray-500">
+                                                    <span class="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                                                        Level <span x-text="Math.floor((student.score || 0) / 50) + 1"></span>
+                                                    </span>
+                                                    <span class="flex items-center gap-1">
+                                                        <Zap class="w-3 h-3 text-yellow-500" />
+                                                        <span x-text="student.streak || 0"></span>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Actions (not in special modes) -->
+                                        <div x-show="!isAttendanceMode && !isMultiSelectMode" class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button @click.stop="editStudent(student)" class="p-1 rounded hover:bg-gray-100">
+                                                <Edit2 class="w-4 h-4 text-gray-500" />
+                                            </button>
+                                            <button @click.stop="deleteStudent(student.id)" class="p-1 rounded hover:bg-gray-100">
+                                                <Trash2 class="w-4 h-4 text-red-500" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Points Display -->
+                                    <div class="text-center">
+                                        <div class="text-2xl font-bold text-green-600" x-text="student.score || 0"></div>
+                                        <div class="text-sm text-gray-500">points</div>
+                                    </div>
+                                    
+                                    <!-- Quick Actions (not in special modes) -->
+                                    <div x-show="!isAttendanceMode && !isMultiSelectMode" class="flex gap-1 mt-3">
+                                        <template x-for="behavior in quickBehaviors" :key="behavior.id">
+                                            <button @click.stop="givePoints(student.id, behavior.pts, behavior.label)" 
+                                                    class="flex-1 p-2 rounded-lg text-xs font-medium transition-colors"
+                                                    :class="behavior.pts > 0 ? 'bg-green-50 text-green-700 hover:bg-green-100' : 'bg-red-50 text-red-700 hover:bg-red-100'">
+                                                <span x-text="behavior.icon || '⭐'"></span>
+                                                <span x-text="(behavior.pts > 0 ? '+' : '') + behavior.pts"></span>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Add Student Modal -->
+        <div x-show="showSingleAddModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-xl p-6 w-full max-w-md">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-900">Add Student</h2>
+                    <button @click="showSingleAddModal = false" class="p-1 rounded hover:bg-gray-100">
+                        <X class="w-5 h-5" />
+                    </button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Student Name</label>
+                        <input type="text" x-model="newStudentName" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Avatar</label>
+                        <div class="grid grid-cols-6 gap-2">
+                            <template x-for="avatar in avatarOptions" :key="avatar">
+                                <button @click="selectedAvatar = avatar" 
+                                        class="w-12 h-12 rounded-lg border-2 flex items-center justify-center text-xl transition-colors"
+                                        :class="selectedAvatar === avatar ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'">
+                                    <span x-text="avatar"></span>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex gap-3 mt-6">
+                    <button @click="showSingleAddModal = false" 
+                            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button @click="addStudent()" 
+                            class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                        Add Student
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Behavior Modal -->
+        <div x-show="showClassBehaviorModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-xl p-6 w-full max-w-2xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-900">Give Points to Class</h2>
+                    <button @click="showClassBehaviorModal = false" class="p-1 rounded hover:bg-gray-100">
+                        <X class="w-5 h-5" />
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <template x-for="behavior in behaviors" :key="behavior.id">
+                        <button @click="givePointsToClass(behavior)" 
+                                class="p-4 rounded-xl border border-gray-200 hover:border-gray-300 transition-colors">
+                            <div class="text-2xl mb-2" x-text="behavior.icon || '⭐'"></div>
+                            <div class="font-medium text-gray-900" x-text="behavior.label"></div>
+                            <div class="text-sm font-bold mt-1" 
+                                 :class="behavior.pts > 0 ? 'text-green-600' : 'text-red-600'"
+                                 x-text="(behavior.pts > 0 ? '+' : '') + behavior.pts + ' pts'"></div>
+                        </button>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+            50% { opacity: 1; transform: translate(-50%, -150%) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -250%) scale(1); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes scaleIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        @keyframes pulseRed {
+            from { background: rgba(255, 0, 0, 0.1); }
+            to { background: rgba(255, 0, 0, 0.3); }
+        }
+        
+        .animate-scale-in {
+            animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+    </style>
+
+    <script is:inline>
+        function classDashboardComplete() {
+            return {
+                // Basic State
+                loading: true,
+                error: null,
+                currentClass: null,
+                students: [],
+                behaviors: [],
+                user: null,
+                teacherClasses: [],
+                
+                // UI State
+                viewMode: 'students',
+                sidebarVisible: true,
+                isMobile: false,
+                displaySize: 'regular',
+                searchQuery: '',
+                sortBy: 'score',
+                
+                // Modal States
+                showAddStudentMenu: false,
+                showSingleAddModal: false,
+                showBulkAddModal: false,
+                showClassBehaviorModal: false,
+                showMultiSelectBehaviorModal: false,
+                showSortMenu: false,
+                showGridMenu: false,
+                showHeaderMenu: false,
+                classSwitcherOpen: false,
+                teacherAccountMenuOpen: false,
+                isClassToolsPanelOpen: false,
+                
+                // Student Management
+                selectedStudent: null,
+                editingStudentId: null,
+                editStudentName: '',
+                editStudentAvatar: null,
+                deleteConfirmStudentId: null,
+                newStudentName: '',
+                selectedAvatar: '👦',
+                avatarOptions: ['👦', '👧', '👨', '👩', '🧑', '👶', '👴', '👵', '🦸', '🦸‍♀️', '🧙', '🧙‍♀️'],
+                
+                // Attendance
+                isAttendanceMode: false,
+                absentStudents: new Set(),
+                attendanceBaselineAbsent: new Set(),
+                attendanceDirty: false,
+                
+                // Multi-select
+                isMultiSelectMode: false,
+                multiSelectedStudents: new Set(),
+                
+                // Buzzer
+                buzzerState: 'idle',
+                buzzerCount: 5,
+                audioCtx: null,
+                mainOsc: null,
+                buzzerCountdownInterval: null,
+                
+                // Timer
+                timerOpen: false,
+                timerFloatingStage: 'setup',
+                timerBubblePos: { x: 16, y: 110 },
+                
+                // Other Features
+                isLuckyDrawOpen: false,
+                showWhiteboard: false,
+                showHistory: false,
+                submissions: [],
+                
+                // App Settings
+                appSettings: {
+                    showNavbar: true,
+                    showAssignments: true,
+                    showInbox: true,
+                    showLuckyDraw: true,
+                    showEggRoad: true,
+                    showAttendance: true,
+                    showAccessCodes: true,
+                    showReports: true,
+                    showTimer: true,
+                    showBuzzer: true,
+                    showWhiteboard: true,
+                    showPointsCards: true,
+                    isPremium: true,
+                },
+                
+                // Workspace
+                mergedWorkspace: false,
+                dockPx: 0,
+                chromeTop: 0,
+                chromeLeft: 0,
+                chromeBottom: 0,
+                
+                // API
+                apiBaseUrl: 'http://localhost:3001/api',
+                
+                // Computed Properties
+                get filteredStudents() {
+                    let filtered = this.students || [];
+                    
+                    // Search filter
+                    if (this.searchQuery) {
+                        filtered = filtered.filter(student => 
+                            student.name.toLowerCase().includes(this.searchQuery.toLowerCase())
+                        );
+                    }
+                    
+                    // Sort
+                    if (this.sortBy === 'name') {
+                        filtered.sort((a, b) => a.name.localeCompare(b.name));
+                    } else if (this.sortBy === 'score') {
+                        filtered.sort((a, b) => (b.score || 0) - (a.score || 0));
+                    }
+                    
+                    return filtered;
+                },
+                
+                get quickBehaviors() {
+                    return (this.behaviors || []).slice(0, 3);
+                },
+                
+                get gridClasses() {
+                    if (this.displaySize === 'compact') {
+                        return 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6';
+                    } else if (this.displaySize === 'regular') {
+                        return 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4';
+                    } else {
+                        return 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3';
+                    }
+                },
+                
+                get effectiveNavVariant() {
+                    return this.mergedWorkspace && this.isClassToolsPanelOpen ? 'sidebar' : 'dock';
+                },
+                
+                get forceLabelRowInPanel() {
+                    return this.mergedWorkspace && this.isClassToolsPanelOpen;
+                },
+                
+                get totalClassPoints() {
+                    return (this.currentClass?.students || []).reduce((acc, s) => acc + (Number(s.score) || 0), 0);
+                },
+                
+                get dashboardStyles() {
+                    return {
+                        background: this.currentClass?.background_color || '#F4F1EA',
+                        overflowX: 'hidden',
+                        transition: 'none',
+                    };
+                },
+                
+                get sidebarStyles() {
+                    if (this.isMobile) {
+                        return {
+                            width: '72px',
+                            boxShadow: this.sidebarVisible ? '0 0 20px rgba(0,0,0,0.06)' : 'none',
+                            outline: '3px solid rgba(99,102,241,0.12)',
+                            borderRight: '1px solid rgba(0,0,0,0.04)',
+                            paddingBottom: '16px'
+                        };
+                    }
+                    return {
+                        width: '210px',
+                        boxShadow: this.sidebarVisible ? '0 0 20px rgba(0,0,0,0.1)' : 'none',
+                        outline: '3px solid rgba(99,102,241,0.08)',
+                        marginTop: '7px',
+                        paddingBottom: '16px'
+                    };
+                },
+                
+                get mainLayoutStyles() {
+                    return {
+                        flexDirection: 'row',
+                        height: '100%',
+                        minHeight: 0,
+                        flex: 1,
+                        alignSelf: 'stretch'
+                    };
+                },
+                
+                get mainContentStyles() {
+                    const marginLeft = this.appSettings.showNavbar && !this.mergedWorkspace
+                        ? (this.sidebarVisible ? (this.isMobile ? '72px' : '210px') : '0')
+                        : '60px';
+                    
+                    return {
+                        marginLeft,
+                        transition: 'margin-left 0.3s ease',
+                        paddingTop: this.isMobile ? '60px' : '80px',
+                        paddingBottom: 0,
+                        maxWidth: '100%',
+                        boxSizing: 'border-box'
+                    };
+                },
+                
+                get headerStyles() {
+                    return {
+                        width: '100%',
+                        paddingRight: this.isMobile ? '10px' : '14px',
+                        paddingLeft: this.mergedWorkspace ? '12px' : undefined,
+                        paddingTop: this.mergedWorkspace ? '6px' : undefined,
+                        paddingBottom: this.mergedWorkspace ? '6px' : undefined,
+                        boxSizing: 'border-box',
+                        borderRadius: this.mergedWorkspace ? 0 : '12px',
+                        flexShrink: 0
+                    };
+                },
+                
+                get contentAreaStyles() {
+                    return {
+                        height: 'auto',
+                        minHeight: 0,
+                        flex: 1,
+                        maxHeight: '100%'
+                    };
+                },
+                
+                get hamburgerStyles() {
+                    const baseLeft = this.sidebarVisible ? (this.isMobile ? '84px' : '220px') : '6px';
+                    return {
+                        left: this.dockPx ? `calc(${this.dockPx}px + ${baseLeft})` : baseLeft,
+                        color: '#1F2933',
+                        border: '1px solid rgba(148,163,184,0.8)',
+                        boxShadow: '0 6px 18px rgba(15,23,42,0.25)',
+                        backdropFilter: 'blur(10px)',
+                    };
+                },
+                
+                get iconStyles() {
+                    return {
+                        width: '44px',
+                        height: '44px'
+                    };
+                },
+                
+                get buzzerOverlayStyles() {
+                    return {
+                        background: this.buzzerState === 'buzzing' ? 'rgba(255, 0, 0, 0.1)' : 'rgba(15, 23, 42, 0.9)',
+                        backdropFilter: 'blur(10px)',
+                        animation: this.buzzerState === 'buzzing' ? 'pulseRed 0.5s infinite alternate' : 'none'
+                    };
+                },
+                
+                // Methods
+                async init() {
+                    // Check authentication
+                    const token = localStorage.getItem('authToken');
+                    if (!token) {
+                        window.location.href = '/login';
+                        return;
+                    }
+                    
+                    // Load display size
+                    const saved = localStorage.getItem('displaySize');
+                    if (saved) this.displaySize = saved;
+                    
+                    // Check mobile
+                    this.isMobile = window.innerWidth <= 768;
+                    
+                    // Load data
+                    await Promise.all([
+                        this.loadUser(),
+                        this.loadClassData()
+                    ]);
+                    
+                    this.loading = false;
+                },
+                
+                async loadUser() {
+                    try {
+                        const token = localStorage.getItem('authToken');
+                        const response = await fetch(`${this.apiBaseUrl}/auth/me`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.user = data.user;
+                            
+                            // Load teacher classes
+                            const classesResponse = await fetch(`${this.apiBaseUrl}/classes`, {
+                                headers: { 'Authorization': `Bearer ${token}` }
+                            });
+                            
+                            if (classesResponse.ok) {
+                                const classesData = await classesResponse.json();
+                                this.teacherClasses = classesData;
+                            }
+                        } else {
+                            this.logout();
+                        }
+                    } catch (error) {
+                        this.error = 'Failed to load user data';
+                    }
+                },
+                
+                async loadClassData() {
+                    try {
+                        const classId = new URLSearchParams(window.location.search).get('class');
+                        if (!classId) return;
+                        
+                        const token = localStorage.getItem('authToken');
+                        const response = await fetch(`${this.apiBaseUrl}/classes/${classId}`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.currentClass = data;
+                            this.students = data.students || [];
+                            this.behaviors = data.behaviors || [];
+                        }
+                    } catch (error) {
+                        this.error = 'Failed to load class data';
+                    }
+                },
+                
+                // Navigation
+                setViewModeWithHistory(newMode) {
+                    this.viewMode = newMode;
+                    const url = new URL(window.location.href);
+                    if (newMode === 'students') {
+                        url.searchParams.delete('tab');
+                    } else {
+                        url.searchParams.set('tab', newMode);
+                    }
+                    window.history.pushState({}, '', url);
+                },
+                
+                handleSidebarItemClick(callback) {
+                    return () => {
+                        callback();
+                    };
+                },
+                
+                onBack() {
+                    window.history.back();
+                },
+                
+                // Student Management
+                selectStudent(student) {
+                    this.selectedStudent = student;
+                },
+                
+                async addStudent() {
+                    if (!this.newStudentName.trim()) return;
+                    
+                    try {
+                        const token = localStorage.getItem('authToken');
+                        const response = await fetch(`${this.apiBaseUrl}/students`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                classId: this.currentClass.id,
+                                name: this.newStudentName,
+                                avatar: this.selectedAvatar
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            const newStudent = await response.json();
+                            this.students.push(newStudent);
+                            this.showSingleAddModal = false;
+                            this.newStudentName = '';
+                            this.selectedAvatar = '👦';
+                        } else {
+                            alert('Failed to add student');
+                        }
+                    } catch (error) {
+                        alert('Error adding student');
+                    }
+                },
+                
+                editStudent(student) {
+                    this.editingStudentId = student.id;
+                    this.editStudentName = student.name;
+                    this.editStudentAvatar = student.avatar;
+                },
+                
+                async deleteStudent(studentId) {
+                    if (!confirm('Are you sure you want to remove this student?')) return;
+                    
+                    try {
+                        const token = localStorage.getItem('authToken');
+                        const response = await fetch(`${this.apiBaseUrl}/students/${studentId}`, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        
+                        if (response.ok) {
+                            this.students = this.students.filter(s => s.id !== studentId);
+                        } else {
+                            alert('Failed to delete student');
+                        }
+                    } catch (error) {
+                        alert('Error deleting student');
+                    }
+                },
+                
+                // Points
+                async givePoints(studentId, points, label) {
+                    try {
+                        const token = localStorage.getItem('authToken');
+                        const response = await fetch(`${this.apiBaseUrl}/points`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                studentId,
+                                points,
+                                label
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            const updatedStudent = await response.json();
+                            const index = this.students.findIndex(s => s.id === studentId);
+                            if (index !== -1) {
+                                this.animatePoints(studentId, points);
+                                this.playPointsSound(points);
+                                this.students[index] = updatedStudent;
+                            }
+                        } else {
+                            alert('Failed to give points');
+                        }
+                    } catch (error) {
+                        alert('Error giving points');
+                    }
+                },
+                
+                async givePointsToClass(behavior) {
+                    const presentStudents = this.students.filter(s => !this.absentStudents.has(s.id));
+                    
+                    try {
+                        const token = localStorage.getItem('authToken');
+                        const response = await fetch(`${this.apiBaseUrl}/points/batch`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                studentIds: presentStudents.map(s => s.id),
+                                points: behavior.pts,
+                                label: behavior.label
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            const updatedStudents = await response.json();
+                            // Update local state
+                            updatedStudents.forEach(updated => {
+                                const index = this.students.findIndex(s => s.id === updated.id);
+                                if (index !== -1) {
+                                    this.students[index] = updated;
+                                }
+                            });
+                            this.showClassBehaviorModal = false;
+                        } else {
+                            alert('Failed to give points to class');
+                        }
+                    } catch (error) {
+                        alert('Error giving points to class');
+                    }
+                },
+                
+                animatePoints(studentId, points) {
+                    const studentCard = document.querySelector(`[data-student-id="${studentId}"]`);
+                    if (!studentCard) return;
+                    
+                    const pointsElement = document.createElement('div');
+                    pointsElement.className = 'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-2xl font-bold pointer-events-none z-50';
+                    pointsElement.textContent = points > 0 ? `+${points}` : `${points}`;
+                    pointsElement.style.color = points > 0 ? '#10b981' : '#ef4444';
+                    pointsElement.style.animation = 'floatUp 1.5s ease-out forwards';
+                    
+                    studentCard.appendChild(pointsElement);
+                    
+                    setTimeout(() => {
+                        if (pointsElement.parentNode) {
+                            pointsElement.parentNode.removeChild(pointsElement);
+                        }
+                    }, 1500);
+                    
+                    studentCard.style.animation = 'pulse 0.5s ease-out';
+                    setTimeout(() => {
+                        studentCard.style.animation = '';
+                    }, 500);
+                },
+                
+                playPointsSound(points) {
+                    try {
+                        if (!this.audioCtx) {
+                            this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                        }
+                        
+                        const oscillator = this.audioCtx.createOscillator();
+                        const gainNode = this.audioCtx.createGain();
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(this.audioCtx.destination);
+                        
+                        if (points > 0) {
+                            oscillator.frequency.setValueAtTime(523.25, this.audioCtx.currentTime);
+                            oscillator.frequency.exponentialRampToValueAtTime(659.25, this.audioCtx.currentTime + 0.1);
+                            oscillator.frequency.exponentialRampToValueAtTime(783.99, this.audioCtx.currentTime + 0.2);
+                        } else {
+                            oscillator.frequency.setValueAtTime(440, this.audioCtx.currentTime);
+                            oscillator.frequency.exponentialRampToValueAtTime(349.23, this.audioCtx.currentTime + 0.1);
+                            oscillator.frequency.exponentialRampToValueAtTime(293.66, this.audioCtx.currentTime + 0.2);
+                        }
+                        
+                        gainNode.gain.setValueAtTime(0.3, this.audioCtx.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.3);
+                        
+                        oscillator.start(this.audioCtx.currentTime);
+                        oscillator.stop(this.audioCtx.currentTime + 0.3);
+                    } catch (error) {
+                        console.log('Audio not available');
+                    }
+                },
+                
+                // Attendance
+                openAttendanceMode() {
+                    const today = new Date().toISOString().split('T')[0];
+                    const base = new Set();
+                    (this.students || []).forEach((s) => {
+                        if (s.attendance === 'absent' && s.attendanceDate === today) base.add(s.id);
+                    });
+                    this.attendanceBaselineAbsent = base;
+                    this.absentStudents = new Set(base);
+                    this.attendanceDirty = false;
+                    this.isMultiSelectMode = false;
+                    this.multiSelectedStudents = new Set();
+                    this.isAttendanceMode = true;
+                },
+                
+                cancelAttendanceMode() {
+                    this.absentStudents = new Set(this.attendanceBaselineAbsent);
+                    this.attendanceDirty = false;
+                    this.isAttendanceMode = false;
+                },
+                
+                saveAttendanceMode() {
+                    // Update attendance in database
+                    this.attendanceBaselineAbsent = new Set(this.absentStudents);
+                    this.attendanceDirty = false;
+                    this.isAttendanceMode = false;
+                },
+                
+                toggleAttendance(studentId) {
+                    if (this.absentStudents.has(studentId)) {
+                        this.absentStudents.delete(studentId);
+                    } else {
+                        this.absentStudents.add(studentId);
+                    }
+                    this.attendanceDirty = !this.areSetsEqual(this.absentStudents, this.attendanceBaselineAbsent);
+                },
+                
+                areSetsEqual(a, b) {
+                    if (a.size !== b.size) return false;
+                    for (const item of a) {
+                        if (!b.has(item)) return false;
+                    }
+                    return true;
+                },
+                
+                // Multi-select
+                toggleMultiSelect(studentId) {
+                    if (this.multiSelectedStudents.has(studentId)) {
+                        this.multiSelectedStudents.delete(studentId);
+                    } else {
+                        this.multiSelectedStudents.add(studentId);
+                    }
+                },
+                
+                // Buzzer
+                startBuzzerWithHistory() {
+                    this.startBuzzerSequence();
+                },
+                
+                startBuzzerSequence() {
+                    this.initAudio();
+                    this.buzzerState = 'counting';
+                    this.buzzerCount = 5;
+                    this.startBuzzerCountdown();
+                },
+                
+                stopBuzzer() {
+                    if (this.mainOsc) {
+                        this.mainOsc.stop();
+                        this.mainOsc = null;
+                    }
+                    if (this.buzzerCountdownInterval) {
+                        clearInterval(this.buzzerCountdownInterval);
+                        this.buzzerCountdownInterval = null;
+                    }
+                    this.buzzerState = 'idle';
+                },
+                
+                initAudio() {
+                    if (!this.audioCtx) {
+                        this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                },
+                
+                startBuzzerCountdown() {
+                    if (this.buzzerCountdownInterval) {
+                        clearInterval(this.buzzerCountdownInterval);
+                    }
+                    
+                    this.buzzerCountdownInterval = setInterval(() => {
+                        if (this.buzzerCount > 0) {
+                            this.playCountdownBeep();
+                            this.buzzerCount--;
+                        } else {
+                            clearInterval(this.buzzerCountdownInterval);
+                            this.buzzerState = 'buzzing';
+                            this.playBuzzerAlarm();
+                        }
+                    }, 1000);
+                },
+                
+                playCountdownBeep() {
+                    try {
+                        if (!this.audioCtx) this.initAudio();
+                        
+                        const osc = this.audioCtx.createOscillator();
+                        const gain = this.audioCtx.createGain();
+                        osc.type = 'square';
+                        osc.frequency.value = 1200;
+                        osc.connect(gain);
+                        gain.connect(this.audioCtx.destination);
+                        
+                        gain.gain.setValueAtTime(0.3, this.audioCtx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.2);
+                        
+                        osc.start();
+                        osc.stop(this.audioCtx.currentTime + 0.2);
+                    } catch (error) {
+                        console.log('Audio not available');
+                    }
+                },
+                
+                playBuzzerAlarm() {
+                    try {
+                        if (!this.audioCtx) this.initAudio();
+                        
+                        const osc1 = this.audioCtx.createOscillator();
+                        const osc2 = this.audioCtx.createOscillator();
+                        const gain = this.audioCtx.createGain();
+                        
+                        osc1.type = 'sawtooth';
+                        osc2.type = 'sawtooth';
+                        osc1.frequency.value = 180;
+                        osc2.frequency.value = 184;
+                        
+                        const lfo = this.audioCtx.createOscillator();
+                        const lfoGain = this.audioCtx.createGain();
+                        lfo.frequency.value = 8;
+                        lfoGain.gain.value = 40;
+                        lfo.connect(lfoGain);
+                        lfoGain.connect(osc1.frequency);
+                        lfoGain.connect(osc2.frequency);
+                        
+                        osc1.connect(gain);
+                        osc2.connect(gain);
+                        gain.connect(this.audioCtx.destination);
+                        
+                        gain.gain.value = 0.4;
+                        
+                        osc1.start();
+                        osc2.start();
+                        lfo.start();
+                        
+                        this.mainOsc = { stop: () => { osc1.stop(); osc2.stop(); lfo.stop(); } };
+                    } catch (error) {
+                        console.log('Audio not available');
+                    }
+                },
+                
+                // Modal helpers
+                openModalWithHistory(modalType, setOpenFn) {
+                    setOpenFn(true);
+                },
+                
+                closeModal() {
+                    this.isLuckyDrawOpen = false;
+                    this.showWhiteboard = false;
+                    this.showHistory = false;
+                    this.buzzerState = 'idle';
+                },
+                
+                // Class switching
+                async switchClass(classId) {
+                    // Reload class data
+                    window.location.href = `/class-dashboard?class=${classId}`;
+                },
+                
+                // Submissions
+                async fetchFreshSubmissions() {
+                    // Mock implementation
+                    this.submissions = [];
+                },
+                
+                // Logout
+                logout() {
+                    localStorage.removeItem('authToken');
+                    window.location.href = '/login';
+                },
+                
+                // Update classes (mock)
+                updateClasses(updater) {
+                    // Mock implementation - would update state and save to API
+                }
+            }
+        }
+    </script>
+</MainLayout>

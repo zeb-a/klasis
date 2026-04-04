@@ -1,0 +1,237 @@
+{
+  "collections": [
+    {
+      "id": "_pb_users_auth_",
+      "name": "users",
+      "type": "auth",
+      "schema": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "options": {
+            "min": 2,
+            "max": 100
+          }
+        },
+        {
+          "name": "email",
+          "type": "email",
+          "required": true,
+          "options": {
+            "only lowercase": true
+          }
+        },
+        {
+          "name": "avatar",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "isPremium",
+          "type": "bool",
+          "required": false,
+          "default": false
+        }
+      ]
+    },
+    {
+      "id": "classes",
+      "name": "classes",
+      "type": "base",
+      "schema": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "options": {
+            "min": 1,
+            "max": 100
+          }
+        },
+        {
+          "name": "avatar",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "background_color",
+          "type": "text",
+          "required": false,
+          "default": "#F4F1EA"
+        },
+        {
+          "name": "teacher",
+          "type": "relation",
+          "required": true,
+          "options": {
+            "collectionId": "_pb_users_auth_",
+            "maxSelect": 1
+          }
+        },
+        {
+          "name": "students",
+          "type": "relation",
+          "required": false,
+          "options": {
+            "collectionId": "students",
+            "maxSelect": null
+          }
+        },
+        {
+          "name": "behaviors",
+          "type": "relation",
+          "required": false,
+          "options": {
+            "collectionId": "behaviors",
+            "maxSelect": null
+          }
+        },
+        {
+          "name": "sticky_note",
+          "type": "text",
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "students",
+      "name": "students",
+      "type": "base",
+      "schema": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "options": {
+            "min": 1,
+            "max": 50
+          }
+        },
+        {
+          "name": "avatar",
+          "type": "text",
+          "required": false,
+          "default": "👦"
+        },
+        {
+          "name": "score",
+          "type": "number",
+          "required": true,
+          "default": 0
+        },
+        {
+          "name": "class",
+          "type": "relation",
+          "required": true,
+          "options": {
+            "collectionId": "classes",
+            "maxSelect": 1
+          }
+        },
+        {
+          "name": "attendance",
+          "type": "select",
+          "required": false,
+          "options": {
+            "values": ["present", "absent"]
+          }
+        },
+        {
+          "name": "attendanceDate",
+          "type": "date",
+          "required": false
+        },
+        {
+          "name": "streak",
+          "type": "number",
+          "required": true,
+          "default": 0
+        }
+      ]
+    },
+    {
+      "id": "behaviors",
+      "name": "behaviors",
+      "type": "base",
+      "schema": [
+        {
+          "name": "label",
+          "type": "text",
+          "required": true,
+          "options": {
+            "min": 1,
+            "max": 50
+          }
+        },
+        {
+          "name": "pts",
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "type",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "icon",
+          "type": "text",
+          "required": false,
+          "default": "⭐"
+        },
+        {
+          "name": "audio",
+          "type": "text",
+          "required": false,
+          "default": "none"
+        },
+        {
+          "name": "class",
+          "type": "relation",
+          "required": true,
+          "options": {
+            "collectionId": "classes",
+            "maxSelect": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "points",
+      "name": "points",
+      "type": "base",
+      "schema": [
+        {
+          "name": "student",
+          "type": "relation",
+          "required": true,
+          "options": {
+            "collectionId": "students",
+            "maxSelect": 1
+          }
+        },
+        {
+          "name": "points",
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "label",
+          "type": "text",
+          "required": true,
+          "options": {
+            "min": 1,
+            "max": 100
+          }
+        },
+        {
+          "name": "timestamp",
+          "type": "date",
+          "required": true,
+          "default": "now"
+        }
+      ]
+    }
+  ]
+}
