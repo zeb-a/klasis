@@ -1,0 +1,307 @@
+---
+/**
+ * Sidebar Component for Astro
+ * A collapsible sidebar with smooth animations and game selection functionality
+ * 
+ * Props:
+ * - isOpen: boolean - Whether the sidebar is visible
+ * - title: string - Sidebar title
+ * - subtitle: string - Optional subtitle
+ */
+
+interface Props {
+	isOpen?: boolean;
+	title?: string;
+	subtitle?: string;
+	position?: 'left' | 'right';
+}
+
+const { 
+	isOpen = false, 
+	title = 'Games', 
+	subtitle = 'Choose a game',
+	position = 'right'
+} = Astro.props;
+
+// Game data
+const games = [
+	{ id: 'tornado', emoji: '🌪️', color: '#10B981', name: 'Tornado' },
+	{ id: 'faceoff', emoji: '⚡', color: '#FF6B6B', name: 'Face Off' },
+	{ id: 'memorymatch', emoji: '🧠', color: '#8B5CF6', name: 'Memory Match' },
+	{ id: 'quiz', emoji: '🎯', color: '#0EA5E9', name: 'Quiz' },
+	{ id: 'motorace', emoji: '🏍️', color: '#F97316', name: 'Moto Race' },
+	{ id: 'horserace', emoji: '🐴', color: '#A855F7', name: 'Horse Race' },
+	{ id: 'spelltheword', emoji: '🔤', color: '#EC4899', name: 'Spell the Word' },
+];
+---
+
+<style define:vars={{ '--sidebar-position': position === 'left' ? 'left' : 'right', '--translate-dir': position === 'left' ? '-100%' : '100%' }}>
+	.sidebar-overlay {
+		position: fixed;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.5);
+		z-index: 3000;
+		opacity: 0;
+		visibility: hidden;
+		transition: opacity 0.3s ease, visibility 0.3s ease;
+	}
+
+	.sidebar-overlay.active {
+		opacity: 1;
+		visibility: visible;
+	}
+
+	.sidebar {
+		position: fixed;
+		top: 0;
+		var(--sidebar-position): 0;
+		width: 380px;
+		height: 100vh;
+		background: #fff;
+		box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+		z-index: 3001;
+		display: flex;
+		flex-direction: column;
+		transform: translateX(var(--translate-dir));
+		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	.sidebar.active {
+		transform: translateX(0);
+	}
+
+	.sidebar-left {
+		box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+	}
+
+	.sidebar-header {
+		padding: 24px;
+		border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		position: relative;
+	}
+
+	.sidebar-title-container {
+		position: absolute;
+		left: 50%;
+		transform: translateX(-50%);
+		text-align: center;
+	}
+
+	.sidebar-title {
+		font-size: 20px;
+		font-weight: 700;
+		color: #1f2937;
+		margin: 0;
+	}
+
+	.sidebar-subtitle {
+		font-size: 13px;
+		color: #6b7280;
+		margin: 4px 0 0 0;
+	}
+
+	.sidebar-close-btn {
+		margin-left: auto;
+		background: rgba(0, 0, 0, 0.05);
+		border: none;
+		border-radius: 8px;
+		padding: 8px;
+		cursor: pointer;
+		transition: background-color 0.2s;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: #6b7280;
+	}
+
+	.sidebar-close-btn:hover {
+		background: rgba(0, 0, 0, 0.1);
+	}
+
+	.sidebar-content {
+		flex: 1;
+		padding: 20px;
+		overflow-y: auto;
+	}
+
+	.games-grid {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 12px;
+	}
+
+	.game-btn {
+		padding: 20px;
+		border-radius: 16px;
+		border: 2px solid;
+		background: rgba(255, 255, 255, 0.8);
+		cursor: pointer;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 8px;
+		transition: transform 0.2s, box-shadow 0.2s;
+	}
+
+	.game-btn:hover {
+		transform: translateY(-4px) scale(1.02);
+		box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+	}
+
+	.game-btn:active {
+		transform: translateY(-2px) scale(0.98);
+	}
+
+	.game-emoji {
+		width: 60px;
+		height: 60px;
+		border-radius: 50%;
+		background: #fff;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 32px;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	}
+
+	.game-name {
+		font-size: 14px;
+		font-weight: 600;
+		color: #1f2937;
+	}
+
+	@media (max-width: 640px) {
+		.sidebar {
+			width: 100%;
+		}
+
+		.games-grid {
+			grid-template-columns: repeat(2, 1fr);
+			gap: 10px;
+		}
+
+		.game-btn {
+			padding: 16px;
+		}
+
+		.game-emoji {
+			width: 50px;
+			height: 50px;
+			font-size: 28px;
+		}
+	}
+</style>
+
+<div class="sidebar-wrapper" data-sidebar-wrapper>
+	<div 
+		class={`sidebar-overlay ${isOpen ? 'active' : ''}`}
+		data-sidebar-overlay
+	></div>
+	
+	<div 
+		class={`sidebar sidebar-${position} ${isOpen ? 'active' : ''}`}
+		role="dialog"
+		aria-modal="true"
+		aria-labelledby="sidebar-title"
+		data-sidebar
+	>
+		<div class="sidebar-header">
+			<div class="sidebar-title-container">
+				<h2 id="sidebar-title" class="sidebar-title">{title}</h2>
+				<p class="sidebar-subtitle">{subtitle}</p>
+			</div>
+			<button 
+				class="sidebar-close-btn"
+				onclick="closeSidebar"
+				aria-label="Close sidebar"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<line x1="18" y1="6" x2="6" y2="18"></line>
+					<line x1="6" y1="6" x2="18" y2="18"></line>
+				</svg>
+			</button>
+		</div>
+
+		<div class="sidebar-content">
+			<div class="games-grid">
+				{games.map((game, index) => (
+					<button
+						class="game-btn"
+						style={`border-color: ${game.color}`}
+						data-game-id={game.id}
+						onclick="handleGameSelect"
+					>
+						<div 
+							class="game-emoji"
+							style={`box-shadow: 0 4px 12px ${game.color}33`}
+						>
+							{game.emoji}
+						</div>
+						<span class="game-name">{game.name}</span>
+					</button>
+				))}
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+	function closeSidebar(event) {
+		const wrapper = event.target.closest('[data-sidebar-wrapper]');
+		if (!wrapper) return;
+
+		const overlay = wrapper.querySelector('[data-sidebar-overlay]');
+		const sidebar = wrapper.querySelector('[data-sidebar]');
+		
+		overlay?.classList.remove('active');
+		sidebar?.classList.remove('active');
+
+		setTimeout(() => {
+			window.dispatchEvent(new CustomEvent('sidebar-closed'));
+		}, 300);
+	}
+
+	function handleGameSelect(event) {
+		const btn = event.target.closest('[data-game-id]');
+		if (!btn) return;
+
+		const gameId = btn.getAttribute('data-game-id');
+		
+		// Store selection in localStorage
+		localStorage.setItem('selected_game_type', gameId);
+		
+		// Dispatch custom event for parent components to handle
+		window.dispatchEvent(new CustomEvent('game-selected', { 
+			detail: { gameId } 
+		}));
+
+		// Close sidebar
+		closeSidebar(event);
+	}
+
+	// Listen for external open/close events
+	window.addEventListener('open-sidebar', () => {
+		const wrapper = document.querySelector('[data-sidebar-wrapper]');
+		if (!wrapper) return;
+
+		const overlay = wrapper.querySelector('[data-sidebar-overlay]');
+		const sidebar = wrapper.querySelector('[data-sidebar]');
+		
+		overlay?.classList.add('active');
+		sidebar?.classList.add('active');
+	});
+
+	window.addEventListener('close-sidebar', () => {
+		const wrapper = document.querySelector('[data-sidebar-wrapper]');
+		if (!wrapper) return;
+
+		const overlay = wrapper.querySelector('[data-sidebar-overlay]');
+		const sidebar = wrapper.querySelector('[data-sidebar]');
+		
+		overlay?.classList.remove('active');
+		sidebar?.classList.remove('active');
+	});
+</script>
