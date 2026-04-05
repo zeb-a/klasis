@@ -1,0 +1,358 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import { Search, Package, BookOpen, X, Moon, Sun, ChevronDown, ChevronUp, Filter, Clock, Users } from 'lucide-react';
+---
+
+<MainLayout title="ESL Games Hub - Klasiz.fun" description="Complete collection of ESL teaching games and activities">
+    <div x-data="eslGames()" :class="{ 'dark': darkMode }" class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+        <!-- Modal Overlay -->
+        <div x-show="isOpen" x-transition.opacity class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" style="display: none;">
+            <div 
+                @click.away="closeModal()"
+                class="w-full max-w-6xl h-[90vh] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+            >
+                <!-- Header -->
+                <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-white dark:bg-gray-800">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                            <BookOpen class="w-5 h-5 text-white" />
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">ESL Teaching Games</h2>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button @click="toggleDarkMode" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
+                            <Moon x-show="!darkMode" class="w-5 h-5" />
+                            <Sun x-show="darkMode" class="w-5 h-5" />
+                        </button>
+                        <button @click="closeModal" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500">
+                            <X class="w-5 h-5" />
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <!-- Search -->
+                        <div class="relative flex-1">
+                            <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input 
+                                type="text" 
+                                x-model="searchTerm"
+                                placeholder="Search games by name, materials, or instructions..."
+                                class="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                        </div>
+
+                        <!-- Section Filter -->
+                        <div class="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
+                            <template x-for="section in sections" :key="section">
+                                <button 
+                                    @click="selectedSection = section"
+                                    class="px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors"
+                                    :class="selectedSection === section 
+                                        ? 'bg-blue-600 text-white' 
+                                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'"
+                                    x-text="section"
+                                ></button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="mt-4 flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                        <span class="flex items-center gap-1">
+                            <Package class="w-4 h-4" />
+                            <span x-text="filteredGames.length + ' games'"></span>
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <BookOpen class="w-4 h-4" />
+                            <span x-text="sections.length - 1 + ' categories'"></span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Games Grid -->
+                <div class="flex-1 overflow-y-auto p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <template x-for="game in filteredGames" :key="game.id">
+                            <div 
+                                @click="toggleGameExpand(game.id)"
+                                class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 cursor-pointer hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-200"
+                                :class="{ 'ring-2 ring-blue-500 border-transparent': expandedGame === game.id }"
+                            >
+                                <div class="flex items-start justify-between mb-3">
+                                    <h3 class="font-semibold text-gray-900 dark:text-white line-clamp-2" x-text="game.title"></h3>
+                                    <ChevronDown 
+                                        class="w-5 h-5 text-gray-400 transition-transform flex-shrink-0 ml-2"
+                                        :class="{ 'rotate-180': expandedGame === game.id }"
+                                    />
+                                </div>
+
+                                <div class="text-xs text-blue-600 dark:text-blue-400 font-medium mb-3" x-text="game.section"></div>
+
+                                <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-3">
+                                    <Package class="w-4 h-4 flex-shrink-0" />
+                                    <span class="line-clamp-1" x-text="game.materials"></span>
+                                </div>
+
+                                <div class="space-y-1.5">
+                                    <template x-for="(instruction, idx) in getPreviewInstructions(game.instructions)" :key="idx">
+                                        <div class="text-sm text-gray-700 dark:text-gray-300">
+                                            <span class="font-medium text-gray-500 dark:text-gray-400" x-text="(idx + 1) + '.'"></span>
+                                            <span x-text="instruction"></span>
+                                        </div>
+                                    </template>
+                                    <div x-show="game.instructions.length > 2" class="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                                        +<span x-text="game.instructions.length - 2"></span> more steps...
+                                    </div>
+                                </div>
+
+                                <!-- Expanded Content -->
+                                <div x-show="expandedGame === game.id" x-transition class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                    <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Full Instructions:</h4>
+                                    <ol class="space-y-2">
+                                        <template x-for="(instruction, idx) in game.instructions" :key="idx">
+                                            <li class="text-sm text-gray-700 dark:text-gray-300">
+                                                <span class="font-medium text-blue-600 dark:text-blue-400 mr-2" x-text="(idx + 1) + '.'"></span>
+                                                <span x-text="instruction"></span>
+                                            </li>
+                                        </template>
+                                    </ol>
+
+                                    <!-- Variations -->
+                                    <div x-show="game.variations.length > 0" class="mt-4">
+                                        <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Variations:</h4>
+                                        <div class="space-y-2">
+                                            <template x-for="(variation, idx) in game.variations" :key="idx">
+                                                <div class="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg">
+                                                    <span class="font-medium text-purple-600 dark:text-purple-400">💡 </span>
+                                                    <span x-text="variation"></span>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div x-show="filteredGames.length === 0" class="text-center py-12">
+                        <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Search class="w-8 h-8 text-gray-400" />
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No games found</h3>
+                        <p class="text-gray-600 dark:text-gray-400">Try adjusting your search or filter criteria</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trigger Button (for demo) -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="text-center">
+                <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">ESL Games Collection</h1>
+                <p class="text-lg text-gray-600 dark:text-gray-400 mb-8">Browse our complete library of engaging ESL teaching activities</p>
+                <button @click="openModal" class="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 shadow-lg transform hover:scale-105 transition-all">
+                    Open Games Library
+                </button>
+
+                <!-- Preview Grid -->
+                <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+                        <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mb-4">
+                            <BookOpen class="w-6 h-6 text-blue-600" />
+                        </div>
+                        <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Flashcard Games</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Interactive activities using flashcards for vocabulary building</p>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+                        <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mb-4">
+                            <Users class="w-6 h-6 text-green-600" />
+                        </div>
+                        <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Group Activities</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Collaborative games for team-based learning</p>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+                        <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mb-4">
+                            <Clock class="w-6 h-6 text-purple-600" />
+                        </div>
+                        <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Quick Reviews</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Fast-paced games for lesson wrap-ups</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script is:inline>
+        function eslGames() {
+            return {
+                isOpen: true,
+                darkMode: false,
+                searchTerm: '',
+                selectedSection: 'All',
+                expandedGame: null,
+                
+                games: [
+                    {
+                        id: 1,
+                        title: "What's Under the Basket",
+                        section: "Flashcard Games",
+                        materials: "Flashcards, a basket/box",
+                        instructions: [
+                            "Place several flashcards face down on the floor or table.",
+                            "Cover them with a basket (or box).",
+                            "Lift the basket briefly — students try to identify and call out the card they saw.",
+                            "The student who names it correctly gets a point or becomes the next 'hider.'",
+                            "Variation: Use a cloth instead of a basket for more suspense."
+                        ],
+                        variations: ["Use a cloth instead of a basket for more suspense"]
+                    },
+                    {
+                        id: 2,
+                        title: "What's Missing (Elephant Memory)",
+                        section: "Flashcard Games",
+                        materials: "Flashcards (5-8)",
+                        instructions: [
+                            "Place flashcards face up on the board or floor where all students can see them.",
+                            "Have students close their eyes (or turn around).",
+                            "Remove one card.",
+                            "Students open their eyes and call out which card is missing.",
+                            "Variation: Remove 2-3 cards for older students."
+                        ],
+                        variations: ["Remove 2-3 cards for older students"]
+                    },
+                    {
+                        id: 3,
+                        title: "Flyswatter Game",
+                        section: "Flashcard Games",
+                        materials: "Flashcards stuck to the board, two flyswatters",
+                        instructions: [
+                            "Divide the class into two teams.",
+                            "Stick flashcards on the board in a grid.",
+                            "One student from each team stands at the front, each holding a flyswatter.",
+                            "Teacher calls out a word (or gives a clue/sentence).",
+                            "The first student to swat the correct flashcard wins a point.",
+                            "Variation: For younger kids, use picture cards. For older, use word-only cards."
+                        ],
+                        variations: ["For younger kids, use picture cards. For older, use word-only cards"]
+                    },
+                    {
+                        id: 4,
+                        title: "Peek-a-Boo Flashcard Game",
+                        section: "Flashcard Games",
+                        materials: "Flashcards, a large cloth or blanket",
+                        instructions: [
+                            "Hold up a flashcard and cover it with a cloth.",
+                            "Slowly reveal the card from one side.",
+                            "Students try to guess the card before it's fully revealed.",
+                            "The first correct guesser gets to hold the next card."
+                        ],
+                        variations: []
+                    },
+                    {
+                        id: 5,
+                        title: "Flashcard Memorizer Game",
+                        section: "Flashcard Games",
+                        materials: "Flashcards",
+                        instructions: [
+                            "Show students a set of flashcards for 10-15 seconds.",
+                            "Hide them all.",
+                            "Ask students to recall as many cards as they can remember.",
+                            "Award points for each correctly recalled card."
+                        ],
+                        variations: []
+                    },
+                    {
+                        id: 6,
+                        title: "Flashcard Flip-Flop",
+                        section: "Memory Games",
+                        materials: "Flashcards",
+                        instructions: [
+                            "Place all flashcards face down in a grid on the table/floor.",
+                            "Students take turns flipping two cards.",
+                            "If the two cards match (or if the student can name both), they keep the pair.",
+                            "If not, flip them back. The student with the most pairs wins."
+                        ],
+                        variations: []
+                    },
+                    {
+                        id: 7,
+                        title: "Boys vs Girls",
+                        section: "Team Games",
+                        materials: "Flashcards",
+                        instructions: [
+                            "Divide class into boys and girls (or Team A / Team B).",
+                            "Show a flashcard. The first side to say the word correctly gets a point.",
+                            "Keep a running score on the board.",
+                            "Variation: Must use the word in a sentence for older students."
+                        ],
+                        variations: ["Must use the word in a sentence for older students"]
+                    },
+                    {
+                        id: 8,
+                        title: "Circle Game / Point To",
+                        section: "Active Games",
+                        materials: "Flashcards placed in a circle on the floor",
+                        instructions: [
+                            "Students stand in a circle around the cards.",
+                            "Teacher calls out a word.",
+                            "Students must point to or jump onto the correct card.",
+                            "The slowest student is out (or does a fun penalty like a silly dance)."
+                        ],
+                        variations: ["Add time limits for extra challenge"]
+                    }
+                ],
+                
+                get sections() {
+                    const secs = ['All', ...new Set(this.games.map(g => g.section))];
+                    return secs.filter(s => s && s.trim() !== '');
+                },
+                
+                get filteredGames() {
+                    return this.games.filter(game => {
+                        const matchesSearch = !this.searchTerm || 
+                            game.title.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+                            game.materials.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+                            game.instructions.join(' ').toLowerCase().includes(this.searchTerm.toLowerCase());
+                        
+                        const matchesSection = this.selectedSection === 'All' || game.section === this.selectedSection;
+                        
+                        return matchesSearch && matchesSection;
+                    });
+                },
+                
+                init() {
+                    // Load dark mode preference
+                    const savedDarkMode = localStorage.getItem('esl_games_dark_mode');
+                    if (savedDarkMode === 'true') this.darkMode = true;
+                },
+                
+                openModal() {
+                    this.isOpen = true;
+                    document.body.style.overflow = 'hidden';
+                },
+                
+                closeModal() {
+                    this.isOpen = false;
+                    document.body.style.overflow = '';
+                },
+                
+                toggleDarkMode() {
+                    this.darkMode = !this.darkMode;
+                    localStorage.setItem('esl_games_dark_mode', this.darkMode);
+                },
+                
+                toggleGameExpand(gameId) {
+                    this.expandedGame = this.expandedGame === gameId ? null : gameId;
+                },
+                
+                getPreviewInstructions(instructions) {
+                    return instructions.slice(0, 2);
+                }
+            }
+        }
+    </script>
+</MainLayout>

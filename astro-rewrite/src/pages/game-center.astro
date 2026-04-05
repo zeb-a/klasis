@@ -1,0 +1,311 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import { Gamepad2, Trophy, Target, Brain, Zap, Timer, Users, Settings, Play, ChevronRight } from 'lucide-react';
+---
+
+<MainLayout title="Game Center - Klasiz.fun" description="Interactive classroom games for engaged learning">
+    <div x-data="gameCenter()" class="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-green-50 dark:from-gray-900 dark:via-purple-900 dark:to-blue-900">
+        <!-- Header -->
+        <nav class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                            <Gamepad2 class="w-6 h-6 text-white" />
+                        </div>
+                        <h1 class="text-xl font-bold text-gray-900 dark:text-white">Game Center</h1>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <button @click="showClassSelection = !showClassSelection" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 font-medium">
+                            <Users class="w-4 h-4" />
+                            <span x-text="selectedClass ? selectedClass.name : 'Select Class'"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Class Selection Modal -->
+        <div x-show="showClassSelection" x-transition.opacity class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" style="display: none;">
+            <div @click.away="showClassSelection = false" class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Select Your Class</h3>
+                <div class="space-y-2">
+                    <template x-for="classItem in classes" :key="classItem.id">
+                        <button 
+                            @click="selectClass(classItem)"
+                            class="w-full p-4 rounded-xl border-2 text-left transition-all"
+                            :class="selectedClass?.id === classItem.id 
+                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+                                : 'border-gray-200 dark:border-gray-700 hover:border-blue-300'"
+                        >
+                            <div class="font-semibold text-gray-900 dark:text-white" x-text="classItem.name"></div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400" x-text="classItem.students?.length + ' students'"></div>
+                        </button>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Game Type Selection -->
+            <div x-show="!selectedGame" class="space-y-8">
+                <!-- Featured Games -->
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                        <Trophy class="w-6 h-6 text-yellow-500" />
+                        Popular Games
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Tornado -->
+                        <div @click="selectGame('tornado')" class="group cursor-pointer bg-white dark:bg-gray-800 rounded-2xl border-2 border-transparent hover:border-purple-500 p-6 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                    <span class="text-3xl">🌪️</span>
+                                </div>
+                                <ChevronRight class="w-5 h-5 text-gray-400 group-hover:text-purple-500 transition-colors" />
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Tornado Challenge</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Spin the wheel and answer questions before the tornado strikes!</p>
+                            <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                                <span class="flex items-center gap-1"><Users class="w-3 h-3" /> 2-8 players</span>
+                                <span class="flex items-center gap-1"><Timer class="w-3 h-3" /> 10-15 min</span>
+                            </div>
+                        </div>
+
+                        <!-- Face Off -->
+                        <div @click="selectGame('faceoff')" class="group cursor-pointer bg-white dark:bg-gray-800 rounded-2xl border-2 border-transparent hover:border-blue-500 p-6 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                    <span class="text-3xl">⚔️</span>
+                                </div>
+                                <ChevronRight class="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Face Off</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Head-to-head word matching competition</p>
+                            <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                                <span class="flex items-center gap-1"><Users class="w-3 h-3" /> 2 players</span>
+                                <span class="flex items-center gap-1"><Timer class="w-3 h-3" /> 5-10 min</span>
+                            </div>
+                        </div>
+
+                        <!-- Memory Match -->
+                        <div @click="selectGame('memorymatch')" class="group cursor-pointer bg-white dark:bg-gray-800 rounded-2xl border-2 border-transparent hover:border-green-500 p-6 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                    <span class="text-3xl">🧠</span>
+                                </div>
+                                <ChevronRight class="w-5 h-5 text-gray-400 group-hover:text-green-500 transition-colors" />
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Memory Match</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Test your memory with card matching</p>
+                            <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                                <span class="flex items-center gap-1"><Users class="w-3 h-3" /> 1-4 players</span>
+                                <span class="flex items-center gap-1"><Timer class="w-3 h-3" /> 5-10 min</span>
+                            </div>
+                        </div>
+
+                        <!-- Quiz -->
+                        <div @click="selectGame('quiz')" class="group cursor-pointer bg-white dark:bg-gray-800 rounded-2xl border-2 border-transparent hover:border-orange-500 p-6 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="w-14 h-14 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                    <span class="text-3xl">📝</span>
+                                </div>
+                                <ChevronRight class="w-5 h-5 text-gray-400 group-hover:text-orange-500 transition-colors" />
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Quiz Challenge</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Create custom quizzes with images</p>
+                            <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                                <span class="flex items-center gap-1"><Users class="w-3 h-3" /> 1-30 players</span>
+                                <span class="flex items-center gap-1"><Timer class="w-3 h-3" /> 10-20 min</span>
+                            </div>
+                        </div>
+
+                        <!-- Moto Race -->
+                        <div @click="selectGame('motorace')" class="group cursor-pointer bg-white dark:bg-gray-800 rounded-2xl border-2 border-transparent hover:border-red-500 p-6 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="w-14 h-14 bg-gradient-to-br from-red-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                    <span class="text-3xl">🏍️</span>
+                                </div>
+                                <ChevronRight class="w-5 h-5 text-gray-400 group-hover:text-red-500 transition-colors" />
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Moto Race</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Race to the finish by answering correctly</p>
+                            <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                                <span class="flex items-center gap-1"><Users class="w-3 h-3" /> 2-6 players</span>
+                                <span class="flex items-center gap-1"><Timer class="w-3 h-3" /> 10-15 min</span>
+                            </div>
+                        </div>
+
+                        <!-- Horse Race -->
+                        <div @click="selectGame('horserace')" class="group cursor-pointer bg-white dark:bg-gray-800 rounded-2xl border-2 border-transparent hover:border-indigo-500 p-6 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                    <span class="text-3xl">🐎</span>
+                                </div>
+                                <ChevronRight class="w-5 h-5 text-gray-400 group-hover:text-indigo-500 transition-colors" />
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Horse Race</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Classic horse racing game with betting</p>
+                            <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                                <span class="flex items-center gap-1"><Users class="w-3 h-3" /> 2-8 players</span>
+                                <span class="flex items-center gap-1"><Timer class="w-3 h-3" /> 10-15 min</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- More Games Section -->
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                        <Zap class="w-6 h-6 text-yellow-500" />
+                        Quick Games
+                    </h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div @click="selectGame('spelltheword')" class="cursor-pointer bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-all">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
+                                    <span class="text-xl">🔤</span>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-gray-900 dark:text-white">Spell the Word</h4>
+                                    <p class="text-xs text-gray-500">Spelling practice</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="cursor-pointer bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-all opacity-50">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-gradient-to-br from-gray-400 to-gray-500 rounded-lg flex items-center justify-center">
+                                    <span class="text-xl">🎯</span>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-gray-900 dark:text-white">Lucky Draw</h4>
+                                    <p class="text-xs text-gray-500">Coming soon</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="cursor-pointer bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-all opacity-50">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-gradient-to-br from-gray-400 to-gray-500 rounded-lg flex items-center justify-center">
+                                    <span class="text-xl">🎲</span>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-gray-900 dark:text-white">Random Pick</h4>
+                                    <p class="text-xs text-gray-500">Coming soon</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="cursor-pointer bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-all opacity-50">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-gradient-to-br from-gray-400 to-gray-500 rounded-lg flex items-center justify-center">
+                                    <span class="text-xl">⏱️</span>
+                                </div>
+                                <div>
+                                    <h4 class="font-semibold text-gray-900 dark:text-white">Timer</h4>
+                                    <p class="text-xs text-gray-500">Coming soon</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Config Placeholder -->
+            <div x-show="selectedGame" x-transition class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center gap-4">
+                        <button @click="selectedGame = null" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <svg class="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                        </button>
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white" x-text="getGameTitle()"></h2>
+                    </div>
+                    <button @click="startGame" class="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-bold hover:from-green-600 hover:to-emerald-700 flex items-center gap-2 shadow-lg">
+                        <Play class="w-5 h-5" />
+                        Start Game
+                    </button>
+                </div>
+
+                <!-- Game-specific config would go here -->
+                <div class="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl p-8 text-center">
+                    <Settings class="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Game Configuration</h3>
+                    <p class="text-gray-600 dark:text-gray-400">Configure your <span x-text="getGameTitle()"></span> settings here</p>
+                    <p class="text-sm text-gray-500 mt-2">This would connect to the actual game components (TornadoGame, FaceOffGame, etc.)</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script is:inline>
+        function gameCenter() {
+            return {
+                showClassSelection: false,
+                selectedGame: null,
+                selectedClass: null,
+                
+                classes: [
+                    { id: 1, name: 'Class 3A - Morning', students: [{id: 1}, {id: 2}, {id: 3}] },
+                    { id: 2, name: 'Class 3B - Afternoon', students: [{id: 4}, {id: 5}] },
+                    { id: 3, name: 'Class 4A - Advanced', students: [{id: 6}, {id: 7}, {id: 8}, {id: 9}] }
+                ],
+                
+                gameTitles: {
+                    tornado: 'Tornado Challenge',
+                    faceoff: 'Face Off',
+                    memorymatch: 'Memory Match',
+                    quiz: 'Quiz Challenge',
+                    motorace: 'Moto Race',
+                    horserace: 'Horse Race',
+                    spelltheword: 'Spell the Word'
+                },
+                
+                init() {
+                    // Load saved class selection
+                    const savedClassId = localStorage.getItem('selected_class_id');
+                    if (savedClassId) {
+                        this.selectedClass = this.classes.find(c => c.id == savedClassId);
+                    }
+                    
+                    // Check if coming back from a game
+                    const savedGameType = localStorage.getItem('selected_game_type');
+                    if (savedGameType && this.classes.length > 0 && !this.selectedClass) {
+                        this.showClassSelection = true;
+                    }
+                },
+                
+                selectClass(classItem) {
+                    this.selectedClass = classItem;
+                    localStorage.setItem('selected_class_id', classItem.id);
+                    this.showClassSelection = false;
+                },
+                
+                selectGame(gameType) {
+                    if (!this.selectedClass) {
+                        this.showClassSelection = true;
+                        return;
+                    }
+                    
+                    this.selectedGame = gameType;
+                    localStorage.setItem('selected_game_type', gameType);
+                    
+                    // Scroll to config section
+                    setTimeout(() => {
+                        document.querySelector('[x-show="selectedGame"]')?.scrollIntoView({ behavior: 'smooth' });
+                    }, 100);
+                },
+                
+                getGameTitle() {
+                    return this.gameTitles[this.selectedGame] || 'Unknown Game';
+                },
+                
+                startGame() {
+                    alert(`Starting ${this.getGameTitle()} with ${this.selectedClass?.name}!`);
+                    // In real implementation, this would navigate to the actual game page
+                    // or render the game component
+                }
+            }
+        }
+    </script>
+</MainLayout>
