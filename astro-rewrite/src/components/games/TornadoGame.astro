@@ -1,0 +1,214 @@
+---
+// TornadoGame.astro - Pure Astro version with Alpine.js
+---
+
+<div 
+  x-data="tornadoGame()"
+  x-init="initGame()"
+  class="max-w-4xl mx-auto p-6"
+>
+  <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg">
+    <!-- Game Header -->
+    <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+          <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-purple-600 dark:text-purple-400"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+          </div>
+          <div>
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Tornado Challenge</h2>
+            <p class="text-gray-600 dark:text-gray-400">Form words before time runs out!</p>
+          </div>
+        </div>
+        <div class="flex items-center space-x-6">
+          <div class="text-center">
+            <div class="flex items-center text-yellow-600 dark:text-yellow-400">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-1"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+              <span class="text-2xl font-bold" x-text="score"></span>
+            </div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">Score</div>
+          </div>
+          <div class="text-center">
+            <div class="flex items-center text-red-600 dark:text-red-400">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-1"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span class="text-2xl font-bold" x-text="timeLeft"></span>
+            </div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">Time</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game Area -->
+    <div class="p-6">
+      <!-- Waiting State -->
+      <template x-if="gameState === 'waiting'">
+        <div class="text-center py-12">
+          <div class="w-24 h-24 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-12 h-12 text-purple-600 dark:text-purple-400"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Ready to play Tornado Challenge?</h3>
+          <p class="text-gray-600 dark:text-gray-400 mb-6">Rearrange the scattered letters to form the correct word before time runs out!</p>
+          <button
+            @click="startGame"
+            class="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 transition-colors text-lg font-semibold"
+          >
+            Start Game
+          </button>
+        </div>
+      </template>
+
+      <!-- Playing State -->
+      <template x-if="gameState === 'playing'">
+        <div>
+          <!-- Target Word Display -->
+          <div class="mb-8 text-center">
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Form this word:</p>
+            <div class="text-3xl font-bold text-gray-900 dark:text-white tracking-wider">
+              <template x-for="(letter, index) in currentWord.split('')" :key="index">
+                <span class="inline-block w-8 h-10 mx-1 border-b-2 border-gray-300 dark:border-gray-600 text-center">
+                  <span x-text="selectedLetters[index]?.letter || ''"></span>
+                </span>
+              </template>
+            </div>
+          </div>
+
+          <!-- Scattered Letters -->
+          <div class="mb-6">
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4 text-center">Click letters in order:</p>
+            <div class="flex flex-wrap justify-center gap-3">
+              <template x-for="(letter, index) in scatteredLetters" :key="index">
+                <button
+                  @click="selectLetter(index, letter)"
+                  :disabled="isLetterSelected(index)"
+                  class="w-14 h-14 rounded-lg font-bold text-xl transition-all transform hover:scale-110"
+                  :class="isLetterSelected(index) ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed' : 'bg-gradient-to-br from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 shadow-lg'"
+                  x-text="letter"
+                ></button>
+              </template>
+            </div>
+          </div>
+
+          <!-- Clear Button -->
+          <div class="text-center">
+            <button
+              @click="clearSelection"
+              class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-6 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+            >
+              Clear Selection
+            </button>
+          </div>
+        </div>
+      </template>
+
+      <!-- Finished State -->
+      <template x-if="gameState === 'finished'">
+        <div class="text-center py-12">
+          <div class="w-24 h-24 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-12 h-12 text-yellow-600 dark:text-yellow-400"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+          </div>
+          <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Game Over!</h3>
+          <p class="text-3xl font-bold text-yellow-600 dark:text-yellow-400 mb-6">Final Score: <span x-text="score"></span></p>
+          <button
+            @click="startGame"
+            class="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 transition-colors text-lg font-semibold"
+          >
+            Play Again
+          </button>
+        </div>
+      </template>
+    </div>
+  </div>
+</div>
+
+<script>
+function tornadoGame() {
+  return {
+    gameState: 'waiting',
+    score: 0,
+    timeLeft: 60,
+    currentWord: '',
+    scatteredLetters: [],
+    selectedLetters: [],
+    timerId: null,
+    
+    words: ['TORNADO', 'THUNDER', 'LIGHTNING', 'STORM', 'RAINBOW', 'CLOUD', 'WIND', 'WEATHER'],
+
+    initGame() {
+      // Initialize if needed
+    },
+
+    startGame() {
+      const word = this.words[Math.floor(Math.random() * this.words.length)];
+      this.currentWord = word;
+      this.scatteredLetters = this.shuffleArray(word.split(''));
+      this.selectedLetters = [];
+      this.score = 0;
+      this.timeLeft = 60;
+      this.gameState = 'playing';
+      
+      // Start timer
+      this.startTimer();
+    },
+
+    startTimer() {
+      clearInterval(this.timerId);
+      this.timerId = setInterval(() => {
+        if (this.timeLeft > 0) {
+          this.timeLeft--;
+        } else {
+          this.gameState = 'finished';
+          clearInterval(this.timerId);
+        }
+      }, 1000);
+    },
+
+    shuffleArray(array) {
+      return array.sort(() => Math.random() - 0.5);
+    },
+
+    selectLetter(originalIndex, letter) {
+      if (this.gameState !== 'playing') return;
+      
+      // Find the next position to fill
+      const nextPosition = this.selectedLetters.length;
+      
+      // Check if we're selecting the correct letter for this position
+      if (letter === this.currentWord[nextPosition]) {
+        this.selectedLetters.push({ index: originalIndex, letter });
+        
+        // Check if word is complete
+        const formedWord = this.selectedLetters.map(item => item.letter).join('');
+        if (formedWord === this.currentWord) {
+          this.score += this.currentWord.length * 10;
+          setTimeout(() => {
+            this.nextWord();
+          }, 1000);
+        }
+      }
+    },
+
+    isLetterSelected(originalIndex) {
+      return this.selectedLetters.some(item => item.index === originalIndex);
+    },
+
+    nextWord() {
+      const word = this.words[Math.floor(Math.random() * this.words.length)];
+      this.currentWord = word;
+      this.scatteredLetters = this.shuffleArray(word.split(''));
+      this.selectedLetters = [];
+    },
+
+    clearSelection() {
+      this.selectedLetters = [];
+    },
+
+    // Cleanup timer when component is destroyed
+    cleanup() {
+      if (this.timerId) {
+        clearInterval(this.timerId);
+      }
+    }
+  };
+}
+</script>
