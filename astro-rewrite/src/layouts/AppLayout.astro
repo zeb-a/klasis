@@ -152,7 +152,7 @@ ${appStateInitScript()}
                     
                     // Load classes
                     if (this.user?.email) {
-                        const cached = localStorage.getItem(\`classABC_data_\${this.user.email}\`);
+                        const cached = localStorage.getItem(`classABC_data_${this.user.email}`);
                         if (cached) {
                             try {
                                 this.classes = JSON.parse(cached);
@@ -268,16 +268,16 @@ ${appStateInitScript()}
                                 next.searchParams.delete('tab');
                             }
                             next.hash = '';
-                            window.history.replaceState(null, '', \`\${next.pathname}\${next.search}\`);
+                            window.history.replaceState(null, '', `${next.pathname}${next.search}`);
                         } else {
-                            window.history.replaceState(null, '', \`/\${legacy}\`);
+                            window.history.replaceState(null, '', `/${legacy}`);
                         }
                     }
                 },
                 
                 navigate(view) {
                     if (view === this.view) return;
-                    window.history.pushState({ view, timestamp: Date.now() }, '', \`/\${view}\`);
+                    window.history.pushState({ view, timestamp: Date.now() }, '', `/${view}`);
                     this.view = view;
                     window.dispatchEvent(new CustomEvent('navigate', { detail: { view } }));
                 },

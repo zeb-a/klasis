@@ -539,7 +539,8 @@ const initialAvatar = getAvatarFromSet('dicebear-adventurers', initialSelectedIn
 <script>
   (function() {
     // State
-    let selectedAvatarIndex = ${initialSelectedIndex};
+    const initialSelectedIndexStr = JSON.stringify(initialSelectedIndex);
+    let selectedAvatarIndex = initialSelectedIndexStr;
     let customPhoto = null;
     let showAvatarPicker = false;
     let studentName = '';

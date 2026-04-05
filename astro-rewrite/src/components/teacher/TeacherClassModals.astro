@@ -1,7 +1,3 @@
---- astro-rewrite/src/components/teacher/TeacherClassModals.astro (原始)
-
-
-+++ astro-rewrite/src/components/teacher/TeacherClassModals.astro (修改后)
 ---
 /**
  * Teacher Class Modals Component for Astro
@@ -588,8 +584,11 @@ const initialAvatar = mode === 'edit' && editingClass ? (editingClass.avatar || 
         const modalFooter = document.getElementById('modal-footer') as HTMLDivElement;
 
         const mode = '${mode}';
-        const editingClassId = ${editingClass?.id ? JSON.stringify(editingClass.id) : 'null'};
-        const classes = ${JSON.stringify(classes)};
+        const editingClassIdStr = JSON.stringify(editingClass?.id ?? null);
+        const classesStr = JSON.stringify(classes);
+
+        const editingClassId = editingClassIdStr;
+        const classesData = classesStr;
 
         let selectedColor = '${initialBgColor}';
         let selectedCharacter = 'Alex';

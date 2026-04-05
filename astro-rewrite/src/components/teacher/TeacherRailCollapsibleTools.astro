@@ -315,8 +315,11 @@ const {
         const exportBackupBtn = document.getElementById('export-backup-btn') as HTMLButtonElement;
         const editProfileBtn = document.getElementById('edit-profile-btn') as HTMLButtonElement;
 
-        const railCollapsed = ${JSON.stringify(railCollapsed)};
-        const classes = ${JSON.stringify(classes)};
+        const railCollapsedStr = JSON.stringify(railCollapsed);
+        const classesStr = JSON.stringify(classes);
+
+        const railCollapsed = railCollapsedStr;
+        const classesData = classesStr;
 
         let expanded = false;
 
