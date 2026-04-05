@@ -1,10 +1,11 @@
 ---
 import MainLayout from '../layouts/MainLayout.astro';
+import AppLayout from '../layouts/AppLayout.astro';
 import { BookOpen, Users, Trophy, Plus, Search, Filter, MoreVertical } from 'lucide-react';
 ---
 
-<MainLayout title="Classes - Klasiz.fun">
-    <div x-data="classesDashboard()" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<AppLayout title="Classes - Klasiz.fun">
+    <div x-data="classesDashboard()" x-init="initClasses()" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Header -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
             <div>
@@ -28,20 +29,6 @@ import { BookOpen, Users, Trophy, Plus, Search, Filter, MoreVertical } from 'luc
                     class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
             </div>
-            <div class="flex gap-2">
-                <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center">
-                    <Filter class="w-5 h-5 mr-2" />
-                    Filter
-                </button>
-                <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                    <option>All Grades</option>
-                    <option>Grade 1</option>
-                    <option>Grade 2</option>
-                    <option>Grade 3</option>
-                    <option>Grade 4</option>
-                    <option>Grade 5</option>
-                </select>
-            </div>
         </div>
 
         <!-- Classes Grid -->
@@ -54,41 +41,23 @@ import { BookOpen, Users, Trophy, Plus, Search, Filter, MoreVertical } from 'luc
                             <div class="flex-1">
                                 <h3 class="text-lg font-semibold text-gray-900" x-text="classItem.name"></h3>
                                 <p class="text-sm text-gray-500" x-text="classItem.grade"></p>
-                                <p class="text-sm text-gray-500" x-text="classItem.subject"></p>
                             </div>
-                            <button class="text-gray-400 hover:text-gray-600">
-                                <MoreVertical class="w-5 h-5" />
+                            <button @click="deleteClass(classItem.id)" class="text-red-400 hover:text-red-600">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                             </button>
                         </div>
                     </div>
 
                     <!-- Class Stats -->
                     <div class="p-6">
-                        <div class="grid grid-cols-3 gap-4 mb-4">
+                        <div class="grid grid-cols-2 gap-4 mb-4">
                             <div class="text-center">
-                                <div class="text-2xl font-bold text-gray-900" x-text="classItem.students"></div>
+                                <div class="text-2xl font-bold text-gray-900" x-text="getStudentCount(classItem.id)"></div>
                                 <div class="text-xs text-gray-500">Students</div>
                             </div>
                             <div class="text-center">
-                                <div class="text-2xl font-bold text-gray-900" x-text="classItem.gamesPlayed"></div>
-                                <div class="text-xs text-gray-500">Games</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-gray-900" x-text="classItem.avgScore + '%'"></div>
-                                <div class="text-xs text-gray-500">Avg Score</div>
-                            </div>
-                        </div>
-
-                        <!-- Recent Activity -->
-                        <div class="mb-4">
-                            <h4 class="text-sm font-medium text-gray-900 mb-2">Recent Activity</h4>
-                            <div class="space-y-2">
-                                <template x-for="activity in classItem.recentActivities.slice(0, 2)" :key="activity.id">
-                                    <div class="flex items-center text-sm">
-                                        <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                                        <span class="text-gray-600" x-text="activity.description"></span>
-                                    </div>
-                                </template>
+                                <div class="text-2xl font-bold text-green-600" x-text="getClassPoints(classItem.id)"></div>
+                                <div class="text-xs text-gray-500">Total Points</div>
                             </div>
                         </div>
 
@@ -113,129 +82,63 @@ import { BookOpen, Users, Trophy, Plus, Search, Filter, MoreVertical } from 'luc
             </div>
             <h3 class="text-lg font-medium text-gray-900 mb-2">No classes found</h3>
             <p class="text-gray-500 mb-4">Get started by creating your first class</p>
-            <button class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+            <button @click="createClass()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
                 Create New Class
             </button>
         </div>
     </div>
 
     <script>
+        import { store } from '../lib/appState.js';
+        
         function classesDashboard() {
             return {
                 searchQuery: '',
-                classes: [
-                    {
-                        id: 1,
-                        name: 'Mathematics 3A',
-                        grade: 'Grade 3',
-                        subject: 'Mathematics',
-                        students: 28,
-                        gamesPlayed: 156,
-                        avgScore: 85,
-                        recentActivities: [
-                            { id: 1, description: 'Tornado Challenge completed' },
-                            { id: 2, description: 'New student joined' }
-                        ]
-                    },
-                    {
-                        id: 2,
-                        name: 'English 4B',
-                        grade: 'Grade 4',
-                        subject: 'English',
-                        students: 32,
-                        gamesPlayed: 203,
-                        avgScore: 92,
-                        recentActivities: [
-                            { id: 1, description: 'Spell The Word tournament' },
-                            { id: 2, description: 'Progress reports sent' }
-                        ]
-                    },
-                    {
-                        id: 3,
-                        name: 'Science 5A',
-                        grade: 'Grade 5',
-                        subject: 'Science',
-                        students: 26,
-                        gamesPlayed: 178,
-                        avgScore: 88,
-                        recentActivities: [
-                            { id: 1, description: 'Science quiz completed' },
-                            { id: 2, description: 'Lab activity scheduled' }
-                        ]
-                    },
-                    {
-                        id: 4,
-                        name: 'Mathematics 2C',
-                        grade: 'Grade 2',
-                        subject: 'Mathematics',
-                        students: 24,
-                        gamesPlayed: 134,
-                        avgScore: 79,
-                        recentActivities: [
-                            { id: 1, description: 'Number games played' },
-                            { id: 2, description: 'Homework assigned' }
-                        ]
-                    },
-                    {
-                        id: 5,
-                        name: 'English 3B',
-                        grade: 'Grade 3',
-                        subject: 'English',
-                        students: 30,
-                        gamesPlayed: 167,
-                        avgScore: 86,
-                        recentActivities: [
-                            { id: 1, description: 'Reading comprehension test' },
-                            { id: 2, description: 'Story writing activity' }
-                        ]
-                    },
-                    {
-                        id: 6,
-                        name: 'Social Studies 4A',
-                        grade: 'Grade 4',
-                        subject: 'Social Studies',
-                        students: 29,
-                        gamesPlayed: 145,
-                        avgScore: 83,
-                        recentActivities: [
-                            { id: 1, description: 'Geography quiz' },
-                            { id: 2, description: 'Project presentations' }
-                        ]
-                    }
-                ],
+                classes: [],
+                
+                initClasses() {
+                    this.classes = store.getState().classes;
+                    window.addEventListener('state-updated', (e) => {
+                        this.classes = e.detail.classes;
+                    });
+                },
+                
                 get filteredClasses() {
                     if (!this.searchQuery) return this.classes;
                     
                     const query = this.searchQuery.toLowerCase();
                     return this.classes.filter(cls => 
                         cls.name.toLowerCase().includes(query) ||
-                        cls.grade.toLowerCase().includes(query) ||
-                        cls.subject.toLowerCase().includes(query)
+                        cls.grade.toLowerCase().includes(query)
                     );
                 },
                 
+                getStudentCount(classId) {
+                    return store.getStudentsByClass(classId).length;
+                },
+                
+                getClassPoints(classId) {
+                    const students = store.getStudentsByClass(classId);
+                    return students.reduce((sum, s) => sum + s.points, 0);
+                },
+                
                 createClass() {
-                    const className = prompt('Enter class name (e.g., Mathematics 3A):');
-                    if (!className) return;
+                    const name = prompt('Enter class name (e.g., Math Grade 3):');
+                    if (!name) return;
                     
-                    const grade = prompt('Enter grade (e.g., Grade 3):') || 'Grade 3';
-                    const subject = prompt('Enter subject (e.g., Mathematics):') || 'General';
+                    const grade = prompt('Enter grade level (e.g., Grade 3):') || 'Grade 3';
                     
-                    const newClass = {
-                        id: Date.now(),
-                        name: className,
-                        grade: grade,
-                        subject: subject,
-                        students: 0,
-                        gamesPlayed: 0,
-                        avgScore: 0,
-                        recentActivities: []
-                    };
-                    
-                    this.classes.push(newClass);
-                    alert('Class created successfully! You can now add students.');
+                    store.addClass(name, grade);
+                    this.classes = store.getState().classes;
+                },
+                
+                deleteClass(classId) {
+                    if (confirm('Are you sure? This will delete all students in this class.')) {
+                        store.deleteClass(classId);
+                        this.classes = store.getState().classes;
+                    }
                 }
             }
         }
     </script>
-</MainLayout>
+</AppLayout>
