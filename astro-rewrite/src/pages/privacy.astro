@@ -1,0 +1,164 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import { Shield, Lock, Eye, Database, CheckCircle, Mail, X, ArrowRight } from 'lucide-react';
+---
+
+<MainLayout title="Privacy Policy - Klasiz.fun" description="Read how Klasiz.fun handles and protects teacher, student, and parent data.">
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+        <!-- Floating Navigation Bar -->
+        <nav class="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
+            <div class="px-6 py-4 flex justify-between items-center">
+                <div class="flex items-center gap-3 font-bold text-xl">
+                    <Shield class="w-6 h-6 text-blue-500" />
+                    <span class="bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">Privacy Policy</span>
+                </div>
+                <a href="/" class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all font-medium flex items-center gap-2">
+                    <X class="w-4 h-4" />
+                    Close
+                </a>
+            </div>
+        </nav>
+
+        <!-- Content -->
+        <div class="pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+            <!-- Summary Cards -->
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+                    <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mb-4">
+                        <Shield class="w-6 h-6 text-blue-600" />
+                    </div>
+                    <h3 class="font-bold mb-2">Data Collection</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">We collect only information needed to provide classroom features.</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+                    <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mb-4">
+                        <Lock class="w-6 h-6 text-green-600" />
+                    </div>
+                    <h3 class="font-bold mb-2">Data Security</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">All traffic is encrypted using HTTPS to protect your data.</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+                    <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mb-4">
+                        <Eye class="w-6 h-6 text-purple-600" />
+                    </div>
+                    <h3 class="font-bold mb-2">Your Rights</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">You can access, correct, or delete your personal data anytime.</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+                    <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center mb-4">
+                        <Database class="w-6 h-6 text-orange-600" />
+                    </div>
+                    <h3 class="font-bold mb-2">Data Ownership</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Student data is owned and controlled by the teacher or school.</p>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-xl border border-gray-200 dark:border-gray-700">
+                <section class="mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">1. Information We Collect</h2>
+                    <div class="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p><strong>Teacher Information:</strong> Name, email address, school name (optional), and account preferences.</p>
+                        <p><strong>Student Information:</strong> Name, gender, class assignments, behavior records, and optional photos uploaded by teachers.</p>
+                        <p><strong>Parent Information:</strong> Email address and access codes linked to their children's classes.</p>
+                        <p><strong>Usage Data:</strong> How you interact with our platform to improve user experience.</p>
+                    </div>
+                </section>
+
+                <section class="mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">2. How We Use Your Information</h2>
+                    <ul class="space-y-2 text-gray-700 dark:text-gray-300 list-disc list-inside">
+                        <li>To provide and maintain our classroom management services</li>
+                        <li>To enable communication between teachers, students, and parents</li>
+                        <li>To generate reports and analytics for teachers</li>
+                        <li>To improve our platform and develop new features</li>
+                        <li>To send important updates about your account</li>
+                    </ul>
+                </section>
+
+                <section class="mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">3. Data Security</h2>
+                    <div class="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>We implement industry-standard security measures to protect your data:</p>
+                        <ul class="space-y-2 list-disc list-inside">
+                            <li>All data transmitted using HTTPS encryption</li>
+                            <li>Secure cloud storage with regular backups</li>
+                            <li>Access controls and authentication requirements</li>
+                            <li>Regular security audits and updates</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section class="mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">4. COPPA Compliance</h2>
+                    <div class="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>Klasiz.fun is designed to comply with the Children's Online Privacy Protection Act (COPPA). We:</p>
+                        <ul class="space-y-2 list-disc list-inside">
+                            <li>Do not collect personal information from children under 13 without parental consent</li>
+                            <li>Allow teachers and schools to act as intermediaries for student accounts</li>
+                            <li>Provide parents with access to review their child's information</li>
+                            <li>Never sell or share student data with third parties for marketing</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section class="mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">5. Your Rights</h2>
+                    <div class="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>You have the right to:</p>
+                        <ul class="space-y-2 list-disc list-inside">
+                            <li>Access all personal data we hold about you</li>
+                            <li>Correct inaccurate or incomplete information</li>
+                            <li>Delete your account and all associated data</li>
+                            <li>Export your data in a portable format</li>
+                            <li>Opt-out of non-essential communications</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section class="mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">6. Data Retention</h2>
+                    <div class="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>We retain your data for as long as your account is active. You can delete your account and all associated data at any time from your account settings. After account deletion, we retain certain information only as required by law.</p>
+                    </div>
+                </section>
+
+                <section class="mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">7. Third-Party Services</h2>
+                    <div class="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>We use trusted third-party services to operate our platform:</p>
+                        <ul class="space-y-2 list-disc list-inside">
+                            <li>Cloud hosting providers (with strict data protection agreements)</li>
+                            <li>Email service providers for notifications</li>
+                            <li>Analytics tools to understand platform usage</li>
+                        </ul>
+                        <p>All third-party providers are required to maintain confidentiality and security standards.</p>
+                    </div>
+                </section>
+
+                <section class="mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">8. Changes to This Policy</h2>
+                    <div class="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>We may update this privacy policy periodically. We will notify you of any material changes by posting the new policy on this page and updating the "Last Updated" date.</p>
+                    </div>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">9. Contact Us</h2>
+                    <div class="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>If you have questions about this privacy policy or our data practices, please contact us:</p>
+                        <div class="flex items-center gap-2 mt-4">
+                            <Mail class="w-5 h-5 text-blue-500" />
+                            <a href="mailto:privacy@klasiz.fun" class="text-blue-600 hover:underline">privacy@klasiz.fun</a>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Last Updated -->
+            <div class="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                Last Updated: January 2024
+            </div>
+        </div>
+    </div>
+</MainLayout>

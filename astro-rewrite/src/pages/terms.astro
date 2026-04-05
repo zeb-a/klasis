@@ -1,0 +1,185 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import { Shield, FileText, UserCheck, AlertTriangle, Globe, Mail, X } from 'lucide-react';
+---
+
+<MainLayout title="Terms of Service - Klasiz.fun" description="Review the terms and usage guidelines for Klasiz.fun.">
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+        <!-- Floating Navigation Bar -->
+        <nav class="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
+            <div class="px-6 py-4 flex justify-between items-center">
+                <div class="flex items-center gap-3 font-bold text-xl">
+                    <Shield class="w-6 h-6 text-green-500" />
+                    <span class="bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent">Terms of Service</span>
+                </div>
+                <a href="/" class="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all font-medium flex items-center gap-2">
+                    <X class="w-4 h-4" />
+                    Close
+                </a>
+            </div>
+        </nav>
+
+        <!-- Content -->
+        <div class="pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+            <!-- Summary Cards -->
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+                    <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mb-4">
+                        <Shield class="w-6 h-6 text-green-600" />
+                    </div>
+                    <h3 class="font-bold mb-2">What you agree to</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Use Klasiz.fun for educational purposes, keep your login details safe, and follow school and local privacy rules.</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+                    <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mb-4">
+                        <FileText class="w-6 h-6 text-blue-600" />
+                    </div>
+                    <h3 class="font-bold mb-2">Acceptance of Terms</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">By accessing or using Klasiz.fun, you agree to be bound by these Terms of Service.</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+                    <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mb-4">
+                        <UserCheck class="w-6 h-6 text-purple-600" />
+                    </div>
+                    <h3 class="font-bold mb-2">User Accounts</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">You are responsible for maintaining the confidentiality of your account and password.</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+                    <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center mb-4">
+                        <AlertTriangle class="w-6 h-6 text-orange-600" />
+                    </div>
+                    <h3 class="font-bold mb-2">Acceptable Use</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">You agree not to misuse the service or attempt to gain unauthorized access.</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 sm:col-span-2 lg:col-span-2">
+                    <div class="w-12 h-12 bg-pink-100 dark:bg-pink-900/30 rounded-lg flex items-center justify-center mb-4">
+                        <Globe class="w-6 h-6 text-pink-600" />
+                    </div>
+                    <h3 class="font-bold mb-2">Intellectual Property</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">All content, trademarks, and data are owned by Klasiz.fun or its licensors.</p>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-xl border border-gray-200 dark:border-gray-700">
+                <section class="mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">1. Acceptance of Terms</h2>
+                    <div class="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>By accessing or using Klasiz.fun (the "Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, please do not use the Service.</p>
+                        <p>These Terms apply to all users, including teachers, students, parents, and school administrators.</p>
+                    </div>
+                </section>
+
+                <section class="mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">2. Account Registration</h2>
+                    <div class="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>To use certain features of the Service, you must register for an account. You agree to:</p>
+                        <ul class="space-y-2 list-disc list-inside">
+                            <li>Provide accurate and complete information</li>
+                            <li>Maintain and update your account information</li>
+                            <li>Keep your password confidential</li>
+                            <li>Notify us immediately of any unauthorized access</li>
+                        </ul>
+                        <p>You are responsible for all activities that occur under your account.</p>
+                    </div>
+                </section>
+
+                <section class="mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">3. Acceptable Use</h2>
+                    <div class="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>You agree NOT to:</p>
+                        <ul class="space-y-2 list-disc list-inside">
+                            <li>Use the Service for any illegal purpose</li>
+                            <li>Violate any local, state, national, or international laws</li>
+                            <li>Harass, threaten, or harm other users</li>
+                            <li>Upload malicious code or viruses</li>
+                            <li>Attempt to gain unauthorized access to our systems</li>
+                            <li>Use the Service to collect personal information from children under 13 without proper consent</li>
+                            <li>Sell, rent, or sublicense access to the Service</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section class="mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">4. User Content</h2>
+                    <div class="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>You retain ownership of content you upload (student names, photos, assignments, etc.). However, you grant us a license to use, store, and display this content solely for the purpose of providing the Service.</p>
+                        <p>You are responsible for ensuring you have the right to upload any content, especially photos of students. Teachers must comply with school policies and parental consent requirements.</p>
+                    </div>
+                </section>
+
+                <section class="mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">5. Intellectual Property</h2>
+                    <div class="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>The Service and its original content, features, and functionality are owned by Klasiz.fun and are protected by international copyright, trademark, patent, trade secret, and other intellectual property laws.</p>
+                        <p>You may not copy, modify, distribute, sell, or lease any part of the Service without our written permission.</p>
+                    </div>
+                </section>
+
+                <section class="mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">6. Privacy</h2>
+                    <div class="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>Your use of the Service is also governed by our <a href="/privacy" class="text-green-600 hover:underline">Privacy Policy</a>, which explains how we collect, use, and protect your personal information.</p>
+                        <p>We are committed to protecting student privacy and complying with COPPA and other applicable privacy laws.</p>
+                    </div>
+                </section>
+
+                <section class="mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">7. Disclaimer of Warranties</h2>
+                    <div class="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>The Service is provided "as is" and "as available" without warranties of any kind, either express or implied. We do not warrant that:</p>
+                        <ul class="space-y-2 list-disc list-inside">
+                            <li>The Service will be uninterrupted or error-free</li>
+                            <li>Defects will be corrected</li>
+                            <li>The Service is free of viruses or harmful components</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section class="mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">8. Limitation of Liability</h2>
+                    <div class="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>To the maximum extent permitted by law, Klasiz.fun shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Service.</p>
+                    </div>
+                </section>
+
+                <section class="mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">9. Termination</h2>
+                    <div class="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>We reserve the right to terminate or suspend your account and access to the Service immediately, without prior notice, for conduct that we believe violates these Terms or is harmful to other users, us, or third parties.</p>
+                    </div>
+                </section>
+
+                <section class="mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">10. Changes to Terms</h2>
+                    <div class="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>We reserve the right to modify these Terms at any time. We will notify users of material changes via email or through the Service. Your continued use of the Service after changes constitutes acceptance of the new Terms.</p>
+                    </div>
+                </section>
+
+                <section class="mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">11. Governing Law</h2>
+                    <div class="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>These Terms shall be governed by and construed in accordance with the laws of the jurisdiction where Klasiz.fun operates, without regard to conflict of law provisions.</p>
+                    </div>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">12. Contact Us</h2>
+                    <div class="space-y-4 text-gray-700 dark:text-gray-300">
+                        <p>If you have questions about these Terms, please contact us:</p>
+                        <div class="flex items-center gap-2 mt-4">
+                            <Mail class="w-5 h-5 text-green-500" />
+                            <a href="mailto:legal@klasiz.fun" class="text-green-600 hover:underline">legal@klasiz.fun</a>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Last Updated -->
+            <div class="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                Last Updated: January 2024
+            </div>
+        </div>
+    </div>
+</MainLayout>
