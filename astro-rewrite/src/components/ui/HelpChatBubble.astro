@@ -1,0 +1,483 @@
+---
+/**
+ * Help Chat Bubble Component for Astro
+ * Provides contextual help and documentation access
+ */
+
+interface Props {
+    pageId?: string;
+}
+
+const { pageId = 'landing' } = Astro.props;
+
+const PAGE_ICONS: Record<string, string> = {
+    'landing': 'Home',
+    'teacher-portal': 'Home',
+    'class-dashboard': 'Layout',
+    'assignments': 'ClipboardList',
+    'inbox': 'MessageSquare',
+    'settings': 'Settings',
+    'access-codes': 'QrCode',
+    'whiteboard': 'Presentation',
+    'parent-portal': 'Heart',
+    'student-portal': 'BookOpen',
+    'reports': 'BarChart3',
+    'timer': 'Clock',
+    'buzzer': 'Siren',
+    'lesson-planner': 'Calendar',
+    'games': 'Gamepad2'
+};
+
+const HELP_TOPICS = [
+    { id: 'getting-started', title: 'Getting Started', icon: 'Home' },
+    { id: 'class-management', title: 'Class Management', icon: 'Users' },
+    { id: 'gamification', title: 'Gamification', icon: 'Trophy' },
+    { id: 'reports', title: 'Reports & Analytics', icon: 'BarChart3' },
+    { id: 'parent-access', title: 'Parent Access', icon: 'Heart' },
+    { id: 'games', title: 'Learning Games', icon: 'Gamepad2' }
+];
+---
+
+<div x-data="helpChatBubble()" class="help-chat-bubble-container">
+    <!-- Help Button -->
+    <button 
+        @click="toggleOpen()"
+        class="help-bubble-button"
+        :class="{ 'open': isOpen }"
+        aria-label="Help"
+    >
+        <svg x-show="!isOpen" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        <svg x-show="isOpen" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+
+    <!-- Help Panel -->
+    <div x-show="isOpen" x-transition class="help-panel">
+        <div class="panel-header">
+            <h3>Help & Support</h3>
+            <p x-text="currentPageTitle">Getting Started</p>
+        </div>
+
+        <!-- Search -->
+        <div class="search-box">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input 
+                type="text" 
+                x-model="searchQuery"
+                placeholder="Search help topics..."
+                @input="filterTopics()"
+            />
+        </div>
+
+        <!-- Quick Topics -->
+        <div class="topics-list">
+            <template x-for="topic in filteredTopics" :key="topic.id">
+                <button @click="selectTopic(topic)" class="topic-item">
+                    <span class="topic-icon" x-text="getIconSvg(topic.icon)"></span>
+                    <span class="topic-title" x-text="topic.title"></span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+            </template>
+        </div>
+
+        <!-- Selected Topic Content -->
+        <div x-show="selectedTopic" class="topic-content">
+            <button @click="selectedTopic = null" class="back-button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                Back
+            </button>
+            <h4 x-text="selectedTopic?.title"></h4>
+            <div class="content-body" x-html="getTopicContent(selectedTopic?.id)"></div>
+        </div>
+
+        <!-- Contact Support -->
+        <div class="support-footer">
+            <p>Need more help?</p>
+            <a href="mailto:support@klasiz.fun" class="contact-btn">Contact Support</a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .help-chat-bubble-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 9999;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .help-bubble-button {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #16A34A 0%, #059669 100%);
+        border: none;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 20px rgba(22, 163, 74, 0.4);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .help-bubble-button:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 24px rgba(22, 163, 74, 0.5);
+    }
+
+    .help-bubble-button.open {
+        background: #EF4444;
+        box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+    }
+
+    .help-panel {
+        position: absolute;
+        bottom: 70px;
+        right: 0;
+        width: 360px;
+        max-height: 500px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .panel-header {
+        padding: 20px;
+        background: linear-gradient(135deg, #16A34A 0%, #059669 100%);
+        color: white;
+    }
+
+    .panel-header h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 800;
+    }
+
+    .panel-header p {
+        margin: 4px 0 0;
+        font-size: 13px;
+        opacity: 0.9;
+    }
+
+    .search-box {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        border-bottom: 1px solid #E2E8F0;
+    }
+
+    .search-box svg {
+        color: #94A3B8;
+        flex-shrink: 0;
+    }
+
+    .search-box input {
+        flex: 1;
+        border: none;
+        outline: none;
+        font-size: 14px;
+        color: #1E293B;
+    }
+
+    .search-box input::placeholder {
+        color: #94A3B8;
+    }
+
+    .topics-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px;
+    }
+
+    .topic-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 12px 16px;
+        border: none;
+        background: none;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: left;
+    }
+
+    .topic-item:hover {
+        background: #F1F5F9;
+    }
+
+    .topic-icon {
+        width: 36px;
+        height: 36px;
+        background: #F0FDF4;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #16A34A;
+        font-size: 18px;
+    }
+
+    .topic-title {
+        flex: 1;
+        font-size: 14px;
+        font-weight: 600;
+        color: #1E293B;
+    }
+
+    .topic-item svg:last-child {
+        color: #94A3B8;
+    }
+
+    .topic-content {
+        position: absolute;
+        inset: 0;
+        background: white;
+        padding: 20px;
+        overflow-y: auto;
+    }
+
+    .back-button {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
+        border: none;
+        background: #F1F5F9;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        color: #64748B;
+        margin-bottom: 16px;
+        transition: all 0.2s;
+    }
+
+    .back-button:hover {
+        background: #E2E8F0;
+        color: #1E293B;
+    }
+
+    .topic-content h4 {
+        margin: 0 0 16px;
+        font-size: 18px;
+        font-weight: 800;
+        color: #1E293B;
+    }
+
+    .content-body {
+        font-size: 14px;
+        line-height: 1.6;
+        color: #475569;
+    }
+
+    .content-body h5 {
+        font-size: 15px;
+        font-weight: 700;
+        color: #1E293B;
+        margin: 20px 0 10px;
+    }
+
+    .content-body ul {
+        margin: 10px 0;
+        padding-left: 20px;
+    }
+
+    .content-body li {
+        margin: 6px 0;
+    }
+
+    .support-footer {
+        padding: 16px 20px;
+        border-top: 1px solid #E2E8F0;
+        text-align: center;
+    }
+
+    .support-footer p {
+        margin: 0 0 12px;
+        font-size: 13px;
+        color: #64748B;
+    }
+
+    .contact-btn {
+        display: inline-block;
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #16A34A 0%, #059669 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 700;
+        transition: all 0.2s;
+    }
+
+    .contact-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+    }
+
+    @media (max-width: 640px) {
+        .help-panel {
+            width: 320px;
+            max-height: 450px;
+            bottom: 70px;
+        }
+
+        .help-chat-bubble-container {
+            bottom: 15px;
+            right: 15px;
+        }
+
+        .help-bubble-button {
+            width: 50px;
+            height: 50px;
+        }
+    }
+</style>
+
+<script>
+    function helpChatBubble() {
+        return {
+            isOpen: false,
+            searchQuery: '',
+            selectedTopic: null,
+            topics: HELP_TOPICS,
+            filteredTopics: HELP_TOPICS,
+            currentPageTitle: 'Getting Started',
+
+            init() {
+                // Load saved position if exists
+                const savedPosition = localStorage.getItem('helpBubblePosition');
+                if (savedPosition) {
+                    try {
+                        const pos = JSON.parse(savedPosition);
+                        const container = this.$el;
+                        container.style.right = pos.x + 'px';
+                        container.style.bottom = pos.y + 'px';
+                    } catch (e) {
+                        // Ignore parse errors
+                    }
+                }
+            },
+
+            toggleOpen() {
+                this.isOpen = !this.isOpen;
+                if (this.isOpen) {
+                    this.selectedTopic = null;
+                    this.searchQuery = '';
+                    this.filteredTopics = this.topics;
+                }
+            },
+
+            filterTopics() {
+                const query = this.searchQuery.toLowerCase();
+                if (!query) {
+                    this.filteredTopics = this.topics;
+                } else {
+                    this.filteredTopics = this.topics.filter(topic =>
+                        topic.title.toLowerCase().includes(query)
+                    );
+                }
+            },
+
+            selectTopic(topic) {
+                this.selectedTopic = topic;
+            },
+
+            getIconSvg(iconName) {
+                const icons: Record<string, string> = {
+                    'Home': '🏠',
+                    'Users': '👥',
+                    'Trophy': '🏆',
+                    'BarChart3': '📊',
+                    'Heart': '❤️',
+                    'Gamepad2': '🎮',
+                    'Layout': '📐',
+                    'ClipboardList': '📋',
+                    'MessageSquare': '💬',
+                    'Settings': '⚙️',
+                    'QrCode': '📱',
+                    'Presentation': '📊',
+                    'BookOpen': '📖',
+                    'Clock': '⏰',
+                    'Siren': '🚨',
+                    'Calendar': '📅'
+                };
+                return icons[iconName] || '❓';
+            },
+
+            getTopicContent(topicId: string | undefined) {
+                const content: Record<string, string> = {
+                    'getting-started': `
+                        <h5>Welcome to Klasiz.fun!</h5>
+                        <p>Get started with these quick steps:</p>
+                        <ul>
+                            <li>Create your first class</li>
+                            <li>Add students via access codes</li>
+                            <li>Explore gamification features</li>
+                            <li>Track student progress</li>
+                        </ul>
+                    `,
+                    'class-management': `
+                        <h5>Managing Your Classes</h5>
+                        <p>Learn how to effectively manage your classes:</p>
+                        <ul>
+                            <li>Create multiple classes</li>
+                            <li>Add/remove students</li>
+                            <li>Generate access codes</li>
+                            <li>Organize student groups</li>
+                        </ul>
+                    `,
+                    'gamification': `
+                        <h5>Gamification Features</h5>
+                        <p>Make learning fun with:</p>
+                        <ul>
+                            <li>Points and rewards system</li>
+                            <li>Level progression</li>
+                            <li>Stickers and achievements</li>
+                            <li>Leaderboards</li>
+                        </ul>
+                    `,
+                    'reports': `
+                        <h5>Reports & Analytics</h5>
+                        <p>Track student performance with:</p>
+                        <ul>
+                            <li>Individual progress reports</li>
+                            <li>Class analytics</li>
+                            <li>Behavior tracking</li>
+                            <li>Export capabilities</li>
+                        </ul>
+                    `,
+                    'parent-access': `
+                        <h5>Parent Portal</h5>
+                        <p>Keep parents informed:</p>
+                        <ul>
+                            <li>Generate parent access codes</li>
+                            <li>Share student progress</li>
+                            <li>Real-time updates</li>
+                            <li>Secure access</li>
+                        </ul>
+                    `,
+                    'games': `
+                        <h5>Learning Games</h5>
+                        <p>Engage students with interactive games:</p>
+                        <ul>
+                            <li>Lucky Draw</li>
+                            <li>Moto Race</li>
+                            <li>Tornado</li>
+                            <li>Memory Match</li>
+                            <li>Quiz Games</li>
+                        </ul>
+                    `
+                };
+                return content[topicId || 'getting-started'] || '<p>Select a topic to view help content.</p>';
+            }
+        };
+    }
+</script>
