@@ -67,9 +67,4 @@ htmlcov/
 # System
 .DS_Store
 Thumbs.db
-
-# Cache
-.mypy_cache/
-.pytest_cache/
-.gradle/
 ```
