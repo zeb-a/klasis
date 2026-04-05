@@ -1,0 +1,329 @@
+---
+/**
+ * Language Selector Component for Astro
+ * Dropdown menu to switch between languages
+ * Stores preference in localStorage
+ * 
+ * Usage: Include in layout or pages, listens for language changes via custom events
+ */
+
+interface Props {
+	position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+}
+
+const { position = 'bottom-left' } = Astro.props;
+
+// Available languages
+const LANGUAGES = [
+	{ code: 'en', flag: '🇺🇸', name: 'English', short: 'EN' },
+	{ code: 'zh', flag: '🇨🇳', name: '中文', short: '中文' },
+	{ code: 'es', flag: '🇪🇸', name: 'Español', short: 'ES' },
+	{ code: 'fr', flag: '🇫🇷', name: 'Français', short: 'FR' },
+];
+
+// Get current language from localStorage or default to English
+const currentLang = typeof window !== 'undefined' 
+	? (localStorage.getItem('language') || 'en') 
+	: 'en';
+
+const currentLangData = LANGUAGES.find(l => l.code === currentLang) || LANGUAGES[0];
+
+// Position classes
+const positionClasses = {
+	'top-left': 'top-full left-0 mt-2',
+	'top-right': 'top-full right-0 mt-2',
+	'bottom-left': 'bottom-full left-0 mb-2',
+	'bottom-right': 'bottom-full right-0 mb-2'
+};
+---
+
+<style>
+	.lang-selector {
+		position: relative;
+		display: inline-block;
+	}
+
+	.lang-btn {
+		padding: 8px 14px;
+		border-radius: 10px;
+		border: 1px solid #E2E8F0;
+		cursor: pointer;
+		background: #F8FAFC;
+		color: #64748B;
+		font-weight: 600;
+		font-size: 13px;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		transition: all 0.2s ease;
+	}
+
+	.lang-btn:hover {
+		background: #F1F5F9;
+	}
+
+	.lang-btn svg {
+		flex-shrink: 0;
+	}
+
+	.lang-dropdown {
+		position: absolute;
+		background: #fff;
+		border-radius: 12px;
+		box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+		z-index: 100;
+		overflow: hidden;
+		min-width: 180px;
+		border: 1px solid #E2E8F0;
+		padding: 6px;
+		opacity: 0;
+		visibility: hidden;
+		transform: translateY(-10px);
+		transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
+	}
+
+	.lang-dropdown.open {
+		opacity: 1;
+		visibility: visible;
+		transform: translateY(0);
+	}
+
+	.lang-dropdown.top-left {
+		top: calc(100% + 8px);
+		left: 0;
+	}
+
+	.lang-dropdown.top-right {
+		top: calc(100% + 8px);
+		right: 0;
+	}
+
+	.lang-dropdown.bottom-left {
+		bottom: calc(100% + 8px);
+		left: 0;
+	}
+
+	.lang-dropdown.bottom-right {
+		bottom: calc(100% + 8px);
+		right: 0;
+	}
+
+	.lang-option {
+		width: 100%;
+		padding: 12px 14px;
+		border: none;
+		border-radius: 8px;
+		background: transparent;
+		color: #64748B;
+		font-weight: 600;
+		cursor: pointer;
+		font-size: 14px;
+		text-align: left;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		transition: all 0.15s ease;
+	}
+
+	.lang-option:hover {
+		background: #F1F5F9;
+	}
+
+	.lang-option.active {
+		background: #EEF2FF;
+		color: #4F46E5;
+	}
+
+	.lang-option.active[data-lang="zh"] {
+		background: #FEF3F2;
+		color: #B91C1C;
+	}
+
+	.lang-option.active[data-lang="es"] {
+		background: #D1FAE5;
+		color: #059669;
+	}
+
+	.lang-option.active[data-lang="fr"] {
+		background: #FEF3C7;
+		color: #D97706;
+	}
+
+	.lang-flag {
+		font-size: 16px;
+	}
+
+	.chevron {
+		transition: transform 0.2s;
+	}
+
+	.chevron.rotated {
+		transform: rotate(180deg);
+	}
+
+	.overlay {
+		position: fixed;
+		inset: 0;
+		z-index: 99;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.lang-btn {
+			border-color: rgba(255,255,255,0.15);
+			background: rgba(255,255,255,0.08);
+			color: #e5e5e5;
+		}
+
+		.lang-btn:hover {
+			background: rgba(255,255,255,0.12);
+		}
+
+		.lang-dropdown {
+			background: #1F1F23;
+			border-color: rgba(255,255,255,0.1);
+		}
+
+		.lang-option {
+			color: #e5e5e5;
+		}
+
+		.lang-option:hover {
+			background: rgba(255,255,255,0.05);
+		}
+
+		.lang-option.active {
+			background: rgba(79, 70, 229, 0.2);
+			color: #818CF8;
+		}
+
+		.lang-option.active[data-lang="zh"] {
+			background: rgba(185, 28, 28, 0.2);
+			color: #FCA5A5;
+		}
+
+		.lang-option.active[data-lang="es"] {
+			background: rgba(5, 150, 105, 0.2);
+			color: #34D399;
+		}
+
+		.lang-option.active[data-lang="fr"] {
+			background: rgba(217, 119, 6, 0.2);
+			color: #FBBF24;
+		}
+	}
+</style>
+
+<div class="lang-selector" data-lang-selector>
+	<button 
+		class="lang-btn"
+		data-lang-toggle
+		aria-label="Change language"
+		aria-expanded="false"
+	>
+		<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
+		<span data-current-lang-short>{currentLangData.short}</span>
+		<svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+	</button>
+	
+	<div class={`lang-dropdown ${position}`} data-lang-dropdown>
+		{LANGUAGES.map((language) => (
+			<button
+				class={`lang-option${language.code === currentLang ? ' active' : ''}`}
+				data-lang={language.code}
+				data-lang-code={language.code}
+			>
+				<span class="lang-flag">{language.flag}</span>
+				<span>{language.name}</span>
+			</button>
+		))}
+	</div>
+</div>
+
+<script>
+	const langSelector = document.querySelector('[data-lang-selector]');
+	if (!langSelector) return;
+
+	const toggleBtn = langSelector.querySelector('[data-lang-toggle]');
+	const dropdown = langSelector.querySelector('[data-lang-dropdown]');
+	const chevron = langSelector.querySelector('.chevron');
+	const currentLangShort = langSelector.querySelector('[data-current-lang-short]');
+	
+	let isOpen = false;
+	
+	function openDropdown() {
+		isOpen = true;
+		dropdown?.classList.add('open');
+		chevron?.classList.add('rotated');
+		toggleBtn?.setAttribute('aria-expanded', 'true');
+	}
+	
+	function closeDropdown() {
+		isOpen = false;
+		dropdown?.classList.remove('open');
+		chevron?.classList.remove('rotated');
+		toggleBtn?.setAttribute('aria-expanded', 'false');
+	}
+	
+	function toggleDropdown() {
+		if (isOpen) {
+			closeDropdown();
+		} else {
+			openDropdown();
+		}
+	}
+	
+	// Toggle button click
+	toggleBtn?.addEventListener('click', (e) => {
+		e.stopPropagation();
+		toggleDropdown();
+	});
+	
+	// Language option click
+	dropdown?.querySelectorAll('[data-lang-code]').forEach(btn => {
+		btn.addEventListener('click', (e) => {
+			const langCode = (e.currentTarget as HTMLElement).getAttribute('data-lang-code');
+			if (langCode) {
+				// Save to localStorage
+				localStorage.setItem('language', langCode);
+				
+				// Update UI
+				const langData = LANGUAGES.find(l => l.code === langCode);
+				if (langData && currentLangShort) {
+					currentLangShort.textContent = langData.short;
+				}
+				
+				// Dispatch event for other components
+				window.dispatchEvent(new CustomEvent('language-change', { 
+					detail: { language: langCode } 
+				}));
+				
+				closeDropdown();
+			}
+		});
+	});
+	
+	// Close on outside click
+	document.addEventListener('click', (e) => {
+		if (isOpen && !langSelector.contains(e.target as Node)) {
+			closeDropdown();
+		}
+	});
+	
+	// Close on escape key
+	document.addEventListener('keydown', (e) => {
+		if (e.key === 'Escape' && isOpen) {
+			closeDropdown();
+		}
+	});
+	
+	// Listen for external language changes
+	window.addEventListener('language-change', (e) => {
+		const detail = (e as CustomEvent).detail;
+		if (detail?.language) {
+			const langData = LANGUAGES.find(l => l.code === detail.language);
+			if (langData && currentLangShort) {
+				currentLangShort.textContent = langData.short;
+			}
+		}
+	});
+</script>
