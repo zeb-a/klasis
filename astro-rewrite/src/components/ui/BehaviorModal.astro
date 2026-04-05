@@ -1,0 +1,853 @@
+---
+interface Props {
+  student?: {
+    name: string;
+    avatar?: string;
+    gender?: string;
+    score?: number;
+  };
+  behaviors?: Array<{
+    id: string;
+    label: string;
+    type: string | string[];
+    pts: number;
+    stickerId?: string;
+    icon?: string;
+  }>;
+  hideName?: boolean;
+}
+
+const { student, behaviors = [], hideName = false } = Astro.props;
+
+// Normalize behaviors - handle both string and array types
+const normalizedBehaviors = behaviors.map(b => ({
+  ...b,
+  type: Array.isArray(b.type) ? b.type[0] : (typeof b.type === 'string' ? b.type : '')
+}));
+
+const wowCards = normalizedBehaviors.filter(b => b.type === 'wow');
+const nonoCards = normalizedBehaviors.filter(b => b.type === 'nono');
+
+// Simple avatar fallback
+const getAvatarFallback = (name: string, gender?: string) => {
+  const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const colors: Record<string, string[]> = {
+    male: ['#4A90D9', '#357ABD'],
+    female: ['#D94A90', '#BD357A'],
+    default: ['#9B59B6', '#8E44AD']
+  };
+  const colorSet = gender && colors[gender] ? colors[gender] : colors.default;
+  
+  return `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='84' height='84'><rect fill='${colorSet[0]}' width='84' height='84'/><text x='50%' y='50%' dy='.35em' text-anchor='middle' fill='white' font-size='36' font-family='Arial' font-weight='bold'>${initials}</text></svg>`;
+};
+
+const displayAvatar = student?.avatar || (student ? getAvatarFallback(student.name, student.gender) : '');
+---
+
+<div class="behavior-modal-overlay" role="dialog" aria-label="Behavior Points Modal" data-behavior-modal="true">
+  <div class="behavior-modal-content" data-behavior-modal="true">
+    <!-- Header -->
+    <div class="modal-header">
+      <button class="close-btn" aria-label="Close" onclick="document.querySelector('.behavior-modal-overlay')?.remove()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+      
+      <div class="header-center">
+        <div class="give-points-label">Give Points</div>
+        
+        <div class="student-info">
+          {!hideName && student && (
+            <div class="avatar-wrapper">
+              <img 
+                src={displayAvatar} 
+                alt={student.name} 
+                class="student-avatar"
+                loading="lazy"
+              />
+              <div class="score-badge">{student.score || 0}</div>
+            </div>
+          )}
+          {!hideName && student && (
+            <h2 class="student-name">{student.name}</h2>
+          )}
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs-container">
+      <button 
+        class="tab-btn tab-wow active" 
+        data-tab="wow"
+        onclick="switchTab('wow')"
+      >
+        WOW CARDS
+      </button>
+      <button 
+        class="tab-btn tab-nono" 
+        data-tab="nono"
+        onclick="switchTab('nono')"
+      >
+        NO-NO CARDS
+      </button>
+      <button 
+        class="tab-btn tab-import" 
+        data-tab="import"
+        onclick="switchTab('import')"
+      >
+        IMPORT
+      </button>
+    </div>
+
+    <!-- Content Area -->
+    <div class="modal-content-scroll">
+      <!-- Cards Grid (WOW / NO-NO) -->
+      <div class="cards-section" data-section="cards">
+        <div class="behavior-cards-grid">
+          {(wowCards.length > 0 ? wowCards : nonoCards).map((card, index) => (
+            <button
+              class={`behavior-card-btn ${card.type === 'wow' ? 'wow-card' : 'nono-card'}`}
+              data-card-id={card.id}
+              data-card-label={card.label}
+              data-card-points={card.pts}
+              data-card-sticker={card.stickerId || ''}
+              onclick={(e) => handleCardClick(e, card)}
+            >
+              {card.stickerId ? (
+                <div class="sticker-display" data-sticker-id={card.stickerId}></div>
+              ) : null}
+              <div class="card-label">{card.label}</div>
+              <div class="card-points">
+                {card.type === 'wow' ? `+${card.pts}` : card.pts}
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <!-- Import Section -->
+      <div class="import-section" data-section="import" style="display: none;">
+        <div class="import-panel">
+          <div class="import-selector">
+            <label>Select class to import from</label>
+            <select id="class-select" onchange="loadSourceBehaviors()">
+              <option value="">-- Choose a class --</option>
+              <!-- Classes will be loaded dynamically -->
+            </select>
+          </div>
+
+          <!-- Preview Area -->
+          <div class="import-preview">
+            <div class="preview-loading" style="display: none;">Loading preview…</div>
+            <div class="preview-message"></div>
+            <div class="preview-grid"></div>
+          </div>
+
+          <!-- Import Button -->
+          <div class="import-actions">
+            <button 
+              id="import-btn" 
+              class="import-action-btn"
+              disabled
+              onclick="handleImport()"
+            >
+              Nothing to Import
+            </button>
+          </div>
+
+          <!-- Result Message -->
+          <div id="import-result" class="import-result"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Overlay */
+  .behavior-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5000;
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Modal Card */
+  .behavior-modal-content {
+    background: #FFFFFF;
+    width: 90%;
+    max-width: 650px;
+    border-radius: 40px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    max-height: 85vh;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: scale(0.9) translateY(20px);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1) translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .behavior-modal-content {
+      max-height: 90vh;
+      width: 95%;
+      border-radius: 24px;
+    }
+  }
+
+  /* Header */
+  .modal-header {
+    position: relative;
+    border-bottom: 1px solid #F0F0F0;
+    padding: 16px;
+  }
+
+  .close-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #999;
+    padding: 8px;
+    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .close-btn:hover {
+    background: #F5F5F5;
+    color: #666;
+  }
+
+  .header-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .give-points-label {
+    position: fixed;
+    left: 17px;
+    top: 17px;
+    text-transform: uppercase;
+    font-weight: 900;
+    color: #ba3d3f;
+    font-size: 13px;
+    letter-spacing: 0.6px;
+  }
+
+  .student-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .avatar-wrapper {
+    position: relative;
+    margin-bottom: 10px;
+  }
+
+  .student-avatar {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    border: 4px solid #F4F1EA;
+    object-fit: cover;
+  }
+
+  .score-badge {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background: #4CAF50;
+    color: white;
+    width: 35px;
+    height: 35px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border: 3px solid white;
+    font-size: 0.9rem;
+  }
+
+  .student-name {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #2D3436;
+  }
+
+  @media (max-width: 640px) {
+    .student-avatar {
+      width: 64px;
+      height: 64px;
+    }
+    
+    .score-badge {
+      width: 28px;
+      height: 28px;
+      font-size: 0.8rem;
+    }
+    
+    .student-name {
+      font-size: 1rem;
+      margin-bottom: 4px;
+    }
+    
+    .give-points-label {
+      font-size: 11px;
+      letter-spacing: 0.4px;
+    }
+  }
+
+  /* Tabs */
+  .tabs-container {
+    display: flex;
+    gap: 10px;
+    padding: 14px;
+    justify-content: center;
+    border-bottom: 1px solid #E6EEF2;
+  }
+
+  .tab-btn {
+    padding: 7px 14px;
+    border-radius: 10px;
+    border: 1px solid #E6EEF2;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 700;
+    transition: all 0.2s;
+  }
+
+  .tab-wow.active, .tab-wow:hover {
+    border-color: #4CAF50;
+    background: #E8F5E9;
+  }
+
+  .tab-nono.active, .tab-nono:hover {
+    border-color: #F44336;
+    background: #FFEBEE;
+  }
+
+  .tab-import.active, .tab-import:hover {
+    border-color: #2563EB;
+    background: #EFF6FF;
+  }
+
+  @media (max-width: 640px) {
+    .tabs-container {
+      gap: 6px;
+      padding: 10px;
+    }
+    
+    .tab-btn {
+      padding: 6px 10px;
+      font-size: 0.75rem;
+    }
+  }
+
+  /* Content Scroll */
+  .modal-content-scroll {
+    padding: 18px 30px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  @media (max-width: 640px) {
+    .modal-content-scroll {
+      padding: 12px 16px;
+    }
+  }
+
+  /* Cards Grid */
+  .behavior-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+    gap: 25px;
+  }
+
+  @media (max-width: 640px) {
+    .behavior-cards-grid {
+      gap: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
+  }
+
+  .behavior-card-btn {
+    background: white;
+    border: 4px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 20px 10px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .behavior-card-btn:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  }
+
+  .wow-card:hover {
+    border-color: #4CAF50;
+  }
+
+  .nono-card:hover {
+    border-color: #F44336;
+  }
+
+  @media (max-width: 640px) {
+    .behavior-card-btn {
+      padding: 16px 8px;
+    }
+  }
+
+  .sticker-display {
+    font-size: 3rem;
+    margin-bottom: 4px;
+  }
+
+  .card-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #333;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .card-points {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #666;
+  }
+
+  /* Import Section */
+  .import-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px 30px;
+  }
+
+  .import-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .import-selector label {
+    color: #475569;
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  .import-selector select {
+    width: 100%;
+    min-width: 320px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #E2E8F0;
+    font-size: 0.95rem;
+  }
+
+  .import-preview {
+    margin-top: 12px;
+    min-height: 80px;
+  }
+
+  .preview-message {
+    text-align: center;
+    margin-bottom: 8px;
+    color: #334155;
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  .preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+  }
+
+  .preview-item {
+    background: white;
+    border: 1px solid #E6EEF2;
+    border-radius: 12px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .preview-item-icon {
+    font-size: 1.6rem;
+    margin-bottom: 6px;
+  }
+
+  .preview-item-label {
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-align: center;
+  }
+
+  .preview-item-points {
+    color: #475569;
+    font-weight: 800;
+    font-size: 0.85rem;
+  }
+
+  .import-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 12px;
+  }
+
+  .import-action-btn {
+    padding: 12px 22px;
+    background: #CBD5E1;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 800;
+    cursor: not-allowed;
+    box-shadow: none;
+    transition: all 0.2s;
+  }
+
+  .import-action-btn:not(:disabled) {
+    background: #4CAF50;
+    cursor: pointer;
+    box-shadow: 0 12px 30px rgba(76, 175, 80, 0.18);
+  }
+
+  .import-action-btn:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px rgba(76, 175, 80, 0.25);
+  }
+
+  .import-result {
+    text-align: center;
+    margin-top: 12px;
+    font-weight: 600;
+  }
+
+  .import-result.success {
+    color: #166534;
+  }
+
+  .import-result.error {
+    color: #991b1b;
+  }
+</style>
+
+<script>
+  let currentTab = 'wow';
+  let selectedClassId = '';
+  let sourceBehaviors = [];
+  let toImport = [];
+  let classesCache = [];
+
+  // Get user email from localStorage
+  function getUserEmail() {
+    try {
+      const raw = localStorage.getItem('classABC_logged_in');
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return parsed?.email || null;
+    } catch {
+      return null;
+    }
+  }
+
+  // Switch tabs
+  function switchTab(tab) {
+    currentTab = tab;
+    
+    // Update tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.classList.remove('active');
+    });
+    document.querySelector(`.tab-${tab}`)?.classList.add('active');
+    
+    // Show/hide sections
+    const cardsSection = document.querySelector('[data-section="cards"]');
+    const importSection = document.querySelector('[data-section="import"]');
+    
+    if (tab === 'import') {
+      cardsSection.style.display = 'none';
+      importSection.style.display = 'block';
+      loadClasses();
+    } else {
+      cardsSection.style.display = 'block';
+      importSection.style.display = 'none';
+      
+      // Update cards grid based on tab
+      updateCardsGrid(tab);
+    }
+  }
+
+  // Update cards grid for WOW/NO-NO
+  function updateCardsGrid(tab) {
+    const grid = document.querySelector('.behavior-cards-grid');
+    const cards = tab === 'wow' 
+      ? document.querySelectorAll('[data-card-id]') 
+      : document.querySelectorAll('[data-card-id]');
+    
+    // Filter visible cards based on type
+    document.querySelectorAll('.behavior-card-btn').forEach(card => {
+      const cardType = card.classList.contains('wow-card') ? 'wow' : 'nono';
+      card.style.display = cardType === tab ? 'flex' : 'none';
+    });
+  }
+
+  // Load classes for import
+  async function loadClasses() {
+    if (classesCache.length > 0) {
+      populateClassSelect(classesCache);
+      return;
+    }
+
+    const userEmail = getUserEmail();
+    try {
+      let items = [];
+      let page = 1;
+      
+      while (true) {
+        let query = `/collections/classes/records?page=${page}&perPage=500`;
+        if (userEmail) {
+          query += `&filter=owner="${userEmail}"`;
+        }
+        
+        // This would need to be handled by the parent page
+        // For now, we'll dispatch an event
+        window.dispatchEvent(new CustomEvent('behavior-modal:load-classes', {
+          detail: { query }
+        }));
+        
+        break; // Simplified for demo
+      }
+      
+      classesCache = items;
+      populateClassSelect(items);
+    } catch (err) {
+      console.error('Failed to fetch classes', err);
+    }
+  }
+
+  // Populate class select dropdown
+  function populateClassSelect(classes) {
+    const select = document.getElementById('class-select');
+    if (!select) return;
+    
+    select.innerHTML = '<option value="">-- Choose a class --</option>';
+    classes.forEach(cls => {
+      const option = document.createElement('option');
+      option.value = cls.id;
+      option.textContent = cls.name || cls.title || cls.id;
+      select.appendChild(option);
+    });
+  }
+
+  // Load source behaviors when class is selected
+  async function loadSourceBehaviors() {
+    const select = document.getElementById('class-select');
+    if (!select) return;
+    
+    selectedClassId = select.value;
+    
+    if (!selectedClassId) {
+      sourceBehaviors = [];
+      toImport = [];
+      updatePreview();
+      return;
+    }
+
+    const previewLoading = document.querySelector('.preview-loading');
+    if (previewLoading) previewLoading.style.display = 'block';
+
+    try {
+      // Dispatch event to load behaviors (handled by parent page)
+      window.dispatchEvent(new CustomEvent('behavior-modal:load-source', {
+        detail: { classId: selectedClassId }
+      }));
+      
+      // For demo purposes, we'll simulate this
+      // In real implementation, this would fetch from API
+      sourceBehaviors = [];
+      toImport = [];
+      updatePreview();
+    } catch (err) {
+      console.error('Failed to load source behaviors', err);
+      sourceBehaviors = [];
+      toImport = [];
+      updatePreview();
+    } finally {
+      if (previewLoading) previewLoading.style.display = 'none';
+    }
+  }
+
+  // Update preview display
+  function updatePreview() {
+    const previewMessage = document.querySelector('.preview-message');
+    const previewGrid = document.querySelector('.preview-grid');
+    const importBtn = document.getElementById('import-btn');
+    
+    if (!previewMessage || !previewGrid || !importBtn) return;
+    
+    if (toImport.length > 0) {
+      previewMessage.textContent = `Preview — ${toImport.length} new card(s) will be imported`;
+      
+      previewGrid.innerHTML = toImport.map(c => `
+        <div class="preview-item">
+          <div class="preview-item-icon">${c.stickerId ? '🎯' : (c.icon || '⭐')}</div>
+          <div class="preview-item-label">${c.label}</div>
+          <div class="preview-item-points">${c.pts ? (c.pts > 0 ? `+${c.pts}` : c.pts) : ''}</div>
+        </div>
+      `).join('');
+      
+      importBtn.disabled = false;
+      importBtn.textContent = 'Import New Cards';
+    } else {
+      previewMessage.textContent = 'No new cards to import from selected class';
+      previewGrid.innerHTML = '';
+      importBtn.disabled = true;
+      importBtn.textContent = 'Nothing to Import';
+    }
+  }
+
+  // Handle import action
+  async function handleImport() {
+    if (!selectedClassId) return;
+    
+    const importBtn = document.getElementById('import-btn');
+    const resultDiv = document.getElementById('import-result');
+    
+    if (!importBtn || !resultDiv) return;
+    
+    importBtn.disabled = true;
+    importBtn.textContent = 'Importing…';
+    
+    try {
+      const payload = toImport.length > 0 ? toImport : sourceBehaviors;
+      
+      // Dispatch event for parent to handle import
+      window.dispatchEvent(new CustomEvent('behavior-import:request', {
+        detail: { 
+          sourceClassId: selectedClassId, 
+          sourceBehaviors: payload 
+        }
+      }));
+      
+      resultDiv.className = 'import-result success';
+      resultDiv.textContent = payload.length > 0 
+        ? `Imported ${payload.length} new card${payload.length > 1 ? 's' : ''}.`
+        : `You're all set — no new cards to import.`;
+    } catch (err) {
+      resultDiv.className = 'import-result error';
+      resultDiv.textContent = `Import failed: ${err.message || 'Failed to import'}`;
+    } finally {
+      importBtn.disabled = false;
+      importBtn.textContent = toImport.length > 0 ? 'Import New Cards' : 'Nothing to Import';
+    }
+  }
+
+  // Handle card click
+  function handleCardClick(event, card) {
+    event.stopPropagation();
+    
+    // Close modal
+    const overlay = document.querySelector('.behavior-modal-overlay');
+    if (overlay) {
+      overlay.style.opacity = '0';
+      overlay.style.transition = 'opacity 0.2s ease';
+      setTimeout(() => overlay.remove(), 200);
+    }
+    
+    // Dispatch custom event with card data
+    window.dispatchEvent(new CustomEvent('behavior-card:click', {
+      detail: { card }
+    }));
+  }
+
+  // Listen for external events
+  window.addEventListener('behavior-modal:set-classes', (e) => {
+    classesCache = e.detail.classes || [];
+    populateClassSelect(classesCache);
+  });
+
+  window.addEventListener('behavior-modal:set-source', (e) => {
+    sourceBehaviors = e.detail.behaviors || [];
+    
+    // Get existing behavior labels
+    const existingLabels = new Set(
+      Array.from(document.querySelectorAll('.behavior-card-btn'))
+        .map(btn => btn.dataset.cardLabel?.toLowerCase().trim() || '')
+    );
+    
+    // Filter out duplicates
+    toImport = sourceBehaviors.filter(x => {
+      const label = (x?.label || '').toLowerCase().trim();
+      return label && !existingLabels.has(label);
+    });
+    
+    updatePreview();
+  });
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const overlay = document.querySelector('.behavior-modal-overlay');
+      if (overlay) {
+        overlay.remove();
+      }
+    }
+    
+    // Enter to submit import
+    if (e.key === 'Enter' && currentTab === 'import') {
+      const importBtn = document.getElementById('import-btn');
+      if (importBtn && !importBtn.disabled) {
+        handleImport();
+      }
+    }
+  });
+
+  // Initialize
+  updateCardsGrid('wow');
+</script>

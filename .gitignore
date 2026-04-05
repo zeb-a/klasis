@@ -1,33 +1,36 @@
-# Examples 1:
-(empty — output nothing)
-
-# Example 2 (Project with artifacts):
-# Compiled and build artifacts
-*.pyc
-__pycache__/
-*.o
-*.obj
+```
+# Build artifacts
 dist/
 build/
-target/
+*.js
+*.ts
+*.jsx
+*.tsx
 
 # Dependencies
-.venv/
-venv/
 node_modules/
-.julia/
-.zig-cache/
 
-# Logs and temp files
-*.log
-*.tmp
-*.swp
-*.swo
+# Cache directories
+.cache/
+.nuxt/
+.next/
+.output/
 
-# Environment
+# Environment variables
 .env
 .env.local
-*.env.*
+.env.*
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# OS generated files
+.DS_Store
+Thumbs.db
 
 # Editors
 .vscode/
@@ -35,38 +38,31 @@ node_modules/
 *.swp
 *.swo
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Coverage
+# Coverage reports
 coverage/
 htmlcov/
 .coverage
 
-# Compressed files
-*.zip
-*.gz
-*.tar
-*.tgz
-*.bz2
-*.xz
-*.7z
-*.rar
-*.zst
-*.lz4
-*.lzh
-*.cab
-*.arj
-*.rpm
-*.deb
-*.Z
-*.lz
-*.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
+# Python specific
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg-info/
+.eggs/
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.tox/
 
-# Original rules preserved
-*.log
+# Node.js specific
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Astro specific
+!.gitignore
+```
