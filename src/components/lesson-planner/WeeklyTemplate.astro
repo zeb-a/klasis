@@ -1,0 +1,25 @@
+---
+import { WEEKLY_DAY_LABELS } from '../../templates/lessonTemplates';
+import DynamicTableTemplate from './DynamicTableTemplate.astro';
+
+interface WeeklyTemplateProps {
+  data: Record<string, any>;
+  onChange: (data: Record<string, any>) => void;
+  highlightedCells: Array<{ type: string; index?: number; field?: string }>;
+  clearHighlight: () => void;
+}
+
+const WeeklyTemplate = ({ data = {}, onChange, highlightedCells = [], clearHighlight }: WeeklyTemplateProps) => {
+  return (
+    <DynamicTableTemplate
+      data={data}
+      onChange={onChange}
+      labelKey="day"
+      defaultLabels={WEEKLY_DAY_LABELS}
+      highlightedCells={highlightedCells}
+      clearHighlight={clearHighlight}
+    />
+  );
+};
+
+export default WeeklyTemplate;

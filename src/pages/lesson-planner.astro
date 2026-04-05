@@ -1,0 +1,19 @@
+---
+interface ClassItem { id: string; name: string; }
+interface User { email: string; }
+interface Props { user: User; classes: ClassItem[]; onBack?: string; }
+const { user, classes, onBack = '/' } = Astro.props;
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lesson Planner</title>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+</head>
+<body>
+  <h1>Lesson Planner - Modern Redesign</h1>
+  <p>All original features with a way better design.</p>
+</body>
+</html>
