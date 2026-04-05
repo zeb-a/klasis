@@ -9,7 +9,7 @@
 - ExamSidebar.astro (teacher component)
 - TornadoGame.astro (game component)
 - SpellTheWordGame.astro (game component)
-- Pages: index, about, login, classes, dashboard, settings, faq, terms, privacy
+- Pages: index, about, login, classes, dashboard, settings, faq, terms, privacy, **reports**, **esl-games**, **game-center**
 - **StudentCard.astro** - Student card with long-press, animations, custom events
 - **LanguageSelector.astro** - 4 languages with localStorage persistence
 - **LevelUpOverlay.astro** - Celebration overlay with disco lights
@@ -24,10 +24,10 @@
 
 ### High Priority - Core Components
 1. ~~**ClassDashboard.jsx**~~ ✅ CONVERTED
-2. **LandingPage.jsx** (132KB) - Landing page
-3. **ESLGames.jsx** (69KB) - ESL Games hub
-4. **GameCenter.jsx** (44KB) - Game center interface
-5. **ReportsPage.jsx** (103KB) - Student reports
+2. ~~**LandingPage.jsx**~~ ✅ CONVERTED (index.astro)
+3. ~~**ESLGames.jsx**~~ ✅ CONVERTED (esl-games.astro)
+4. ~~**GameCenter.jsx**~~ ✅ CONVERTED (game-center.astro)
+5. ~~**ReportsPage.jsx**~~ ✅ CONVERTED (reports.astro)
 6. **SettingsPage.jsx** (79KB) - Settings page
 7. **TeacherWorkspace.jsx** (46KB) - Teacher tools
 8. **AssignmentsPage.jsx** (47KB) - Assignments management
