@@ -11,14 +11,6 @@ export default defineConfig({
   vite: {
     build: {
       minify: 'esbuild',
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            'games': ['./src/components/games/TornadoGame.jsx', './src/components/games/SpellTheWordGame.jsx'],
-            'vendor': ['react', 'react-dom'],
-          }
-        }
-      }
     }
   }
 });

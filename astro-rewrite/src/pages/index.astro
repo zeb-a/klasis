@@ -482,15 +482,27 @@ import { ArrowRight, LogIn, Sparkles, Star, GraduationCap, Heart, BookOpen, Dice
                 },
                 
                 handleLogin() {
+                    // Simulate login - in production this would call API
                     console.log('Login:', this.email, this.password);
+                    // Store auth token and redirect to dashboard
+                    localStorage.setItem('authToken', 'demo-token');
+                    localStorage.setItem('user', JSON.stringify({ name: 'Teacher', email: this.email }));
+                    // Redirect to classes page (teacher dashboard)
+                    window.location.href = '/classes';
                 },
                 
                 handleSignup() {
                     console.log('Signup:', this.email, this.password);
+                    // Store auth token and redirect to onboarding
+                    localStorage.setItem('authToken', 'demo-token');
+                    localStorage.setItem('user', JSON.stringify({ name: 'Teacher', email: this.email }));
+                    window.location.href = '/classes';
                 },
                 
                 handleStudentLogin() {
                     console.log('Student login:', this.accessCode);
+                    // Redirect to student portal with access code
+                    window.location.href = `/student-portal?code=${this.accessCode}`;
                 }
             }
         }

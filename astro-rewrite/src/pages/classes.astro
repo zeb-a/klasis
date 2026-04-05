@@ -11,7 +11,7 @@ import { BookOpen, Users, Trophy, Plus, Search, Filter, MoreVertical } from 'luc
                 <h1 class="text-3xl font-bold text-gray-900">My Classes</h1>
                 <p class="text-gray-600 mt-2">Manage your classes and track student progress</p>
             </div>
-            <button class="mt-4 sm:mt-0 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center">
+            <button @click="createClass()" class="mt-4 sm:mt-0 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center">
                 <Plus class="w-5 h-5 mr-2" />
                 Create New Class
             </button>
@@ -94,12 +94,12 @@ import { BookOpen, Users, Trophy, Plus, Search, Filter, MoreVertical } from 'luc
 
                         <!-- Action Buttons -->
                         <div class="flex gap-2">
-                            <button class="flex-1 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm">
+                            <a :href="`/class-dashboard?class=${classItem.id}`" class="flex-1 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm text-center">
                                 View Class
-                            </button>
-                            <button class="flex-1 border border-gray-300 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm">
+                            </a>
+                            <a :href="`/game-center?class=${classItem.id}`" class="flex-1 border border-gray-300 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm text-center">
                                 Start Game
-                            </button>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -212,6 +212,28 @@ import { BookOpen, Users, Trophy, Plus, Search, Filter, MoreVertical } from 'luc
                         cls.grade.toLowerCase().includes(query) ||
                         cls.subject.toLowerCase().includes(query)
                     );
+                },
+                
+                createClass() {
+                    const className = prompt('Enter class name (e.g., Mathematics 3A):');
+                    if (!className) return;
+                    
+                    const grade = prompt('Enter grade (e.g., Grade 3):') || 'Grade 3';
+                    const subject = prompt('Enter subject (e.g., Mathematics):') || 'General';
+                    
+                    const newClass = {
+                        id: Date.now(),
+                        name: className,
+                        grade: grade,
+                        subject: subject,
+                        students: 0,
+                        gamesPlayed: 0,
+                        avgScore: 0,
+                        recentActivities: []
+                    };
+                    
+                    this.classes.push(newClass);
+                    alert('Class created successfully! You can now add students.');
                 }
             }
         }
