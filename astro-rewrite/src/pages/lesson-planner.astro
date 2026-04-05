@@ -1,0 +1,610 @@
+---
+// LessonPlannerPage.astro - Main Lesson Planner Page Component
+import MainLayout from '../layouts/MainLayout.astro';
+import DailyTemplate from '../components/lesson-planner/DailyTemplate.astro';
+import WeeklyTemplate from '../components/lesson-planner/WeeklyTemplate.astro';
+import MonthlyTemplate from '../components/lesson-planner/MonthlyTemplate.astro';
+import YearlyTemplate from '../components/lesson-planner/YearlyTemplate.astro';
+import { t } from '../lib/i18n';
+import type { LessonPlan } from '../services/lessonPlanApi';
+
+interface Props {
+  classId?: string;
+  planId?: string;
+}
+
+const { classId = '', planId = '' } = Astro.props;
+
+// Available period types
+const PERIOD_TYPES = [
+  { value: 'daily', label: t('lesson_planner.daily') },
+  { value: 'weekly', label: t('lesson_planner.weekly') },
+  { value: 'monthly', label: t('lesson_planner.monthly') },
+  { value: 'yearly', label: t('lesson_planner.yearly') }
+];
+---
+
+<MainLayout title={t('lesson_planner.title')}>
+  <div id="lesson-planner-app" 
+       data-class-id={classId} 
+       data-plan-id={planId}
+       class="min-h-screen bg-gray-50">
+    
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 px-6 py-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <a href="/classes" class="text-gray-500 hover:text-gray-700">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+          </a>
+          <h1 class="text-2xl font-bold text-gray-900">{t('lesson_planner.title')}</h1>
+        </div>
+        
+        <div class="flex items-center gap-3">
+          <button id="btn-new-plan" 
+                  class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            {t('lesson_planner.new_plan')}
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <div class="flex">
+      <!-- Sidebar - Plan List -->
+      <aside class="w-80 bg-white border-r border-gray-200 min-h-[calc(100vh-73px)]">
+        <!-- Search -->
+        <div class="p-4 border-b border-gray-200">
+          <div class="relative">
+            <input 
+              type="text" 
+              id="search-plans"
+              placeholder={t('lesson_planner.search_plans')}
+              class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Period Filter -->
+        <div class="p-4 border-b border-gray-200">
+          <label class="block text-sm font-medium text-gray-700 mb-2">{t('lesson_planner.period')}</label>
+          <select id="period-filter" class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">{t('lesson_planner.select_period')}</option>
+            {PERIOD_TYPES.map(type => (
+              <option value={type.value}>{type.label}</option>
+            ))}
+          </select>
+        </div>
+
+        <!-- Plan List -->
+        <div id="plan-list" class="overflow-y-auto" style="max-height: calc(100vh - 250px);">
+          <div class="p-4 text-center text-gray-500 text-sm" id="no-plans-message">
+            {t('lesson_planner.no_plans')}
+          </div>
+          <!-- Plans will be loaded here dynamically -->
+        </div>
+      </aside>
+
+      <!-- Main Content - Editor -->
+      <main class="flex-1 p-6 overflow-y-auto" style="height: calc(100vh - 73px);">
+        <!-- Editor Container -->
+        <div id="editor-container" class="hidden">
+          <!-- Editor Header -->
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
+            <div class="flex items-center justify-between mb-4">
+              <input 
+                type="text" 
+                id="plan-title"
+                placeholder={t('lesson_planner.lesson_plan_title')}
+                class="text-xl font-semibold border-none focus:outline-none focus:ring-0 w-full"
+              />
+              <div class="flex items-center gap-2">
+                <span id="save-status" class="text-sm text-gray-500"></span>
+                <button id="btn-save" 
+                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium">
+                  {t('lesson_planner.save')}
+                </button>
+              </div>
+            </div>
+
+            <!-- Metadata -->
+            <div class="flex items-center gap-4 text-sm text-gray-600">
+              <div class="flex items-center gap-2">
+                <label class="font-medium">{t('lesson_planner.period')}:</label>
+                <select id="plan-period-type" class="p-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  {PERIOD_TYPES.map(type => (
+                    <option value={type.value}>{type.label}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div id="date-fields" class="flex items-center gap-2">
+                <!-- Dynamic date fields based on period type -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Template Editor -->
+          <div id="template-editor" class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <!-- Template content loads here -->
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="mt-4 flex items-center gap-3">
+            <button id="btn-export-pdf" 
+                    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              {t('lesson_planner.export_pdf')}
+            </button>
+            
+            <button id="btn-export-docx" 
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              {t('lesson_planner.export_docx')}
+            </button>
+            
+            <button id="btn-delete" 
+                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm flex items-center gap-2 ml-auto">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+              {t('lesson_planner.delete')}
+            </button>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="flex items-center justify-center h-full">
+          <div class="text-center">
+            <svg class="w-24 h-24 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No Plan Selected</h3>
+            <p class="text-gray-500 mb-4">Select a plan from the sidebar or create a new one.</p>
+            <button id="btn-create-first" 
+                    class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+              {t('lesson_planner.new_plan')}
+            </button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Client-side Script -->
+  <script>
+    import { 
+      getLessonPlans, 
+      getLessonPlan, 
+      createLessonPlan, 
+      updateLessonPlan, 
+      deleteLessonPlan,
+      searchLessonPlans 
+    } from '../services/lessonPlanApi';
+    import { exportAsPdf, exportAsDocx } from '../lib/exportUtils';
+    import { t } from '../lib/i18n';
+
+    // State
+    let currentPlan = null;
+    let currentData = {};
+    let highlightedCells = [];
+    let allPlans = [];
+    let filteredPlans = [];
+    const classId = document.getElementById('lesson-planner-app').dataset.classId;
+    const initialPlanId = document.getElementById('lesson-planner-app').dataset.planId;
+
+    // DOM Elements
+    const planListEl = document.getElementById('plan-list');
+    const editorContainerEl = document.getElementById('editor-container');
+    const emptyStateEl = document.getElementById('empty-state');
+    const noPlansMessageEl = document.getElementById('no-plans-message');
+    const planTitleEl = document.getElementById('plan-title');
+    const planPeriodTypeEl = document.getElementById('plan-period-type');
+    const templateEditorEl = document.getElementById('template-editor');
+    const saveStatusEl = document.getElementById('save-status');
+    const dateFieldsEl = document.getElementById('date-fields');
+    const searchInputEl = document.getElementById('search-plans');
+    const periodFilterEl = document.getElementById('period-filter');
+
+    // Load plans
+    async function loadPlans() {
+      if (!classId) return;
+      
+      try {
+        allPlans = await getLessonPlans(classId);
+        applyFilters();
+        renderPlanList();
+      } catch (error) {
+        console.error('Failed to load plans:', error);
+      }
+    }
+
+    // Apply filters
+    function applyFilters() {
+      const searchTerm = searchInputEl?.value || '';
+      const periodFilter = periodFilterEl?.value || '';
+      
+      filteredPlans = allPlans.filter(plan => {
+        const matchesSearch = !searchTerm || 
+          plan.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          plan.periodType.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        const matchesPeriod = !periodFilter || plan.periodType === periodFilter;
+        
+        return matchesSearch && matchesPeriod;
+      });
+    }
+
+    // Render plan list
+    function renderPlanList() {
+      if (filteredPlans.length === 0) {
+        planListEl.innerHTML = `
+          <div class="p-4 text-center text-gray-500 text-sm">
+            ${t('lesson_planner.no_plans')}
+          </div>
+        `;
+        return;
+      }
+
+      planListEl.innerHTML = filteredPlans.map(plan => `
+        <div class="plan-item p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${currentPlan?.id === plan.id ? 'bg-blue-50 border-l-4 border-l-blue-600' : ''}" 
+             data-plan-id="${plan.id}">
+          <div class="flex items-start justify-between">
+            <div class="flex-1 min-w-0">
+              <h3 class="font-medium text-gray-900 truncate">${plan.title}</h3>
+              <p class="text-xs text-gray-500 mt-1">
+                <span class="inline-block px-2 py-0.5 bg-gray-100 rounded-full">${getPeriodLabel(plan.periodType)}</span>
+                <span class="ml-2">${new Date(plan.updatedAt).toLocaleDateString()}</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      // Add click handlers
+      planListEl.querySelectorAll('.plan-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const planId = item.dataset.planId;
+          selectPlan(planId);
+        });
+      });
+    }
+
+    // Get period label
+    function getPeriodLabel(type) {
+      const labels = {
+        daily: t('lesson_planner.daily'),
+        weekly: t('lesson_planner.weekly'),
+        monthly: t('lesson_planner.monthly'),
+        yearly: t('lesson_planner.yearly')
+      };
+      return labels[type] || type;
+    }
+
+    // Select plan
+    async function selectPlan(planId) {
+      try {
+        currentPlan = await getLessonPlan(planId);
+        if (!currentPlan) return;
+
+        currentData = currentPlan.data || {};
+        highlightedCells = [];
+
+        // Update UI
+        editorContainerEl.classList.remove('hidden');
+        emptyStateEl.classList.add('hidden');
+        
+        planTitleEl.value = currentPlan.title;
+        planPeriodTypeEl.value = currentPlan.periodType;
+        
+        updateDateFields(currentPlan.periodType);
+        renderTemplate(currentPlan.periodType, currentData);
+        renderPlanList();
+        
+        saveStatusEl.textContent = `${t('lesson_planner.saved_at')} ${new Date(currentPlan.updatedAt).toLocaleTimeString()}`;
+      } catch (error) {
+        console.error('Failed to load plan:', error);
+      }
+    }
+
+    // Update date fields based on period type
+    function updateDateFields(periodType) {
+      if (periodType === 'daily') {
+        dateFieldsEl.innerHTML = `
+          <label class="font-medium">${t('lesson_planner.date')}:</label>
+          <input type="date" id="plan-date" class="p-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        `;
+        const dateInput = document.getElementById('plan-date');
+        if (dateInput && currentData.date) {
+          dateInput.value = currentData.date;
+        }
+      } else if (periodType === 'weekly') {
+        dateFieldsEl.innerHTML = `
+          <label class="font-medium">${t('lesson_planner.from')}:</label>
+          <input type="date" id="plan-from-date" class="p-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <label class="font-medium ml-2">${t('lesson_planner.to')}:</label>
+          <input type="date" id="plan-to-date" class="p-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        `;
+        const fromDateInput = document.getElementById('plan-from-date');
+        const toDateInput = document.getElementById('plan-to-date');
+        if (fromDateInput && currentData.fromDate) fromDateInput.value = currentData.fromDate;
+        if (toDateInput && currentData.toDate) toDateInput.value = currentData.toDate;
+      } else if (periodType === 'monthly') {
+        dateFieldsEl.innerHTML = `
+          <label class="font-medium">${t('lesson_planner.month_year')}:</label>
+          <input type="month" id="plan-month" class="p-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        `;
+        const monthInput = document.getElementById('plan-month');
+        if (monthInput && currentData.month) monthInput.value = currentData.month;
+      } else if (periodType === 'yearly') {
+        dateFieldsEl.innerHTML = `
+          <label class="font-medium">${t('lesson_planner.year')}:</label>
+          <input type="number" id="plan-year" min="2000" max="2100" class="p-1 border border-gray-300 rounded w-24 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        `;
+        const yearInput = document.getElementById('plan-year');
+        if (yearInput && currentData.year) yearInput.value = currentData.year;
+      }
+    }
+
+    // Render template editor
+    function renderTemplate(periodType, data) {
+      // Clear previous content
+      templateEditorEl.innerHTML = '';
+      
+      // Create container for the template
+      const container = document.createElement('div');
+      templateEditorEl.appendChild(container);
+      
+      // Import and use the template renderer
+      import('../lib/templateRenderer').then(({ renderTemplate: render }) => {
+        render({
+          container,
+          periodType,
+          data,
+          onChange: (newData) => {
+            currentData = newData;
+            scheduleAutoSave();
+            
+            // Dispatch event for other listeners
+            window.dispatchEvent(new CustomEvent('template-data-change', {
+              detail: { data: newData }
+            }));
+          }
+        });
+      }).catch(err => {
+        console.error('Failed to load template renderer:', err);
+      });
+    }
+
+    // Save plan
+    async function savePlan() {
+      if (!currentPlan) return;
+      
+      const title = planTitleEl.value.trim();
+      if (!title) {
+        alert('Please enter a title');
+        return;
+      }
+
+      // Collect data from date fields
+      if (currentPlan.periodType === 'daily') {
+        const dateInput = document.getElementById('plan-date');
+        if (dateInput) currentData.date = dateInput.value;
+      } else if (currentPlan.periodType === 'weekly') {
+        const fromDateInput = document.getElementById('plan-from-date');
+        const toDateInput = document.getElementById('plan-to-date');
+        if (fromDateInput) currentData.fromDate = fromDateInput.value;
+        if (toDateInput) currentData.toDate = toDateInput.value;
+      } else if (currentPlan.periodType === 'monthly') {
+        const monthInput = document.getElementById('plan-month');
+        if (monthInput) currentData.month = monthInput.value;
+      } else if (currentPlan.periodType === 'yearly') {
+        const yearInput = document.getElementById('plan-year');
+        if (yearInput) currentData.year = yearInput.value;
+      }
+
+      try {
+        saveStatusEl.textContent = t('lesson_planner.saving');
+        
+        const updated = await updateLessonPlan({
+          id: currentPlan.id,
+          title,
+          data: currentData
+        });
+        
+        if (updated) {
+          currentPlan = updated;
+          saveStatusEl.textContent = `${t('lesson_planner.saved_at')} ${new Date(updated.updatedAt).toLocaleTimeString()}`;
+          
+          // Refresh plan list
+          await loadPlans();
+        }
+      } catch (error) {
+        console.error('Failed to save plan:', error);
+        saveStatusEl.textContent = t('common.error');
+      }
+    }
+
+    // Delete plan
+    async function deletePlan() {
+      if (!currentPlan) return;
+      
+      if (!confirm(t('lesson_planner.confirm_delete'))) {
+        return;
+      }
+
+      try {
+        await deleteLessonPlan(currentPlan.id);
+        currentPlan = null;
+        currentData = {};
+        
+        editorContainerEl.classList.add('hidden');
+        emptyStateEl.classList.remove('hidden');
+        
+        await loadPlans();
+      } catch (error) {
+        console.error('Failed to delete plan:', error);
+      }
+    }
+
+    // Create new plan
+    async function createNewPlan() {
+      if (!classId) {
+        alert('Please select a class first');
+        return;
+      }
+
+      const defaultPeriodType = planPeriodTypeEl.value || 'daily';
+      
+      try {
+        const newPlan = await createLessonPlan({
+          classId,
+          periodType: defaultPeriodType,
+          title: 'Untitled Plan',
+          data: {}
+        });
+        
+        await loadPlans();
+        selectPlan(newPlan.id);
+        
+        // Focus on title field
+        setTimeout(() => {
+          planTitleEl.focus();
+          planTitleEl.select();
+        }, 100);
+      } catch (error) {
+        console.error('Failed to create plan:', error);
+      }
+    }
+
+    // Export functions
+    function handleExportPdf() {
+      if (!currentPlan) return;
+      exportAsPdf(currentPlan);
+    }
+
+    function handleExportDocx() {
+      if (!currentPlan) return;
+      exportAsDocx(currentPlan);
+    }
+
+    // Event listeners
+    document.getElementById('btn-new-plan')?.addEventListener('click', createNewPlan);
+    document.getElementById('btn-create-first')?.addEventListener('click', createNewPlan);
+    document.getElementById('btn-save')?.addEventListener('click', savePlan);
+    document.getElementById('btn-delete')?.addEventListener('click', deletePlan);
+    document.getElementById('btn-export-pdf')?.addEventListener('click', handleExportPdf);
+    document.getElementById('btn-export-docx')?.addEventListener('click', handleExportDocx);
+
+    searchInputEl?.addEventListener('input', () => {
+      applyFilters();
+      renderPlanList();
+    });
+
+    periodFilterEl?.addEventListener('change', () => {
+      applyFilters();
+      renderPlanList();
+    });
+
+    planPeriodTypeEl?.addEventListener('change', async (e) => {
+      if (!currentPlan) return;
+      
+      const newPeriodType = e.target.value;
+      
+      // Update period type in data
+      try {
+        await updateLessonPlan({
+          id: currentPlan.id,
+          data: { ...currentData }
+        });
+        
+        currentPlan.periodType = newPeriodType;
+        updateDateFields(newPeriodType);
+        renderTemplate(newPeriodType, currentData);
+      } catch (error) {
+        console.error('Failed to update period type:', error);
+      }
+    });
+
+    // Auto-save on data change (debounced)
+    let saveTimeout;
+    function scheduleAutoSave() {
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(() => {
+        if (currentPlan) {
+          savePlan();
+        }
+      }, 2000);
+    }
+
+    // Listen for template data changes
+    window.addEventListener('template-data-change', (e) => {
+      currentData = e.detail.data;
+      scheduleAutoSave();
+    });
+
+    // Initialize
+    if (classId) {
+      loadPlans();
+      
+      if (initialPlanId) {
+        selectPlan(initialPlanId);
+      }
+    }
+  </script>
+
+  <style>
+    #lesson-planner-app {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+    
+    .plan-item:hover {
+      background-color: #f9fafb;
+    }
+    
+    .plan-item.active {
+      background-color: #eff6ff;
+      border-left-color: #2563eb;
+    }
+    
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      ring: 2px;
+      ring-color: #3b82f6;
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    /* Scrollbar styling */
+    #plan-list::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    #plan-list::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    
+    #plan-list::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 3px;
+    }
+    
+    #plan-list::-webkit-scrollbar-thumb:hover {
+      background: #a1a1a1;
+    }
+  </style>
+</MainLayout>
