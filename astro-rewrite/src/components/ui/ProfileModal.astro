@@ -1,0 +1,1068 @@
+---
+import type { User } from '../types';
+import { AVATAR_OPTIONS, avatarByCharacter, boringAvatar, fallbackInitialsDataUrl } from '../utils/avatar';
+
+interface Props {
+  user: User;
+  onSave: (data: { id: string; title: string; name: string; avatar: string; password?: string; oldPassword?: string }) => Promise<void>;
+  onClose: () => void;
+}
+
+const { user, onSave, onClose } = Astro.props;
+
+// Build-time defaults
+const initialTitle = user.title || '';
+const initialName = user.name || '';
+const initialAvatar = user.avatar || boringAvatar(user.name || user.email);
+
+// Find selected character based on current avatar
+let selectedCharacter = '';
+if (user.avatar) {
+  for (const opt of AVATAR_OPTIONS) {
+    if (user.avatar === avatarByCharacter(opt.name)) {
+      selectedCharacter = opt.name;
+      break;
+    }
+  }
+}
+---
+
+<div class="profile-modal-overlay" role="presentation">
+  <div 
+    class="profile-modal-content animated-modal-content modal-animate-center" 
+    role="dialog" 
+    aria-modal="true" 
+    aria-labelledby="profile-modal-title"
+    data-glass-dialog="true"
+  >
+    <!-- Top accent -->
+    <div class="modal-top-accent"></div>
+
+    <!-- Header -->
+    <div class="modal-header">
+      <button 
+        type="button" 
+        class="close-btn" 
+        aria-label="Close"
+        onclick="onClose()"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+      
+      <div class="header-content">
+        <span class="header-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+        </span>
+        <div>
+          <h2 id="profile-modal-title">Edit Profile</h2>
+          <p>Update your personal information and security settings</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <form class="modal-form" id="profile-form">
+      <!-- Avatar Section -->
+      <div class="avatar-section" id="avatar-section">
+        <button type="button" class="avatar-button" id="avatar-trigger">
+          <div class="avatar-ring">
+            <img 
+              src={initialAvatar} 
+              alt="" 
+              class="avatar-image"
+              id="current-avatar"
+            />
+          </div>
+          <span class="camera-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+          </span>
+        </button>
+        
+        <p class="avatar-label">Change Avatar</p>
+        
+        <input 
+          type="file" 
+          id="profile-avatar-upload" 
+          accept="image/*" 
+          class="hidden-input"
+        />
+        
+        <button 
+          type="button" 
+          class="upload-btn"
+          id="upload-trigger"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+          <span id="upload-text">Upload Photo</span>
+        </button>
+        
+        <button 
+          type="button" 
+          class="remove-photo-btn hidden"
+          id="remove-photo"
+        >
+          Remove
+        </button>
+      </div>
+
+      <!-- Avatar Picker Portal (shown via JS) -->
+      <div class="avatar-picker-portal hidden" id="avatar-picker">
+        <div class="avatar-picker" onclick="event.stopPropagation()">
+          <div class="picker-title">Pick Character</div>
+          <div class="character-grid">
+            ${AVATAR_OPTIONS.map(char => `
+              <button 
+                type="button" 
+                class="character-btn ${selectedCharacter === char.name ? 'selected' : ''}"
+                data-character="${char.name}"
+                title="${char.label}"
+              >
+                <img src="${avatarByCharacter(char.name)}" alt="" class="character-thumb" />
+                <span class="character-name">${char.name}</span>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <!-- Identity Section -->
+      <div class="section-label">
+        <span class="label-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </span>
+        <span>Identity</span>
+      </div>
+
+      <div class="name-fields">
+        <div class="title-field">
+          <label for="profile-title" class="field-label">Title</label>
+          <select id="profile-title" class="field-input" value={initialTitle}>
+            <option value="">—</option>
+            <option value="Mr.">Mr.</option>
+            <option value="Mrs.">Mrs.</option>
+            <option value="Miss">Miss</option>
+            <option value="Ms.">Ms.</option>
+            <option value="Dr.">Dr.</option>
+            <option value="Prof.">Prof.</option>
+          </select>
+        </div>
+        
+        <div class="name-field">
+          <label for="profile-name" class="field-label">Full Name</label>
+          <input 
+            id="profile-name" 
+            type="text" 
+            class="field-input" 
+            placeholder="Full Name"
+            value={initialName}
+            autocomplete="name"
+          />
+        </div>
+      </div>
+
+      <!-- Email Section -->
+      <div class="section-label">
+        <span class="label-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+        </span>
+        <span>Email</span>
+      </div>
+
+      <div class="email-field readonly">
+        <input
+          type="text"
+          class="field-input readonly"
+          placeholder="Email"
+          aria-label="Email"
+          value={user.email || ''}
+          readonly
+        />
+        <span class="lock-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </span>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <!-- Security Section -->
+      <div class="section-label">
+        <span class="label-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M6 12a6 6 0 0 1 6-6v2a4 4 0 0 0-4 4Z"/><path d="M18 12a6 6 0 0 0-6-6v2a4 4 0 0 1 4 4Z"/></svg>
+        </span>
+        <span>Security</span>
+      </div>
+
+      <p class="password-hint">Leave blank to keep your current password</p>
+
+      <div class="password-fields">
+        <div class="password-field">
+          <label for="profile-old-pw" class="field-label">Current Password</label>
+          <input 
+            id="profile-old-pw" 
+            type="password" 
+            class="field-input" 
+            placeholder="Current Password"
+            autocomplete="current-password"
+          />
+        </div>
+        
+        <div class="password-field">
+          <label for="profile-new-pw" class="field-label">New Password</label>
+          <input 
+            id="profile-new-pw" 
+            type="password" 
+            class="field-input" 
+            placeholder="New Password"
+            autocomplete="new-password"
+          />
+        </div>
+        
+        <div class="password-field">
+          <label for="profile-confirm-pw" class="field-label">Confirm New Password</label>
+          <input 
+            id="profile-confirm-pw" 
+            type="password" 
+            class="field-input" 
+            placeholder="Confirm New Password"
+            autocomplete="new-password"
+          />
+        </div>
+      </div>
+
+      <!-- Error Message -->
+      <div class="error-message hidden" id="error-msg" role="alert"></div>
+
+      <!-- Submit Button -->
+      <button 
+        type="submit" 
+        class="submit-btn"
+        id="submit-btn"
+        data-enter-submit
+      >
+        Save Changes
+      </button>
+    </form>
+  </div>
+</div>
+
+<style>
+  /* CSS Variables for theming */
+  .profile-modal-overlay {
+    --overlay-bg: rgba(15, 23, 42, 0.14);
+    --shell-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 50%, rgba(241, 245, 249, 0.98) 100%);
+    --shell-border: rgba(203, 213, 225, 0.4);
+    --heading-color: #0f172a;
+    --sub-color: #64748b;
+    --field-bg: #f8fafc;
+    --field-border: #e2e8f0;
+    --field-border-focus: #6366f1;
+    --chip-bg: rgba(99, 102, 241, 0.1);
+    --section-line: rgba(15, 23, 42, 0.08);
+    --picker-bg: rgba(255, 255, 255, 0.82);
+    --picker-border: #e2e8f0;
+    --error-bg: #fef2f2;
+    --error-text: #b91c1c;
+    
+    position: fixed;
+    inset: 0;
+    background: var(--overlay-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 20px 16px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .profile-modal-overlay {
+      --overlay-bg: rgba(15, 23, 42, 0.38);
+      --shell-bg: linear-gradient(145deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 50%, rgba(30, 41, 59, 0.95) 100%);
+      --shell-border: rgba(71, 85, 105, 0.3);
+      --heading-color: #f1f5f9;
+      --sub-color: #94a3b8;
+      --field-bg: rgba(15, 23, 42, 0.55);
+      --field-border: rgba(148, 163, 184, 0.2);
+      --field-border-focus: rgba(129, 140, 248, 0.55);
+      --chip-bg: rgba(99, 102, 241, 0.15);
+      --section-line: rgba(148, 163, 184, 0.12);
+      --picker-bg: rgba(30, 41, 59, 0.55);
+      --picker-border: rgba(148, 163, 184, 0.25);
+      --error-bg: rgba(239, 68, 68, 0.12);
+      --error-text: #fca5a5;
+    }
+  }
+
+  .profile-modal-content {
+    background: var(--shell-bg);
+    border: 1px solid var(--shell-border);
+    border-radius: 22px;
+    width: min(100%, 440px);
+    max-width: 440px;
+    max-height: min(90vh, 640px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    backdrop-filter: blur(22px) saturate(1.2);
+    -webkit-backdrop-filter: blur(22px) saturate(1.2);
+    box-shadow: 
+      0 0 0 1px rgba(255,255,255,0.8) inset,
+      0 20px 40px -12px rgba(0, 0, 0, 0.08),
+      0 0 60px -20px rgba(0, 0, 0, 0.04);
+  }
+
+  .modal-top-accent {
+    height: 4px;
+    width: 100%;
+    flex-shrink: 0;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6 45%, #22c55e);
+    opacity: 0.95;
+  }
+
+  .modal-header {
+    padding: 20px 22px 16px;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .close-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid var(--field-border);
+    background: rgba(248, 250, 252, 0.9);
+    color: var(--sub-color);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s, transform 0.15s;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .close-btn {
+      background: rgba(15, 23, 42, 0.5);
+    }
+  }
+
+  .close-btn:hover {
+    transform: scale(1.05);
+  }
+
+  .header-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding-right: 44px;
+  }
+
+  .header-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(34, 197, 94, 0.15));
+    color: #5b21b6;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .header-icon {
+      color: #c4b5fd;
+    }
+  }
+
+  .modal-header h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--heading-color);
+  }
+
+  .modal-header p {
+    margin: 6px 0 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--sub-color);
+    max-width: 300px;
+  }
+
+  .modal-form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0 22px 22px;
+    gap: 0;
+  }
+
+  .avatar-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 0 20px;
+    position: relative;
+    overflow: visible;
+  }
+
+  .avatar-button {
+    position: relative;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-radius: 50%;
+  }
+
+  .avatar-ring {
+    padding: 3px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #a855f7 50%, #22c55e);
+    box-shadow: 0 12px 32px rgba(99, 102, 241, 0.2);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .avatar-ring {
+      box-shadow: 0 12px 40px rgba(99, 102, 241, 0.25);
+    }
+  }
+
+  .avatar-image {
+    width: 92px;
+    height: 92px;
+    border-radius: 50%;
+    display: block;
+    object-fit: cover;
+    background: #f1f5f9;
+    border: 3px solid #fff;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .avatar-image {
+      background: #0f172a;
+      border: 3px solid #1e293b;
+    }
+  }
+
+  .camera-badge {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.45);
+    border: 2px solid #fff;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .camera-badge {
+      border: 2px solid #1e293b;
+    }
+  }
+
+  .avatar-label {
+    margin: 14px 0 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--heading-color);
+  }
+
+  .hidden-input {
+    display: none;
+  }
+
+  .upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 10px 18px;
+    border-radius: 12px;
+    border: 1px solid var(--field-border);
+    background: var(--field-bg);
+    color: var(--heading-color);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.2s;
+  }
+
+  .upload-btn:hover {
+    transform: scale(1.03);
+  }
+
+  .remove-photo-btn {
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--sub-color);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .remove-photo-btn.hidden {
+    display: none;
+  }
+
+  /* Avatar Picker Portal */
+  .avatar-picker-portal {
+    position: fixed;
+    z-index: 100001;
+    padding: 14px;
+  }
+
+  .avatar-picker {
+    background: var(--picker-bg);
+    border: 1px solid var(--picker-border);
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
+    backdrop-filter: blur(18px) saturate(1.15);
+    -webkit-backdrop-filter: blur(18px) saturate(1.15);
+    padding: 14px;
+    max-width: 360px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .avatar-picker {
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+    }
+  }
+
+  .avatar-picker-portal.hidden {
+    display: none;
+  }
+
+  .picker-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--sub-color);
+    margin-bottom: 10px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .character-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    width: 100%;
+  }
+
+  .character-btn {
+    position: relative;
+    background: #f8fafc;
+    border: 2px solid var(--field-border);
+    border-radius: 12px;
+    padding: 6px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    outline: none;
+    transition: transform 0.15s, box-shadow 0.2s;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .character-btn {
+      background: rgba(15, 23, 42, 0.6);
+    }
+  }
+
+  .character-btn.selected {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  }
+
+  .character-btn:hover {
+    transform: scale(1.06);
+  }
+
+  .character-thumb {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    object-fit: cover;
+  }
+
+  .character-btn:hover .character-thumb {
+    transform: scale(4);
+    position: absolute;
+    bottom: 44px;
+    left: 50%;
+    margin-left: -20px;
+    z-index: 20;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+  }
+
+  .character-name {
+    font-size: 7px;
+    color: var(--sub-color);
+    text-transform: capitalize;
+    font-weight: 600;
+  }
+
+  .section-divider {
+    height: 1px;
+    background: var(--section-line);
+    margin: 4px 0 18px;
+  }
+
+  .section-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .label-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: var(--chip-bg);
+    color: #4f46e5;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .label-icon {
+      color: #a5b4fc;
+    }
+  }
+
+  .section-label span:last-child {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--heading-color);
+  }
+
+  .name-fields {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .title-field {
+    flex: 0 0 88px;
+  }
+
+  .name-field {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .field-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--sub-color);
+    margin-bottom: 6px;
+  }
+
+  .field-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--field-border);
+    font-size: 15px;
+    outline: none;
+    background: var(--field-bg);
+    color: var(--heading-color);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .field-input:focus {
+    border-color: var(--field-border-focus);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  }
+
+  .field-input.readonly {
+    opacity: 0.85;
+    cursor: not-allowed;
+  }
+
+  .email-field {
+    position: relative;
+    margin-bottom: 16px;
+  }
+
+  .email-field.readonly .lock-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--sub-color);
+    pointer-events: none;
+  }
+
+  .password-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .password-hint {
+    margin: -6px 0 14px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--sub-color);
+  }
+
+  .error-message {
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--error-bg);
+    color: var(--error-text);
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 14px;
+    border: 1px solid #fecaca;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .error-message {
+      border: 1px solid rgba(248, 113, 113, 0.25);
+    }
+  }
+
+  .error-message.hidden {
+    display: none;
+  }
+
+  .submit-btn {
+    margin-top: auto;
+    width: 100%;
+    padding: 14px 20px;
+    border-radius: 14px;
+    border: none;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    background: linear-gradient(135deg, #6366f1 0%, #7c3aed 50%, #4f46e5 100%);
+    color: #ffffff;
+    box-shadow: 0 10px 28px -6px rgba(99, 102, 241, 0.55);
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
+  }
+
+  .submit-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+
+  .submit-btn:disabled {
+    cursor: wait;
+    opacity: 0.75;
+  }
+</style>
+
+<script>
+  (function() {
+    // State
+    let selectedCharacter = '${selectedCharacter}';
+    let uploadedAvatar = null;
+    let showAvatarPicker = false;
+    let hoveredChar = null;
+    let error = '';
+    let saving = false;
+    
+    const initialAvatar = '${initialAvatar}';
+    const userName = '${initialName}';
+    
+    // Elements
+    const overlay = document.querySelector('.profile-modal-overlay');
+    const modalContent = document.querySelector('.profile-modal-content');
+    const avatarSection = document.getElementById('avatar-section');
+    const avatarTrigger = document.getElementById('avatar-trigger');
+    const currentAvatarImg = document.getElementById('current-avatar');
+    const fileInput = document.getElementById('profile-avatar-upload');
+    const uploadTrigger = document.getElementById('upload-trigger');
+    const uploadText = document.getElementById('upload-text');
+    const removePhotoBtn = document.getElementById('remove-photo');
+    const avatarPicker = document.getElementById('avatar-picker');
+    const form = document.getElementById('profile-form');
+    const errorMsg = document.getElementById('error-msg');
+    const submitBtn = document.getElementById('submit-btn');
+    
+    // Get dropdown position
+    function getDropdownPosition() {
+      if (!avatarSection) return { top: 0, left: 0 };
+      
+      const rect = avatarSection.getBoundingClientRect();
+      const pickerW = Math.min(360, window.innerWidth - 24);
+      let left = rect.left + rect.width / 2 - pickerW / 2;
+      left = Math.max(12, Math.min(left, window.innerWidth - pickerW - 12));
+      const top = Math.min(rect.bottom + 12, window.innerHeight - 280);
+      
+      return { top, left, width: pickerW };
+    }
+    
+    // Update avatar display
+    function updateAvatarDisplay() {
+      let avatarToDisplay = initialAvatar;
+      
+      if (selectedCharacter) {
+        // Character avatars are handled by data attributes
+        const charBtn = document.querySelector(`[data-character="${selectedCharacter}"]`);
+        if (charBtn) {
+          const thumb = charBtn.querySelector('.character-thumb');
+          if (thumb) avatarToDisplay = thumb.src;
+        }
+      }
+      
+      if (uploadedAvatar) {
+        avatarToDisplay = uploadedAvatar;
+      }
+      
+      currentAvatarImg.src = avatarToDisplay;
+      
+      // Update upload button text
+      uploadText.textContent = uploadedAvatar ? 'Change Photo' : 'Upload Photo';
+      
+      // Show/hide remove button
+      if (uploadedAvatar) {
+        removePhotoBtn.classList.remove('hidden');
+      } else {
+        removePhotoBtn.classList.add('hidden');
+      }
+    }
+    
+    // Handle avatar click
+    avatarTrigger?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showAvatarPicker = !showAvatarPicker;
+      
+      if (showAvatarPicker && avatarSection) {
+        const pos = getDropdownPosition();
+        avatarPicker.style.top = pos.top + 'px';
+        avatarPicker.style.left = pos.left + 'px';
+        avatarPicker.style.width = pos.width + 'px';
+        avatarPicker.classList.remove('hidden');
+      } else {
+        avatarPicker.classList.add('hidden');
+      }
+    });
+    
+    // Handle file upload
+    uploadTrigger?.addEventListener('click', () => {
+      fileInput?.click();
+    });
+    
+    fileInput?.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      
+      if (file.size > 1024 * 1024) {
+        showError('Image too large (max 1MB)');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = () => {
+        uploadedAvatar = reader.result;
+        selectedCharacter = '';
+        updateAvatarDisplay();
+        // Clear character selection visually
+        document.querySelectorAll('.character-btn').forEach(btn => {
+          btn.classList.remove('selected');
+        });
+      };
+      reader.onerror = () => showError('Failed to read image file');
+      reader.readAsDataURL(file);
+    });
+    
+    // Handle remove photo
+    removePhotoBtn?.addEventListener('click', () => {
+      uploadedAvatar = null;
+      selectedCharacter = '';
+      updateAvatarDisplay();
+      fileInput.value = '';
+    });
+    
+    // Handle character selection
+    document.querySelectorAll('.character-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const character = btn.getAttribute('data-character');
+        
+        // Update visual selection
+        document.querySelectorAll('.character-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        
+        selectedCharacter = character;
+        uploadedAvatar = null;
+        showAvatarPicker = false;
+        avatarPicker.classList.add('hidden');
+        
+        updateAvatarDisplay();
+      });
+      
+      // Hover effect for preview
+      btn.addEventListener('mouseenter', () => {
+        hoveredChar = btn.getAttribute('data-character');
+      });
+      
+      btn.addEventListener('mouseleave', () => {
+        hoveredChar = null;
+      });
+    });
+    
+    // Close picker when clicking outside
+    overlay?.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        onClose();
+      }
+    });
+    
+    modalContent?.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+    
+    // Show error
+    function showError(message) {
+      error = message;
+      errorMsg.textContent = message;
+      errorMsg.classList.remove('hidden');
+    }
+    
+    // Hide error
+    function hideError() {
+      error = '';
+      errorMsg.classList.add('hidden');
+    }
+    
+    // Handle form submission
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideError();
+      
+      const nameInput = document.getElementById('profile-name');
+      const titleSelect = document.getElementById('profile-title');
+      const oldPwInput = document.getElementById('profile-old-pw');
+      const newPwInput = document.getElementById('profile-new-pw');
+      const confirmPwInput = document.getElementById('profile-confirm-pw');
+      
+      const name = nameInput?.value || '';
+      const title = titleSelect?.value || '';
+      const oldPassword = oldPwInput?.value || '';
+      const password = newPwInput?.value || '';
+      const confirm = confirmPwInput?.value || '';
+      
+      // Validation
+      if (password && password !== confirm) {
+        showError('Passwords do not match');
+        return;
+      }
+      
+      if (!name.trim()) {
+        showError('Name cannot be empty');
+        return;
+      }
+      
+      // Determine avatar to save
+      let avatarToSave = initialAvatar;
+      if (selectedCharacter) {
+        // Get avatar URL from selected character
+        const charBtn = document.querySelector(`[data-character="${selectedCharacter}"]`);
+        if (charBtn) {
+          const thumb = charBtn.querySelector('.character-thumb');
+          if (thumb) avatarToSave = thumb.src;
+        }
+      }
+      if (uploadedAvatar) {
+        avatarToSave = uploadedAvatar;
+      }
+      
+      // Save
+      saving = true;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving...';
+      
+      try {
+        await onSave({
+          id: '${user.id}',
+          title,
+          name,
+          avatar: avatarToSave,
+          password: password || undefined,
+          oldPassword: oldPassword || undefined
+        });
+        
+        if (password) {
+          // Dispatch toast event
+          window.dispatchEvent(new CustomEvent('toast', {
+            detail: { message: 'Password changed successfully!', type: 'success' }
+          }));
+        }
+        
+        if (title !== '${initialTitle}' || name !== '${initialName}' || avatarToSave !== '${initialAvatar}') {
+          window.dispatchEvent(new CustomEvent('toast', {
+            detail: { message: 'Profile updated successfully!', type: 'success' }
+          }));
+        }
+        
+        onClose();
+      } catch (err) {
+        showError(err.message || 'Failed to update profile');
+        window.dispatchEvent(new CustomEvent('toast', {
+          detail: { message: err.message || 'Failed to update profile', type: 'error' }
+        }));
+      } finally {
+        saving = false;
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save Changes';
+      }
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !showAvatarPicker) {
+        onClose();
+      }
+      
+      if (e.key === 'Enter' && e.target.hasAttribute('data-enter-submit')) {
+        form?.requestSubmit();
+      }
+    });
+    
+    // Placeholder functions for parent communication
+    window.onClose = function() {
+      window.dispatchEvent(new CustomEvent('profile-modal-close'));
+    };
+    
+    window.onSave = async function(data) {
+      window.dispatchEvent(new CustomEvent('profile-save', { detail: data }));
+      // In real usage, this would be provided by parent component
+      return Promise.resolve();
+    };
+    
+    // Initialize
+    updateAvatarDisplay();
+  })();
+</script>

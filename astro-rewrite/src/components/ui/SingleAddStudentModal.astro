@@ -1,0 +1,777 @@
+---
+import { generateAvatarSetList, getAvatarFromSet } from '../utils/bulkAvatarSets';
+
+interface Props {
+  onClose: () => void;
+  onSave: (student: { name: string; gender: string; avatar: string; avatarSetId: string | null; avatarIndex: number | null }) => void;
+}
+
+const { onClose, onSave } = Astro.props;
+
+// Generate avatar list at build time
+const avatarList = generateAvatarSetList('dicebear-adventurers', 50) || [];
+const initialSelectedIndex = 0;
+const initialAvatar = getAvatarFromSet('dicebear-adventurers', initialSelectedIndex);
+---
+
+<div class="modal-overlay" role="presentation">
+  <div class="modal-content animated-modal-content modal-animate-center">
+    <!-- Header -->
+    <div class="modal-header">
+      <h3>Add A Student</h3>
+      <button 
+        type="button" 
+        class="close-btn" 
+        aria-label="Close"
+        id="close-btn"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- Avatar Section -->
+    <div class="avatar-section" id="avatar-section">
+      <div class="avatar-display" id="avatar-trigger">
+        <img 
+          src={initialAvatar} 
+          alt="Avatar" 
+          class="avatar-image"
+          id="current-avatar"
+        />
+        <div class="camera-badge">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+        </div>
+      </div>
+      
+      <p class="change-avatar-text" id="change-avatar-text">Change Avatar</p>
+      
+      <input 
+        type="file" 
+        id="avatar-upload" 
+        accept="image/*" 
+        class="hidden-input"
+      />
+      
+      <div class="button-row">
+        <button 
+          type="button" 
+          class="upload-btn"
+          id="upload-btn"
+        >
+          Upload Photo
+        </button>
+        <button 
+          type="button" 
+          class="remove-btn hidden"
+          id="remove-btn"
+        >
+          Remove
+        </button>
+      </div>
+    </div>
+
+    <!-- Avatar Picker Portal -->
+    <div class="avatar-picker-portal hidden" id="avatar-picker">
+      <div class="avatar-picker" onclick="event.stopPropagation()">
+        <div class="picker-header">
+          <span class="picker-title">Adventurers Avatars</span>
+          <button 
+            type="button" 
+            class="picker-close"
+            id="picker-close"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+        </div>
+        
+        <div class="avatar-grid">
+          ${avatarList.map((avatar, idx) => `
+            <button 
+              type="button" 
+              class="avatar-option ${idx === initialSelectedIndex ? 'selected' : ''}"
+              data-index="${idx}"
+              data-avatar="${avatar.url}"
+            >
+              <img src="${avatar.url}" alt="" class="avatar-thumb" />
+              <span class="avatar-number">${idx + 1}</span>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- Name Input -->
+    <input
+      type="text"
+      id="student-name"
+      class="name-input"
+      placeholder="Student name"
+      autofocus
+    />
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+      <button 
+        type="button" 
+        class="cancel-btn"
+        id="cancel-btn"
+      >
+        Cancel
+      </button>
+      <button 
+        type="button" 
+        class="save-btn"
+        id="save-btn"
+        disabled
+      >
+        Add Student
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Modal Overlay */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    padding: 20px;
+  }
+
+  .modal-content {
+    background: white;
+    border-radius: 24px;
+    width: 90%;
+    max-width: 500px;
+    padding: 24px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .modal-content {
+      background: rgba(30, 41, 59, 0.95);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+    
+    .modal-header h3 {
+      color: #f1f5f9;
+    }
+    
+    .close-btn {
+      background: rgba(51, 65, 85, 0.5);
+      color: #94a3b8;
+    }
+    
+    .name-input {
+      background: rgba(15, 23, 42, 0.5);
+      border-color: rgba(148, 163, 184, 0.2);
+      color: #f1f5f9;
+    }
+    
+    .cancel-btn {
+      background: rgba(51, 65, 85, 0.5);
+      color: #94a3b8;
+      border-color: rgba(148, 163, 184, 0.2);
+    }
+    
+    .avatar-picker {
+      background: rgba(30, 41, 59, 0.96);
+      border-color: rgba(148, 163, 184, 0.25);
+    }
+    
+    .picker-title {
+      color: #e2e8f0;
+    }
+    
+    .avatar-option {
+      background: rgba(15, 23, 42, 0.6);
+      border-color: rgba(148, 163, 184, 0.2);
+    }
+    
+    .avatar-number {
+      color: #94a3b8;
+    }
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+  }
+
+  .close-btn {
+    background: #f1f5f9;
+    border: none;
+    cursor: pointer;
+    color: #64748b;
+    padding: 8px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+
+  .close-btn:hover {
+    transform: rotate(90deg) scale(1.1);
+    background: #e2e8f0;
+  }
+
+  .avatar-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+    overflow: visible;
+    position: relative;
+  }
+
+  .avatar-display {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: #F8FAFC;
+    border: 3px solid #E2E8F0;
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .avatar-display:hover {
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+  }
+
+  .avatar-image {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .camera-badge {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background: #4CAF50;
+    color: white;
+    padding: 6px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .change-avatar-text {
+    margin-top: 8px;
+    text-align: center;
+    font-size: 13px;
+    color: #64748B;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.2s ease;
+  }
+
+  .change-avatar-text:hover {
+    color: #4CAF50;
+  }
+
+  .hidden-input {
+    display: none;
+  }
+
+  .button-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 12px;
+  }
+
+  .upload-btn {
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    transition: all 0.2s ease;
+  }
+
+  .upload-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+  }
+
+  .remove-btn {
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 13px;
+    color: #64748b;
+    transition: all 0.2s ease;
+  }
+
+  .remove-btn:hover {
+    background: #f1f5f9;
+  }
+
+  .remove-btn.hidden {
+    display: none;
+  }
+
+  /* Avatar Picker Portal */
+  .avatar-picker-portal {
+    position: fixed;
+    z-index: 100001;
+    padding: 0;
+  }
+
+  .avatar-picker {
+    background: white;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    padding: 16px;
+    width: 380px;
+    max-height: 400px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .avatar-picker-portal.hidden {
+    display: none;
+  }
+
+  .picker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .picker-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+  }
+
+  .picker-close {
+    background: #f1f5f9;
+    border: none;
+    cursor: pointer;
+    color: #64748b;
+    padding: 6px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+
+  .picker-close:hover {
+    background: #e2e8f0;
+  }
+
+  .avatar-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    justify-items: center;
+    width: 100%;
+    overflow-y: auto;
+    max-height: 320px;
+    padding-right: 4px;
+  }
+
+  .avatar-grid::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .avatar-grid::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+  }
+
+  .avatar-grid::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+  }
+
+  .avatar-grid::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
+  .avatar-option {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    position: relative;
+  }
+
+  .avatar-option:hover {
+    border-color: #4CAF50;
+    transform: scale(1.08);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.15);
+  }
+
+  .avatar-option.selected {
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+  }
+
+  .avatar-thumb {
+    width: 56px;
+    height: 56px;
+    border-radius: 6px;
+    object-fit: cover;
+  }
+
+  .avatar-number {
+    font-size: 8px;
+    color: #94a3b8;
+    font-weight: 600;
+  }
+
+  /* Name Input */
+  .name-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 16px;
+    outline: none;
+    font-size: 14px;
+    color: #334155;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .name-input:focus {
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+  }
+
+  .name-input::placeholder {
+    color: #94a3b8;
+  }
+
+  /* Action Buttons */
+  .action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .cancel-btn {
+    padding: 14px 20px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    flex: 1;
+    transition: all 0.2s ease;
+  }
+
+  .cancel-btn:hover {
+    background: #f1f5f9;
+  }
+
+  .save-btn {
+    padding: 14px 20px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    flex: 1;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .save-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+  }
+
+  .save-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+</style>
+
+<script>
+  (function() {
+    // State
+    let selectedAvatarIndex = ${initialSelectedIndex};
+    let customPhoto = null;
+    let showAvatarPicker = false;
+    let studentName = '';
+    
+    const initialAvatar = '${initialAvatar}';
+    
+    // Elements
+    const overlay = document.querySelector('.modal-overlay');
+    const modalContent = document.querySelector('.modal-content');
+    const avatarSection = document.getElementById('avatar-section');
+    const avatarTrigger = document.getElementById('avatar-trigger');
+    const currentAvatarImg = document.getElementById('current-avatar');
+    const changeAvatarText = document.getElementById('change-avatar-text');
+    const fileInput = document.getElementById('avatar-upload');
+    const uploadBtn = document.getElementById('upload-btn');
+    const removeBtn = document.getElementById('remove-btn');
+    const avatarPicker = document.getElementById('avatar-picker');
+    const pickerClose = document.getElementById('picker-close');
+    const closeBtn = document.getElementById('close-btn');
+    const cancelBtn = document.getElementById('cancel-btn');
+    const saveBtn = document.getElementById('save-btn');
+    const nameInput = document.getElementById('student-name');
+    
+    // Get dropdown position
+    function getDropdownPosition() {
+      if (!avatarSection) return { top: 0, left: 0 };
+      const rect = avatarSection.getBoundingClientRect();
+      return {
+        top: rect.top - 200,
+        left: rect.left + rect.width / 2 - 190
+      };
+    }
+    
+    // Update avatar display
+    function updateAvatarDisplay() {
+      if (customPhoto) {
+        currentAvatarImg.src = customPhoto;
+        uploadBtn.textContent = 'Change Photo';
+        removeBtn.classList.remove('hidden');
+      } else {
+        const selectedOption = document.querySelector(`[data-index="${selectedAvatarIndex}"]`);
+        if (selectedOption) {
+          const avatarUrl = selectedOption.getAttribute('data-avatar');
+          currentAvatarImg.src = avatarUrl;
+        }
+        uploadBtn.textContent = 'Upload Photo';
+        removeBtn.classList.add('hidden');
+      }
+    }
+    
+    // Update visual selection
+    function updateSelectionVisual() {
+      document.querySelectorAll('.avatar-option').forEach(opt => {
+        opt.classList.remove('selected');
+      });
+      
+      const selectedOption = document.querySelector(`[data-index="${selectedAvatarIndex}"]`);
+      if (selectedOption) {
+        selectedOption.classList.add('selected');
+      }
+    }
+    
+    // Toggle avatar picker
+    function toggleAvatarPicker() {
+      showAvatarPicker = !showAvatarPicker;
+      
+      if (showAvatarPicker && avatarSection) {
+        const pos = getDropdownPosition();
+        avatarPicker.style.top = pos.top + 'px';
+        avatarPicker.style.left = pos.left + 'px';
+        avatarPicker.classList.remove('hidden');
+      } else {
+        avatarPicker.classList.add('hidden');
+      }
+    }
+    
+    // Validate and update save button
+    function validateForm() {
+      const canSave = studentName.trim().length > 0;
+      saveBtn.disabled = !canSave;
+      return canSave;
+    }
+    
+    // Handle avatar trigger click
+    avatarTrigger?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleAvatarPicker();
+    });
+    
+    changeAvatarText?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleAvatarPicker();
+    });
+    
+    // Handle upload button
+    uploadBtn?.addEventListener('click', () => {
+      fileInput?.click();
+    });
+    
+    // Handle file upload
+    fileInput?.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      
+      if (file.size > 2 * 1024 * 1024) {
+        window.dispatchEvent(new CustomEvent('toast', {
+          detail: { message: 'Image too large. Max 2MB.', type: 'error' }
+        }));
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = () => {
+        customPhoto = reader.result;
+        updateAvatarDisplay();
+        
+        // Clear avatar selection
+        selectedAvatarIndex = 0;
+        updateSelectionVisual();
+      };
+      reader.readAsDataURL(file);
+    });
+    
+    // Handle remove photo
+    removeBtn?.addEventListener('click', () => {
+      customPhoto = null;
+      updateAvatarDisplay();
+      fileInput.value = '';
+    });
+    
+    // Handle avatar option selection
+    document.querySelectorAll('.avatar-option').forEach(option => {
+      option.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const index = parseInt(option.getAttribute('data-index'));
+        selectedAvatarIndex = index;
+        customPhoto = null;
+        showAvatarPicker = false;
+        avatarPicker.classList.add('hidden');
+        
+        updateAvatarDisplay();
+        updateSelectionVisual();
+      });
+    });
+    
+    // Close picker
+    pickerClose?.addEventListener('click', () => {
+      showAvatarPicker = false;
+      avatarPicker.classList.add('hidden');
+    });
+    
+    // Handle name input
+    nameInput?.addEventListener('input', (e) => {
+      studentName = e.target.value;
+      validateForm();
+    });
+    
+    // Close handlers
+    closeBtn?.addEventListener('click', onClose);
+    cancelBtn?.addEventListener('click', onClose);
+    
+    overlay?.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        onClose();
+      }
+    });
+    
+    modalContent?.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+    
+    // Handle save
+    saveBtn?.addEventListener('click', () => {
+      if (!validateForm()) {
+        window.dispatchEvent(new CustomEvent('toast', {
+          detail: { message: 'Please enter a student name', type: 'error' }
+        }));
+        return;
+      }
+      
+      // Detect gender from name (simple heuristic)
+      const nameLower = studentName.toLowerCase();
+      let gender = 'other';
+      if (/(she|her|hers|herself)$/.test(nameLower) || /(a|e|i|y)$/i.test(studentName)) {
+        gender = 'female';
+      } else if (/(he|him|his|himself)$/.test(nameLower) || /^[a-m]/i.test(studentName)) {
+        gender = 'male';
+      }
+      
+      // Get avatar URL
+      let avatarUrl = initialAvatar;
+      if (customPhoto) {
+        avatarUrl = customPhoto;
+      } else {
+        const selectedOption = document.querySelector(`[data-index="${selectedAvatarIndex}"]`);
+        if (selectedOption) {
+          avatarUrl = selectedOption.getAttribute('data-avatar');
+        }
+      }
+      
+      const student = {
+        name: studentName.trim(),
+        gender: gender,
+        avatar: avatarUrl,
+        avatarSetId: customPhoto ? null : 'dicebear-adventurers',
+        avatarIndex: customPhoto ? null : selectedAvatarIndex
+      };
+      
+      // Dispatch save event
+      window.dispatchEvent(new CustomEvent('student-save', { detail: student }));
+      
+      window.dispatchEvent(new CustomEvent('toast', {
+        detail: { message: `${studentName} added!`, type: 'success' }
+      }));
+      
+      onClose();
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    });
+    
+    // Placeholder functions
+    window.onClose = function() {
+      window.dispatchEvent(new CustomEvent('add-student-modal-close'));
+    };
+    
+    // Initialize
+    updateAvatarDisplay();
+    updateSelectionVisual();
+  })();
+</script>

@@ -1,0 +1,1077 @@
+---
+import type { ClassData, Student } from '../types';
+
+interface Props {
+  activeClass: ClassData;
+  onClose: () => void;
+  refreshClasses: () => Promise<void>;
+}
+
+const { activeClass, onClose, refreshClasses } = Astro.props;
+
+// Build-time data preparation
+const students = activeClass.students || [];
+const allEvents: any[] = [];
+
+(students as Student[]).forEach(student => {
+  if (student.history && Array.isArray(student.history)) {
+    student.history.forEach(event => {
+      allEvents.push({
+        ...event,
+        studentId: student.id,
+        studentName: student.name,
+        studentAvatar: student.avatar,
+        studentGender: student.gender
+      });
+    });
+  }
+});
+
+// Sort by timestamp (newest first)
+allEvents.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+// Calculate stats
+let totalWow = 0;
+let totalNono = 0;
+let totalLucky = 0;
+
+allEvents.forEach(event => {
+  if (event.pts > 0) {
+    if (event.label === 'Lucky Draw Winner') {
+      totalLucky += event.pts;
+    } else {
+      totalWow += event.pts;
+    }
+  } else {
+    totalNono += event.pts;
+  }
+});
+---
+
+<div class="history-modal-overlay" role="presentation">
+  <div class="history-modal-content">
+    <!-- Header -->
+    <div class="modal-header">
+      <div class="header-title">
+        <span class="header-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 12"/><path d="M3 3v9h9"/><path d="M12 7v5l4 2"/></svg>
+        </span>
+        <div>
+          <h2>Points History</h2>
+          <p id="class-name-display">{activeClass.name || 'Unknown Class'}</p>
+        </div>
+      </div>
+      
+      <div class="header-actions">
+        <button 
+          type="button" 
+          class="refresh-btn"
+          id="refresh-btn"
+          aria-label="Refresh"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 12"/><path d="M3 3v9h9"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 12"/><path d="M21 21v-9h-9"/></svg>
+        </button>
+        
+        <button 
+          type="button" 
+          class="close-btn"
+          id="close-btn"
+          aria-label="Close"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-container">
+      <div class="stat-card wow">
+        <div class="stat-icon-wrapper wow">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+        </div>
+        <div class="stat-info">
+          <div class="stat-value" id="stat-wow">{totalWow}</div>
+          <div class="stat-label">WOW Points</div>
+        </div>
+      </div>
+      
+      <div class="stat-card nono">
+        <div class="stat-icon-wrapper nono">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+        </div>
+        <div class="stat-info">
+          <div class="stat-value negative" id="stat-nono">{totalNono}</div>
+          <div class="stat-label">NO-NO Points</div>
+        </div>
+      </div>
+      
+      <div class="stat-card lucky">
+        <div class="stat-icon-wrapper lucky">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="m12 18 4-4"/><path d="m8 14 4 4"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="m6 6 2.5 2.5"/><path d="m15.5 15.5 2.5 2.5"/><path d="m6 18 2.5-2.5"/><path d="m15.5 8.5 2.5-2.5"/></svg>
+        </div>
+        <div class="stat-info">
+          <div class="stat-value" id="stat-lucky">{totalLucky}</div>
+          <div class="stat-label">Lucky Points</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-container">
+      <select id="filter-type" class="filter-select">
+        <option value="all">All Types</option>
+        <option value="wow">WOW Cards</option>
+        <option value="nono">NO-NO Cards</option>
+        <option value="lucky">Lucky Draw</option>
+      </select>
+      
+      <select id="filter-student" class="filter-select">
+        <option value="all">All Students</option>
+        ${students.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
+      </select>
+      
+      <select id="filter-date" class="filter-select">
+        <option value="all">All Time</option>
+        <option value="today">Today</option>
+        <option value="week">This Week</option>
+        <option value="month">This Month</option>
+      </select>
+      
+      <button 
+        type="button" 
+        class="clear-btn"
+        id="clear-btn"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+        Clear
+      </button>
+    </div>
+
+    <!-- Events List -->
+    <div class="content-scroll">
+      <div class="events-list" id="events-list">
+        <!-- Events will be populated by JS -->
+      </div>
+      
+      <div class="empty-state hidden" id="empty-state">
+        <div class="empty-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="m12 18 4-4"/><path d="m8 14 4 4"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="m6 6 2.5 2.5"/><path d="m15.5 15.5 2.5 2.5"/><path d="m6 18 2.5-2.5"/><path d="m15.5 8.5 2.5-2.5"/></svg>
+        </div>
+        <p class="empty-text">No point events found</p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p class="footer-text">{allEvents.length} event{allEvents.length !== 1 ? 's' : ''} recorded</p>
+    </div>
+  </div>
+  
+  <!-- Confirmation Modal -->
+  <div class="confirm-overlay hidden" id="confirm-overlay">
+    <div class="confirm-modal">
+      <div class="confirm-icon-wrapper">
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+      </div>
+      <h3 class="confirm-title">Clear History?</h3>
+      <p class="confirm-message">This action cannot be undone. All point history will be permanently deleted.</p>
+      <div class="confirm-buttons">
+        <button 
+          type="button" 
+          class="confirm-cancel-btn"
+          id="confirm-cancel"
+        >
+          Cancel
+        </button>
+        <button 
+          type="button" 
+          class="confirm-delete-btn"
+          id="confirm-delete"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Modal Overlay */
+  .history-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5000;
+    padding: 20px;
+  }
+
+  .history-modal-content {
+    background: #FFFFFF;
+    border-radius: 24px;
+    width: 100%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .history-modal-content {
+      background: rgba(30, 41, 59, 0.95);
+    }
+    
+    .modal-header h2 {
+      color: #f1f5f9;
+    }
+    
+    #class-name-display {
+      color: #94a3b8;
+    }
+    
+    .refresh-btn, .close-btn {
+      background: rgba(51, 65, 85, 0.5);
+      color: #94a3b8;
+    }
+    
+    .stat-card {
+      background: rgba(51, 65, 85, 0.3);
+    }
+    
+    .stat-value {
+      color: #e2e8f0;
+    }
+    
+    .stat-label {
+      color: #94a3b8;
+    }
+    
+    .filter-select {
+      background: rgba(15, 23, 42, 0.5);
+      border-color: rgba(148, 163, 184, 0.2);
+      color: #f1f5f9;
+    }
+    
+    .clear-btn {
+      background: rgba(239, 68, 68, 0.1);
+      color: #fca5a5;
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+    
+    .events-list-item {
+      background: rgba(51, 65, 85, 0.3);
+      border-color: rgba(148, 163, 184, 0.1);
+    }
+    
+    .event-student-name {
+      color: #e2e8f0;
+    }
+    
+    .event-label {
+      color: #94a3b8;
+    }
+    
+    .event-date {
+      color: #64748b;
+    }
+    
+    .confirm-modal {
+      background: rgba(30, 41, 59, 0.96);
+    }
+    
+    .confirm-title {
+      color: #f1f5f9;
+    }
+    
+    .confirm-message {
+      color: #94a3b8;
+    }
+    
+    .confirm-cancel-btn {
+      background: rgba(51, 65, 85, 0.5);
+      color: #94a3b8;
+      border-color: rgba(148, 163, 184, 0.2);
+    }
+  }
+
+  /* Header */
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #F0F0F0;
+  }
+
+  .header-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .header-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(34, 197, 94, 0.1));
+    color: #6366f1;
+  }
+
+  .modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 800;
+    color: #1F2937;
+  }
+
+  #class-name-display {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: #6B7280;
+    font-weight: 500;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .refresh-btn, .close-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: none;
+    background: #F8FAFC;
+    color: #64748B;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+
+  .refresh-btn:hover, .close-btn:hover {
+    background: #E2E8F0;
+    transform: scale(1.05);
+  }
+
+  .refresh-btn.refreshing svg {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Stats Container */
+  .stats-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    padding: 20px 24px;
+    border-bottom: 1px solid #F0F0F0;
+  }
+
+  @media (max-width: 768px) {
+    .stats-container {
+      gap: 10px;
+      padding: 16px;
+    }
+  }
+
+  .stat-card {
+    background: #F8FAFC;
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  @media (max-width: 768px) {
+    .stat-card {
+      padding: 10px 8px;
+      gap: 6px;
+    }
+  }
+
+  .stat-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 768px) {
+    .stat-icon-wrapper {
+      width: 32px;
+      height: 32px;
+    }
+  }
+
+  .stat-icon-wrapper.wow {
+    background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+    color: #D97706;
+  }
+
+  .stat-icon-wrapper.nono {
+    background: linear-gradient(135deg, #FEE2E2, #FECACA);
+    color: #DC2626;
+  }
+
+  .stat-icon-wrapper.lucky {
+    background: linear-gradient(135deg, #DCFCE7, #BBF7D0);
+    color: #16A34A;
+  }
+
+  .stat-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .stat-value {
+    font-size: 24px;
+    font-weight: 900;
+    color: #2D3436;
+    line-height: 1.2;
+  }
+
+  .stat-value.negative {
+    color: #DC2626;
+  }
+
+  @media (max-width: 768px) {
+    .stat-value {
+      font-size: 16px;
+    }
+  }
+
+  .stat-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  @media (max-width: 768px) {
+    .stat-label {
+      font-size: 10px;
+    }
+  }
+
+  /* Filters */
+  .filters-container {
+    display: flex;
+    gap: 12px;
+    padding: 16px 24px;
+    border-bottom: 1px solid #F0F0F0;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 768px) {
+    .filters-container {
+      gap: 8px;
+      padding: 12px 16px;
+    }
+  }
+
+  .filter-select {
+    flex: 1 1 200px;
+    min-width: 100px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid #E2E8F0;
+    background: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s ease;
+  }
+
+  .filter-select:focus {
+    border-color: #6366f1;
+  }
+
+  @media (max-width: 768px) {
+    .filter-select {
+      flex: 1 1 100px;
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+  }
+
+  .clear-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid #FEE2E2;
+    background: #FEF2F2;
+    color: #DC2626;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .clear-btn:hover {
+    background: #FEE2E2;
+  }
+
+  @media (max-width: 768px) {
+    .clear-btn {
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+  }
+
+  /* Content Scroll */
+  .content-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 24px;
+  }
+
+  @media (max-width: 768px) {
+    .content-scroll {
+      padding: 12px 16px;
+    }
+  }
+
+  .events-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .events-list-item {
+    background: #fff;
+    border-radius: 16px;
+    padding: 16px;
+    border: 1px solid #E2E8F0;
+    display: flex;
+    gap: 14px;
+    transition: all 0.2s;
+  }
+
+  .events-list-item:hover {
+    border-color: #CBD5E1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  @media (max-width: 768px) {
+    .events-list-item {
+      padding: 12px;
+      gap: 10px;
+    }
+  }
+
+  .event-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 3px solid #F8FAFC;
+    flex-shrink: 0;
+    object-fit: cover;
+  }
+
+  @media (max-width: 768px) {
+    .event-avatar {
+      width: 42px;
+      height: 42px;
+    }
+  }
+
+  .event-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .event-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .event-student-name {
+    font-size: 16px;
+    font-weight: 800;
+    color: #2D3436;
+  }
+
+  @media (max-width: 768px) {
+    .event-student-name {
+      font-size: 14px;
+    }
+  }
+
+  .event-points {
+    font-size: 20px;
+    font-weight: 900;
+  }
+
+  .event-points.positive {
+    color: #16A34A;
+  }
+
+  .event-points.negative {
+    color: #DC2626;
+  }
+
+  .event-label {
+    font-size: 14px;
+    color: #64748B;
+    font-weight: 600;
+  }
+
+  @media (max-width: 768px) {
+    .event-label {
+      font-size: 13px;
+    }
+  }
+
+  .event-date {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    color: #94A3B8;
+    font-weight: 600;
+  }
+
+  /* Empty State */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+  }
+
+  .empty-state.hidden {
+    display: none;
+  }
+
+  @media (max-width: 768px) {
+    .empty-state {
+      padding: 40px 20px;
+    }
+  }
+
+  .empty-icon {
+    color: #CBD5E1;
+    margin-bottom: 16px;
+  }
+
+  .empty-text {
+    margin: 0;
+    font-size: 16px;
+    color: #64748B;
+    font-weight: 700;
+  }
+
+  /* Footer */
+  .footer {
+    padding: 16px 24px;
+    border-top: 1px solid #F0F0F0;
+    text-align: center;
+  }
+
+  @media (max-width: 768px) {
+    .footer {
+      padding: 12px 16px;
+    }
+  }
+
+  .footer-text {
+    margin: 0;
+    font-size: 13px;
+    color: #94A3B8;
+    font-weight: 600;
+  }
+
+  /* Confirm Modal */
+  .confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 6000;
+  }
+
+  .confirm-overlay.hidden {
+    display: none;
+  }
+
+  .confirm-modal {
+    background: #FFFFFF;
+    width: 90%;
+    max-width: 400px;
+    border-radius: 24px;
+    padding: 32px 28px;
+    text-align: center;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+
+  @media (max-width: 768px) {
+    .confirm-modal {
+      padding: 24px 20px;
+      max-width: 340px;
+    }
+  }
+
+  .confirm-icon-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: #FEF2F2;
+    color: #DC2626;
+    margin-bottom: 20px;
+  }
+
+  .confirm-title {
+    margin: 0 0 12px 0;
+    font-size: 22px;
+    font-weight: 800;
+    color: #1F2937;
+  }
+
+  @media (max-width: 768px) {
+    .confirm-title {
+      font-size: 20px;
+    }
+  }
+
+  .confirm-message {
+    margin: 0 0 24px 0;
+    font-size: 15px;
+    font-weight: 500;
+    color: #6B7280;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 768px) {
+    .confirm-message {
+      font-size: 14px;
+    }
+  }
+
+  .confirm-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+
+  .confirm-cancel-btn {
+    flex: 1;
+    padding: 14px 24px;
+    border-radius: 12px;
+    border: 2px solid #E5E7EB;
+    background: #FFFFFF;
+    font-size: 15px;
+    font-weight: 700;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .confirm-cancel-btn:hover {
+    background: #F9FAFB;
+  }
+
+  @media (max-width: 768px) {
+    .confirm-cancel-btn {
+      padding: 12px 20px;
+      font-size: 14px;
+    }
+  }
+
+  .confirm-delete-btn {
+    flex: 1;
+    padding: 14px 24px;
+    border-radius: 12px;
+    border: none;
+    background: #DC2626;
+    font-size: 15px;
+    font-weight: 700;
+    color: #FFFFFF;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .confirm-delete-btn:hover {
+    background: #B91C1C;
+  }
+
+  @media (max-width: 768px) {
+    .confirm-delete-btn {
+      padding: 12px 20px;
+      font-size: 14px;
+    }
+  }
+</style>
+
+<script>
+  (function() {
+    // State
+    let filterType = 'all';
+    let filterStudent = 'all';
+    let dateRange = 'all';
+    let clearing = false;
+    let refreshing = false;
+    let showConfirmModal = false;
+    let clearTarget = 'all';
+    
+    const allEvents = ${JSON.stringify(allEvents)};
+    
+    // Elements
+    const overlay = document.querySelector('.history-modal-overlay');
+    const modalContent = document.querySelector('.history-modal-content');
+    const closeBtn = document.getElementById('close-btn');
+    const refreshBtn = document.getElementById('refresh-btn');
+    const filterTypeSelect = document.getElementById('filter-type');
+    const filterStudentSelect = document.getElementById('filter-student');
+    const filterDateSelect = document.getElementById('filter-date');
+    const clearBtn = document.getElementById('clear-btn');
+    const eventsList = document.getElementById('events-list');
+    const emptyState = document.getElementById('empty-state');
+    const confirmOverlay = document.getElementById('confirm-overlay');
+    const confirmCancel = document.getElementById('confirm-cancel');
+    const confirmDelete = document.getElementById('confirm-delete');
+    const statWow = document.getElementById('stat-wow');
+    const statNono = document.getElementById('stat-nono');
+    const statLucky = document.getElementById('stat-lucky');
+    
+    // Format date
+    function formatDate(timestamp) {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      
+      return date.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    }
+    
+    // Apply filters
+    function getFilteredEvents() {
+      let filtered = [...allEvents];
+      
+      // Filter by type
+      if (filterType !== 'all') {
+        if (filterType === 'lucky') {
+          filtered = filtered.filter(e => e.label === 'Lucky Draw Winner');
+        } else {
+          filtered = filtered.filter(e => e.type === filterType);
+        }
+      }
+      
+      // Filter by student
+      if (filterStudent !== 'all') {
+        filtered = filtered.filter(e => String(e.studentId) === String(filterStudent));
+      }
+      
+      // Filter by date range
+      if (dateRange !== 'all') {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
+        filtered = filtered.filter(e => {
+          const eventDate = new Date(e.timestamp);
+          
+          switch (dateRange) {
+            case 'today':
+              return eventDate >= today;
+            case 'week':
+              const weekAgo = new Date(today);
+              weekAgo.setDate(weekAgo.getDate() - 7);
+              return eventDate >= weekAgo;
+            case 'month':
+              const monthAgo = new Date(today);
+              monthAgo.setMonth(monthAgo.getMonth() - 1);
+              return eventDate >= monthAgo;
+            default:
+              return true;
+          }
+        });
+      }
+      
+      return filtered;
+    }
+    
+    // Render events
+    function renderEvents() {
+      const filtered = getFilteredEvents();
+      
+      if (filtered.length === 0) {
+        eventsList.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      
+      emptyState.classList.add('hidden');
+      
+      eventsList.innerHTML = filtered.map(event => {
+        const isPositive = event.pts > 0;
+        const pointsClass = isPositive ? 'positive' : 'negative';
+        const pointsSign = isPositive ? '+' : '';
+        
+        return `
+          <div class="events-list-item">
+            <img src="${event.studentAvatar}" alt="" class="event-avatar" />
+            <div class="event-content">
+              <div class="event-header">
+                <span class="event-student-name">${event.studentName}</span>
+                <span class="event-points ${pointsClass}">${pointsSign}${event.pts}</span>
+              </div>
+              <div class="event-label">${event.label}</div>
+              <div class="event-date">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                ${formatDate(event.timestamp)}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    // Handle refresh
+    refreshBtn?.addEventListener('click', async () => {
+      if (refreshing) return;
+      
+      refreshing = true;
+      refreshBtn.classList.add('refreshing');
+      
+      try {
+        await refreshClasses();
+        window.dispatchEvent(new CustomEvent('toast', {
+          detail: { message: 'History refreshed!', type: 'success' }
+        }));
+      } catch (err) {
+        window.dispatchEvent(new CustomEvent('toast', {
+          detail: { message: 'Failed to refresh', type: 'error' }
+        }));
+      } finally {
+        refreshing = false;
+        refreshBtn.classList.remove('refreshing');
+      }
+    });
+    
+    // Handle filters
+    filterTypeSelect?.addEventListener('change', (e) => {
+      filterType = e.target.value;
+      renderEvents();
+    });
+    
+    filterStudentSelect?.addEventListener('change', (e) => {
+      filterStudent = e.target.value;
+      renderEvents();
+    });
+    
+    filterDateSelect?.addEventListener('change', (e) => {
+      dateRange = e.target.value;
+      renderEvents();
+    });
+    
+    // Handle clear button
+    clearBtn?.addEventListener('click', () => {
+      clearTarget = 'all';
+      showConfirmModal = true;
+      confirmOverlay.classList.remove('hidden');
+    });
+    
+    // Handle confirm cancel
+    confirmCancel?.addEventListener('click', () => {
+      showConfirmModal = false;
+      confirmOverlay.classList.add('hidden');
+    });
+    
+    // Handle confirm delete
+    confirmDelete?.addEventListener('click', async () => {
+      if (clearing) return;
+      
+      clearing = true;
+      showConfirmModal = false;
+      confirmOverlay.classList.add('hidden');
+      
+      try {
+        // Dispatch clear event
+        window.dispatchEvent(new CustomEvent('clear-history', {
+          detail: { target: clearTarget }
+        }));
+        
+        window.dispatchEvent(new CustomEvent('toast', {
+          detail: { message: 'History cleared successfully!', type: 'success' }
+        }));
+      } catch (err) {
+        window.dispatchEvent(new CustomEvent('toast', {
+          detail: { message: 'Failed to clear history', type: 'error' }
+        }));
+      } finally {
+        clearing = false;
+      }
+    });
+    
+    // Close handlers
+    closeBtn?.addEventListener('click', onClose);
+    
+    overlay?.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        onClose();
+      }
+    });
+    
+    modalContent?.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+    
+    // Placeholder function
+    window.onClose = function() {
+      window.dispatchEvent(new CustomEvent('history-modal-close'));
+    };
+    
+    window.refreshClasses = async function() {
+      // In real usage, this would be provided by parent component
+      return Promise.resolve();
+    };
+    
+    // Initialize
+    renderEvents();
+  })();
+</script>
