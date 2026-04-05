@@ -1,0 +1,576 @@
+---
+/**
+ * Student Card Component for Astro
+ * Displays student info with score, level, progress bar, and avatar
+ * Supports hover/long-press actions, animations, and multi-select mode
+ * 
+ * Props:
+ * - student: { id, name, score, avatar, gender }
+ * - displaySize: 'compact' | 'regular' | 'spacious'
+ * - animating: boolean
+ * - animationType: 'small' | 'medium' | 'large' | 'confetti'
+ * - disableActions: boolean
+ * - isMultiSelectMode: boolean
+ */
+
+interface Student {
+	id: string;
+	name: string;
+	score: number;
+	avatar?: string;
+	gender?: string;
+}
+
+interface Props {
+	student: Student;
+	displaySize?: 'compact' | 'regular' | 'spacious';
+	animating?: boolean;
+	animationType?: 'small' | 'medium' | 'large' | 'confetti';
+	disableActions?: boolean;
+	isMultiSelectMode?: boolean;
+}
+
+const { 
+	student,
+	displaySize = 'regular',
+	animating = false,
+	animationType = 'small',
+	disableActions = false,
+	isMultiSelectMode = false
+} = Astro.props;
+
+// Calculate level and progress
+const calculateLevel = (score: number) => Math.floor(score / 50) + 1;
+const calculateProgress = (score: number) => ((score % 50) / 50) * 100;
+
+const level = calculateLevel(student.score || 0);
+const progress = calculateProgress(student.score || 0);
+
+// Level colors
+const getLevelColor = (lvl: number) => {
+	const colors = [
+		{ bg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', progress: '#4CAF50' },
+		{ bg: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', progress: '#FF9800' },
+		{ bg: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', progress: '#2196F3' },
+		{ bg: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', progress: '#9C27B0' },
+		{ bg: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', progress: '#FF5722' },
+		{ bg: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)', progress: '#795548' },
+		{ bg: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', progress: '#E91E63' },
+		{ bg: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)', progress: '#3F51B5' },
+		{ bg: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)', progress: '#009688' },
+		{ bg: 'linear-gradient(135deg, #fecfef 0%, #fecfef 100%)', progress: '#CDDC39' },
+	];
+	return colors[Math.min(lvl - 1, colors.length - 1)];
+};
+
+// Avatar background colors by level group
+const getAvatarBgColor = (lvl: number) => {
+	const colors = ['#FFEAA7', '#FFD700', '#FF6B6B', '#4ECDC4', '#95E1D3', '#AA96DA', '#FCBAD3', '#A8E6CF', '#FFD3B6', '#FFAAA5'];
+	return colors[Math.min(Math.floor((lvl - 1) / 3), colors.length - 1)];
+};
+
+const levelColor = getLevelColor(level);
+const avatarBgColor = getAvatarBgColor(level);
+const isSpacious = displaySize === 'spacious';
+
+// Simple avatar fallback (boringAvatar alternative)
+const getAvatarUrl = (name: string, avatar?: string) => {
+	if (avatar) return avatar;
+	const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+	return `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'><rect fill='${encodeURIComponent(avatarBgColor)}' width='100' height='100'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='40' fill='white' font-family='sans-serif'>${initials}</text></svg>`;
+};
+
+const displayAvatar = getAvatarUrl(student.name, student.avatar);
+---
+
+<style define:vars={{ 
+	'--card-bg': '#ffffff',
+	'--avatar-bg': avatarBgColor,
+	'--level-bg': levelColor.bg,
+	'--level-progress': levelColor.progress,
+	'--is-animating': animating ? '1' : '0',
+	'--animation-scale': animationType === 'small' ? '1.06' : animationType === 'medium' ? '1.1' : animationType === 'large' ? '1.14' : '1.16',
+	'--is-multi-select': isMultiSelectMode ? '0.7' : '1'
+}}>
+	.student-card {
+		background: var(--card-bg);
+		border-radius: var(--border-radius, 24px);
+		padding: var(--card-padding, 20px);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		position: relative;
+		aspect-ratio: 1 / 1;
+		width: 100%;
+		box-sizing: border-box;
+		cursor: var(--cursor, pointer);
+		touch-action: manipulation;
+		user-select: none;
+		opacity: var(--is-multi-select);
+		transition: transform 200ms cubic-bezier(.2,.9,.2,1), box-shadow 200ms;
+	}
+
+	.student-card.hovered {
+		transform: scale(1.05);
+	}
+
+	.student-card.animating {
+		transform: scale(var(--animation-scale));
+		box-shadow: 0 20px 40px rgba(76,175,80,0.18);
+	}
+
+	.student-card.animating-confetti {
+		box-shadow: 0 30px 60px rgba(255, 192, 203, 0.3), 0 10px 30px rgba(99,102,241,0.12);
+	}
+
+	/* Score Badge */
+	.score-badge {
+		position: absolute;
+		background: #E3F2FD;
+		color: #2196F3;
+		border-radius: 10px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-weight: bold;
+		box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+		transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+		z-index: 2;
+	}
+
+	.score-badge.compact {
+		top: 7px;
+		left: 7px;
+		background: rgba(227, 242, 253, 0.98);
+		color: #1976D2;
+		padding: 2px 5px;
+		border-radius: 6px;
+		font-size: 10px;
+		max-width: calc(100% - 14px);
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.score-badge.regular {
+		top: 12px;
+		left: 12px;
+		width: clamp(36px, 12%, 56px);
+		height: clamp(36px, 12%, 56px);
+		font-size: clamp(0.9rem, 3vw, 1.3rem);
+	}
+
+	.score-badge.spacious {
+		top: 16px;
+		left: 16px;
+		width: clamp(48px, 15%, 64px);
+		height: clamp(48px, 15%, 64px);
+		font-size: clamp(1.1rem, 4vw, 1.6rem);
+	}
+
+	.score-badge.animating {
+		transform: scale(1.2);
+		box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+	}
+
+	/* Level Badge */
+	.level-badge {
+		position: absolute;
+		background: var(--level-bg);
+		color: white;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-weight: bold;
+		box-shadow: 0 2px 8px color-mix(in srgb, var(--level-progress) 40%, transparent);
+		border: 2px solid white;
+		transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+		z-index: 2;
+	}
+
+	.level-badge.regular {
+		top: 12px;
+		right: 12px;
+		width: clamp(28px, 10%, 40px);
+		height: clamp(28px, 10%, 40px);
+		font-size: clamp(0.8rem, 2.5vw, 1rem);
+	}
+
+	.level-badge.spacious {
+		top: 16px;
+		right: 16px;
+		width: clamp(32px, 12%, 48px);
+		height: clamp(32px, 12%, 48px);
+		font-size: clamp(0.9rem, 3vw, 1.1rem);
+	}
+
+	.level-badge.star::after {
+		content: '⭐';
+		position: absolute;
+		top: -2px;
+		right: -2px;
+		background: #FFD700;
+		color: #333;
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		font-size: 7px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: 1px solid white;
+		box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+	}
+
+	/* Progress Bar */
+	.progress-bar {
+		position: absolute;
+		background: #f0f0f0;
+		border-radius: 6px;
+		overflow: hidden;
+		box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+		z-index: 1;
+	}
+
+	.progress-bar.regular {
+		top: 60px;
+		right: 8px;
+		bottom: 60px;
+		width: 12px;
+	}
+
+	.progress-bar.spacious {
+		top: 70px;
+		right: 10px;
+		bottom: 70px;
+		width: 12px;
+	}
+
+	.progress-fill {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		background: #FF8C00;
+		border-radius: 6px;
+		transition: height 0.3s ease;
+		box-shadow: 0 0 4px rgba(255, 140, 0, 0.6);
+	}
+
+	.progress-knob {
+		position: absolute;
+		left: 50%;
+		background: white;
+		border-radius: 50%;
+		border: 3px solid var(--level-progress);
+		box-shadow: 0 0 8px color-mix(in srgb, var(--level-progress) 62%, transparent);
+		transition: bottom 0.3s ease;
+		transform: translateX(-50%);
+		z-index: 1;
+	}
+
+	.progress-knob.regular {
+		width: 16px;
+		height: 16px;
+	}
+
+	.progress-knob.spacious {
+		width: 16px;
+		height: 16px;
+	}
+
+	/* Avatar */
+	.avatar {
+		border-radius: 50%;
+		object-fit: cover;
+		border: 3px solid white;
+		box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+		background-color: var(--avatar-bg);
+		transition: transform 220ms ease, box-shadow 220ms ease, background-color 0.3s ease;
+	}
+
+	.avatar.compact {
+		width: 50%;
+		height: 50%;
+		border-width: 2px;
+	}
+
+	.avatar.regular {
+		width: 70%;
+		height: 70%;
+	}
+
+	.avatar.spacious {
+		width: 85%;
+		height: 85%;
+	}
+
+	.avatar.animating {
+		transform: translateY(-3px) rotate(5deg);
+	}
+
+	/* Name */
+	.student-name {
+		position: absolute;
+		font-weight: 800;
+		color: #2D3436;
+		text-align: center;
+		max-width: 85%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.student-name.compact {
+		bottom: -10px;
+		left: 50%;
+		transform: translateX(-50%);
+		width: 92%;
+		height: 48px;
+	}
+
+	.student-name.regular {
+		bottom: 14px;
+		font-size: clamp(0.9rem, 4%, 1.2rem);
+	}
+
+	.student-name.spacious {
+		bottom: 14px;
+		font-size: clamp(1.05rem, 4.8%, 1.35rem);
+	}
+
+	/* Action Buttons */
+	.action-buttons {
+		position: absolute;
+		display: flex;
+		gap: 6px;
+		z-index: 10;
+		opacity: 0;
+		visibility: hidden;
+		transition: opacity 0.2s, visibility 0.2s;
+	}
+
+	.action-buttons.visible {
+		opacity: 1;
+		visibility: visible;
+	}
+
+	.action-buttons.compact {
+		top: 4px;
+		right: 4px;
+		gap: 4px;
+	}
+
+	.action-buttons.regular {
+		top: 8px;
+		right: 8px;
+	}
+
+	.action-buttons.spacious {
+		top: 12px;
+		right: 12px;
+		gap: 8px;
+	}
+
+	.action-btn {
+		background: white;
+		border: 1px solid #ddd;
+		border-radius: 9px;
+		padding: 8px;
+		cursor: pointer;
+		color: #4CAF50;
+		box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.2s;
+	}
+
+	.action-btn:hover {
+		background: #E8F5E9;
+	}
+
+	.action-btn.delete {
+		color: #FF6B6B;
+	}
+
+	.action-btn.delete:hover {
+		background: #FFEBEE;
+	}
+
+	.action-btn.close {
+		background: #f1f5f9;
+		color: #64748b;
+	}
+
+	/* Size variants */
+	.student-card.compact {
+		border-radius: 12px;
+		padding: 6px;
+	}
+
+	.student-card.spacious {
+		border-radius: 28px;
+		padding: 26px;
+	}
+</style>
+
+<div 
+	class={`student-card ${displaySize} ${animating ? `animating${animationType === 'confetti' ? ' animating-confetti' : ''}` : ''}`}
+	data-student-id={student.id}
+	data-action="click"
+>
+	<!-- Action Buttons -->
+	<div class={`action-buttons ${displaySize}`} data-actions>
+		<button 
+			class="action-btn" 
+			data-action="edit"
+			aria-label="Edit student"
+		>
+			<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+		</button>
+		<button 
+			class="action-btn delete" 
+			data-action="delete"
+			aria-label="Delete student"
+		>
+			<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+		</button>
+	</div>
+
+	<!-- Score Badge -->
+	<div 
+		class={`score-badge ${displaySize} ${animating ? 'animating' : ''}`}
+	>{student.score}</div>
+
+	<!-- Level Badge -->
+	{displaySize !== 'compact' && (
+		<div 
+			class={`level-badge ${displaySize}${level > 1 ? ' star' : ''}`}
+		>{level}</div>
+	)}
+
+	<!-- Progress Bar -->
+	{displaySize !== 'compact' && (
+		<div class={`progress-bar ${displaySize}`}>
+			<div class="progress-fill" style={`height: ${progress}%`}></div>
+			{progress > 0 && (
+				<div class={`progress-knob ${displaySize}`} style={`bottom: ${Math.max(0, progress - 4)}%`}></div>
+			)}
+		</div>
+	)}
+
+	<!-- Avatar -->
+	<img 
+		class={`avatar ${displaySize} ${animating ? 'animating' : ''}`}
+		src={displayAvatar}
+		alt={student.name}
+		loading="lazy"
+	/>
+
+	<!-- Name -->
+	{displaySize === 'compact' ? (
+		<svg viewBox="0 0 150 50" class={`student-name ${displaySize}`}>
+			<defs>
+				<path id={`textPathStudent-${student.id}`} d="M 10,5 Q 75,50 140,5" />
+			</defs>
+			<text fill="#2D3436" fontSize="14" fontWeight="900" textAnchor="middle">
+				<textPath href={`#textPathStudent-${student.id}`} startOffset="50%">
+					{student.name}
+				</textPath>
+			</text>
+		</svg>
+	) : (
+		<div class={`student-name ${displaySize}`}>{student.name}</div>
+	)}
+</div>
+
+<script>
+	// Student Card Interactivity
+	const cards = document.querySelectorAll('[data-student-id]');
+	
+	cards.forEach(card => {
+		let pressTimer: NodeJS.Timeout;
+		let wasLongPress = false;
+		
+		const showActions = () => {
+			const actions = card.querySelector('[data-actions]');
+			actions?.classList.add('visible');
+		};
+		
+		const hideActions = () => {
+			const actions = card.querySelector('[data-actions]');
+			actions?.classList.remove('visible');
+		};
+		
+		// Long press for touch devices
+		card.addEventListener('pointerdown', (e) => {
+			wasLongPress = false;
+			pressTimer = setTimeout(() => {
+				wasLongPress = true;
+				if (navigator.vibrate) navigator.vibrate(50);
+				showActions();
+			}, 500);
+		});
+		
+		card.addEventListener('pointerup', () => {
+			clearTimeout(pressTimer);
+		});
+		
+		card.addEventListener('pointerleave', (e) => {
+			clearTimeout(pressTimer);
+			if (e.pointerType === 'mouse') {
+				hideActions();
+			}
+		});
+		
+		// Hover for desktop
+		card.addEventListener('mouseenter', (e) => {
+			if (e.pointerType !== 'touch') {
+				card.classList.add('hovered');
+			}
+		});
+		
+		card.addEventListener('mouseleave', () => {
+			card.classList.remove('hovered');
+			hideActions();
+		});
+		
+		// Click handler
+		card.addEventListener('click', (e) => {
+			const target = e.target as HTMLElement;
+			
+			// Handle action buttons
+			if (target.closest('[data-action="edit"]')) {
+				e.stopPropagation();
+				hideActions();
+				window.dispatchEvent(new CustomEvent('student-edit', { 
+					detail: { id: card.getAttribute('data-student-id') } 
+				}));
+				return;
+			}
+			
+			if (target.closest('[data-action="delete"]')) {
+				e.stopPropagation();
+				hideActions();
+				window.dispatchEvent(new CustomEvent('student-delete', { 
+					detail: { id: card.getAttribute('data-student-id') } 
+				}));
+				return;
+			}
+			
+			// Normal click - award points
+			if (!wasLongPress) {
+				const rect = card.getBoundingClientRect();
+				window.dispatchEvent(new CustomEvent('student-click', {
+					detail: { 
+						id: card.getAttribute('data-student-id'),
+						x: rect.left + rect.width / 2,
+						y: rect.top + rect.height / 2
+					}
+				}));
+			}
+		});
+	});
+</script>
