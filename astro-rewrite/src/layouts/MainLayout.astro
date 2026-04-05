@@ -5,6 +5,11 @@ export interface Props {
 }
 
 const { title, description = "Klasiz.fun - Modern Classroom Management" } = Astro.props;
+
+// Import theme utilities
+import { themeInitScript } from '../lib/theme';
+import { pageHelpInitScript } from '../lib/pageHelp';
+import { errorHandlingInitScript } from '../lib/errorBoundary';
 ---
 
 <!DOCTYPE html>
@@ -15,6 +20,9 @@ const { title, description = "Klasiz.fun - Modern Classroom Management" } = Astr
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="description" content={description} />
     <title>{title}</title>
+    
+    <!-- Theme initialization (prevents flash of unstyled content) -->
+    <script is:inline>{themeInitScript()}</script>
     
     <!-- Tailwind CSS -->
     <style is:global>
@@ -38,6 +46,17 @@ const { title, description = "Klasiz.fun - Modern Classroom Management" } = Astr
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
+    <!-- Error boundary fallback (hidden by default, shown on error) -->
+    <div id="error-boundary-fallback" style="display: none;">
+        <!-- Will be populated by error handling script -->
+    </div>
+    
+    <!-- Initialize core infrastructure scripts -->
+    <script is:inline>
+        {pageHelpInitScript()}
+        {errorHandlingInitScript()}
+    </script>
+    
     <nav class="bg-white shadow-sm border-b">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
