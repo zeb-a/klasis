@@ -1,0 +1,23 @@
+---
+// YearlyTemplate.astro - Lesson Planner Yearly View Component
+interface Props {
+  data: Record<string, any>;
+  onChange: (data: Record<string, any>) => void;
+  highlightedCells: Array<{ type: string; index?: number; field?: string }>;
+  clearHighlight: () => void;
+}
+
+const { data = {}, onChange, highlightedCells = [], clearHighlight } = Astro.props;
+
+import { YEARLY_SECTION_LABELS } from '../lib/lessonTemplates';
+import DynamicTableTemplate from './DynamicTableTemplate.astro';
+---
+
+<DynamicTableTemplate
+  data={data}
+  onChange={onChange}
+  labelKey="section"
+  defaultLabels={YEARLY_SECTION_LABELS}
+  highlightedCells={highlightedCells}
+  clearHighlight={clearHighlight}
+/>

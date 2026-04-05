@@ -1,0 +1,23 @@
+---
+// WeeklyTemplate.astro - Lesson Planner Weekly View Component
+interface Props {
+  data: Record<string, any>;
+  onChange: (data: Record<string, any>) => void;
+  highlightedCells: Array<{ type: string; index?: number; field?: string }>;
+  clearHighlight: () => void;
+}
+
+const { data = {}, onChange, highlightedCells = [], clearHighlight } = Astro.props;
+
+import { WEEKLY_DAY_LABELS } from '../lib/lessonTemplates';
+import DynamicTableTemplate from './DynamicTableTemplate.astro';
+---
+
+<DynamicTableTemplate
+  data={data}
+  onChange={onChange}
+  labelKey="day"
+  defaultLabels={WEEKLY_DAY_LABELS}
+  highlightedCells={highlightedCells}
+  clearHighlight={clearHighlight}
+/>
