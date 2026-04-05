@@ -10,11 +10,20 @@
 - TornadoGame.astro (game component)
 - SpellTheWordGame.astro (game component)
 - Pages: index, about, login, classes, dashboard, settings, faq, terms, privacy
+- **StudentCard.astro** - Student card with long-press, animations, custom events
+- **LanguageSelector.astro** - 4 languages with localStorage persistence
+- **LevelUpOverlay.astro** - Celebration overlay with disco lights
+- **BehaviorModal.astro** - Behavior tracking with 3 tabs
+- **StickerPicker.astro** - 46 stickers across categories
+- **ProfileModal.astro** - Profile editing with avatar picker
+- **SingleAddStudentModal.astro** - Add student with 50 avatars
+- **PointsHistoryView.astro** - History viewer with stats & filters
+- **ClassDashboard.astro** (32KB) - Main classroom dashboard with stats, quick actions, student grid
 
 ## Remaining Components to Convert
 
 ### High Priority - Core Components
-1. **ClassDashboard.jsx** (174KB) - Main classroom management view
+1. ~~**ClassDashboard.jsx**~~ ✅ CONVERTED
 2. **LandingPage.jsx** (132KB) - Landing page
 3. **ESLGames.jsx** (69KB) - ESL Games hub
 4. **GameCenter.jsx** (44KB) - Game center interface

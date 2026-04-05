@@ -1,0 +1,1232 @@
+---
+// ClassDashboard.astro - Main classroom management dashboard
+// Converted from React to Astro with progressive enhancement
+
+interface Student {
+  id: string;
+  name: string;
+  score?: number;
+  level?: number;
+  avatar?: string | null;
+  character?: string | null;
+  seed?: number | null;
+  avatarSetId?: string | null;
+  avatarIndex?: number | null;
+  attendance?: 'present' | 'absent';
+  attendanceDate?: string;
+}
+
+interface Behavior {
+  id: string;
+  label: string;
+  points: number;
+  type: 'positive' | 'negative';
+  emoji?: string;
+  color?: string;
+}
+
+interface ClassData {
+  id: string;
+  name: string;
+  students: Student[];
+  behaviors: Behavior[];
+  tasks?: any[];
+  assignments?: any[];
+}
+
+interface Props {
+  activeClass: ClassData;
+  user?: { email: string; name?: string };
+  isPremium?: boolean;
+  leftDockInsetPx?: number;
+  mergedWorkspace?: boolean;
+  onBack?: () => void;
+  onSwitchClass?: (classId: string) => void;
+  teacherClasses?: ClassData[];
+}
+
+const { 
+  activeClass, 
+  user, 
+  isPremium = true, 
+  leftDockInsetPx = 0,
+  mergedWorkspace = false,
+  teacherClasses = []
+} = Astro.props;
+
+// Build-time calculations
+const today = new Date().toISOString().split('T')[0];
+const defaultAvatar = '🎓';
+
+// Sort students by score (highest first) or name
+const sortedStudents = [...(activeClass?.students || [])].sort((a, b) => {
+  return (b.score || 0) - (a.score || 0);
+});
+
+// Calculate class stats
+const totalStudents = sortedStudents.length;
+const averageScore = totalStudents > 0 
+  ? Math.round(sortedStudents.reduce((sum, s) => sum + (s.score || 0), 0) / totalStudents) 
+  : 0;
+const topStudent = sortedStudents[0];
+const presentCount = sortedStudents.filter(s => s.attendance !== 'absent' || s.attendanceDate !== today).length;
+
+// Feature flags
+const features = {
+  showNavbar: true,
+  showAssignments: isPremium,
+  showInbox: isPremium,
+  showLuckyDraw: true,
+  showEggRoad: true,
+  showAttendance: true,
+  showAccessCodes: isPremium,
+  showReports: true,
+  showTimer: true,
+  showBuzzer: true,
+  showWhiteboard: true,
+  showPointsCards: true,
+};
+---
+
+<div class="class-dashboard" data-class-id={activeClass?.id}>
+  <!-- Header -->
+  <header class="dashboard-header">
+    <div class="header-left">
+      <button class="back-btn" aria-label="Back to classes" data-action="back">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      
+      <div class="class-info">
+        <h1 class="class-name">{activeClass?.name || 'Classroom'}</h1>
+        <span class="student-count">{totalStudents} students • {presentCount} present</span>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <!-- View Controls -->
+      <div class="view-controls">
+        <button class="icon-btn" data-action="sort" aria-label="Sort students">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 5h10M11 9h7M11 13h4M3 17l3 3 6-6M6 13V20"/>
+          </svg>
+        </button>
+        
+        <button class="icon-btn" data-action="display-size" aria-label="Display size">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <path d="M9 3v18M3 9h18"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Add Student Button -->
+      <button class="add-student-btn" data-action="add-student">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        <span>Add Student</span>
+      </button>
+
+      <!-- Class Tools Menu -->
+      <button class="menu-btn" data-action="class-tools" aria-label="Class tools">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="1"/>
+          <circle cx="12" cy="5" r="1"/>
+          <circle cx="12" cy="19" r="1"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-value">{totalStudents}</div>
+        <div class="stat-label">Total Students</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-icon">⭐</div>
+        <div class="stat-value">{averageScore}</div>
+        <div class="stat-label">Average Points</div>
+      </div>
+      
+      <div class="stat-card highlight">
+        <div class="stat-icon">🏆</div>
+        <div class="stat-value">{topStudent?.name || '-'}</div>
+        <div class="stat-label">Top Student</div>
+        <div class="stat-sub">{topStudent?.score || 0} pts</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value">{presentCount}/{totalStudents}</div>
+        <div class="stat-label">Attendance</div>
+      </div>
+    </div>
+
+    <!-- Quick Actions Toolbar -->
+    <div class="quick-actions">
+      {features.showLuckyDraw && (
+        <button class="action-btn" data-action="lucky-draw">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+          </svg>
+          <span>Lucky Draw</span>
+        </button>
+      )}
+      
+      {features.showEggRoad && (
+        <button class="action-btn" data-action="egg-road">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+          <span>Egg Road</span>
+        </button>
+      )}
+      
+      {features.showAttendance && (
+        <button class="action-btn" data-action="attendance">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 11l3 3L22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+          <span>Attendance</span>
+        </button>
+      )}
+      
+      {features.showTimer && (
+        <button class="action-btn" data-action="timer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 6v6l4 2"/>
+          </svg>
+          <span>Timer</span>
+        </button>
+      )}
+      
+      {features.showBuzzer && (
+        <button class="action-btn" data-action="buzzer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          <span>Buzzer</span>
+        </button>
+      )}
+      
+      {features.showWhiteboard && (
+        <button class="action-btn" data-action="whiteboard">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+            <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+            <path d="M2 2l7.586 7.586"/>
+            <circle cx="11" cy="11" r="2"/>
+          </svg>
+          <span>Whiteboard</span>
+        </button>
+      )}
+      
+      {features.showReports && (
+        <button class="action-btn" data-action="reports">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+          </svg>
+          <span>Reports</span>
+        </button>
+      )}
+      
+      {features.showAssignments && (
+        <button class="action-btn" data-action="assignments">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+            <path d="M13 2v7h7"/>
+          </svg>
+          <span>Assignments</span>
+        </button>
+      )}
+    </div>
+
+    <!-- Student Grid -->
+    <div class="student-grid" data-display-size="regular">
+      {sortedStudents.map((student) => {
+        const avatar = student.avatar || student.character || defaultAvatar;
+        const isAbsent = student.attendance === 'absent' && student.attendanceDate === today;
+        const level = student.level || 1;
+        const score = student.score || 0;
+        
+        // Calculate progress to next level (assuming 100 points per level)
+        const progress = Math.min((score % 100) / 100 * 100, 100);
+        
+        return (
+          <article 
+            class={`student-card ${isAbsent ? 'absent' : ''}`}
+            data-student-id={student.id}
+            data-score={score}
+            tabindex="0"
+            role="button"
+            aria-label={`${student.name}, ${score} points, level ${level}`}
+          >
+            <div class="card-header">
+              <div class="avatar-container">
+                <div class="avatar">{avatar}</div>
+                {isAbsent && (
+                  <span class="absent-badge" title="Absent today">😷</span>
+                )}
+              </div>
+              
+              <button class="card-menu-btn" aria-label="Student options">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="1"/>
+                  <circle cx="12" cy="5" r="1"/>
+                  <circle cx="12" cy="19" r="1"/>
+                </svg>
+              </button>
+            </div>
+            
+            <div class="card-body">
+              <h3 class="student-name">{student.name}</h3>
+              
+              <div class="level-badge">
+                <span class="level-icon">🎯</span>
+                <span>Level {level}</span>
+              </div>
+              
+              <div class="progress-container">
+                <div class="progress-bar">
+                  <div class="progress-fill" style={`width: ${progress}%`}></div>
+                </div>
+                <span class="progress-text">{Math.round(progress)}%</span>
+              </div>
+              
+              <div class="score-display">
+                <span class="score-icon">⭐</span>
+                <span class="score-value">{score}</span>
+              </div>
+            </div>
+            
+            <div class="card-actions">
+              <button class="action-btn-small positive" data-action="award-point" data-points="1">
+                <span>+1</span>
+              </button>
+              <button class="action-btn-small positive" data-action="award-point" data-points="2">
+                <span>+2</span>
+              </button>
+              <button class="action-btn-small negative" data-action="remove-point" data-points="1">
+                <span>-1</span>
+              </button>
+            </div>
+          </article>
+        );
+      })}
+      
+      {sortedStudents.length === 0 && (
+        <div class="empty-state">
+          <div class="empty-icon">🎓</div>
+          <h3>No Students Yet</h3>
+          <p>Add your first student to get started!</p>
+          <button class="add-first-btn" data-action="add-student">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            <span>Add Student</span>
+          </button>
+        </div>
+      )}
+    </div>
+  </main>
+
+  <!-- Whole Class Tile -->
+  <div class="whole-class-tile" data-action="whole-class">
+    <div class="tile-content">
+      <div class="tile-icon">👥</div>
+      <div class="tile-label">Whole Class</div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* CSS Variables for theming */
+  .class-dashboard {
+    --bg-primary: #F4F1EA;
+    --bg-secondary: #ffffff;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --accent-color: #6366F1;
+    --accent-gradient: linear-gradient(135deg, #6366F1 0%, #a855f7 100%);
+    --success-color: #4CAF50;
+    --danger-color: #FF5252;
+    --border-color: rgba(226, 232, 240, 0.8);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.1);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background: var(--bg-primary);
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  /* Dark mode support */
+  @media (prefers-color-scheme: dark) {
+    .class-dashboard {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --border-color: rgba(148, 163, 184, 0.2);
+    }
+  }
+
+  /* Header Styles */
+  .dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-color);
+    z-index: 10;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .dashboard-header {
+      background: rgba(30, 41, 59, 0.8);
+    }
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .back-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: var(--transition);
+    color: var(--text-secondary);
+  }
+
+  .back-btn:hover {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--accent-color);
+  }
+
+  .class-name {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin: 0;
+    color: var(--text-primary);
+  }
+
+  .student-count {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .view-controls {
+    display: flex;
+    gap: 8px;
+  }
+
+  .icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: var(--transition);
+    color: var(--text-secondary);
+  }
+
+  .icon-btn:hover {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--accent-color);
+  }
+
+  .add-student-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: var(--accent-gradient);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  }
+
+  .add-student-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+  }
+
+  .menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: var(--transition);
+    color: var(--text-secondary);
+  }
+
+  .menu-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  /* Main Content */
+  .dashboard-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 24px;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  /* Stats Bar */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--bg-secondary);
+    padding: 20px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: var(--transition);
+  }
+
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .stat-card.highlight {
+    background: var(--accent-gradient);
+    color: white;
+    border: none;
+  }
+
+  .stat-icon {
+    font-size: 2rem;
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-top: 4px;
+  }
+
+  .stat-card.highlight .stat-label {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .stat-sub {
+    font-size: 0.75rem;
+    opacity: 0.9;
+    margin-top: 4px;
+  }
+
+  /* Quick Actions */
+  .quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .action-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .action-btn:hover {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+    transform: translateY(-2px);
+  }
+
+  /* Student Grid */
+  .student-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    padding-bottom: 40px;
+  }
+
+  .student-card {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    transition: var(--transition);
+    cursor: pointer;
+    position: relative;
+  }
+
+  .student-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .student-card.absent {
+    opacity: 0.7;
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 16px 16px 0;
+  }
+
+  .avatar-container {
+    position: relative;
+  }
+
+  .avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: white;
+    border: 3px solid var(--bg-secondary);
+    box-shadow: var(--shadow-md);
+  }
+
+  .absent-badge {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    font-size: 1.25rem;
+    background: var(--bg-secondary);
+    border-radius: 50%;
+    padding: 2px;
+  }
+
+  .card-menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: var(--transition);
+  }
+
+  .card-menu-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  .card-body {
+    padding: 16px;
+  }
+
+  .student-name {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin: 0 0 12px;
+    color: var(--text-primary);
+  }
+
+  .level-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--accent-color);
+    margin-bottom: 12px;
+  }
+
+  .progress-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .progress-bar {
+    flex: 1;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent-gradient);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+  }
+
+  .progress-text {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    min-width: 35px;
+    text-align: right;
+  }
+
+  .score-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-primary);
+  }
+
+  .score-icon {
+    font-size: 1.5rem;
+  }
+
+  .card-actions {
+    display: flex;
+    gap: 8px;
+    padding: 0 16px 16px;
+  }
+
+  .action-btn-small {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .action-btn-small.positive {
+    background: rgba(76, 175, 80, 0.1);
+    color: var(--success-color);
+  }
+
+  .action-btn-small.positive:hover {
+    background: var(--success-color);
+    color: white;
+  }
+
+  .action-btn-small.negative {
+    background: rgba(255, 82, 82, 0.1);
+    color: var(--danger-color);
+  }
+
+  .action-btn-small.negative:hover {
+    background: var(--danger-color);
+    color: white;
+  }
+
+  /* Empty State */
+  .empty-state {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+  }
+
+  .empty-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+  }
+
+  .empty-state h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 8px;
+    color: var(--text-primary);
+  }
+
+  .empty-state p {
+    color: var(--text-secondary);
+    margin: 0 0 24px;
+  }
+
+  .add-first-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 28px;
+    background: var(--accent-gradient);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  }
+
+  .add-first-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+  }
+
+  /* Whole Class Tile */
+  .whole-class-tile {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 80px;
+    height: 80px;
+    background: var(--accent-gradient);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+    transition: var(--transition);
+    z-index: 100;
+  }
+
+  .whole-class-tile:hover {
+    transform: scale(1.1);
+    box-shadow: 0 12px 32px rgba(99, 102, 241, 0.5);
+  }
+
+  .tile-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: white;
+  }
+
+  .tile-icon {
+    font-size: 1.75rem;
+    line-height: 1;
+  }
+
+  .tile-label {
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .dashboard-header {
+      padding: 12px 16px;
+    }
+
+    .class-name {
+      font-size: 1.25rem;
+    }
+
+    .add-student-btn span {
+      display: none;
+    }
+
+    .dashboard-main {
+      padding: 16px;
+    }
+
+    .stats-bar {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .quick-actions {
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      padding-bottom: 12px;
+    }
+
+    .action-btn {
+      flex-shrink: 0;
+      padding: 10px 14px;
+      font-size: 13px;
+    }
+
+    .student-grid {
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 16px;
+    }
+
+    .whole-class-tile {
+      width: 70px;
+      height: 70px;
+      bottom: 16px;
+      right: 16px;
+    }
+  }
+
+  /* Animations */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .student-card {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .student-card:nth-child(1) { animation-delay: 0.05s; }
+  .student-card:nth-child(2) { animation-delay: 0.1s; }
+  .student-card:nth-child(3) { animation-delay: 0.15s; }
+  .student-card:nth-child(4) { animation-delay: 0.2s; }
+  .student-card:nth-child(5) { animation-delay: 0.25s; }
+  .student-card:nth-child(6) { animation-delay: 0.3s; }
+</style>
+
+<script>
+  // Progressive Enhancement for ClassDashboard
+  document.addEventListener('DOMContentLoaded', () => {
+    const dashboard = document.querySelector('.class-dashboard');
+    if (!dashboard) return;
+
+    // State
+    let displaySize = localStorage.getItem('displaySize') || 'regular';
+    let sortBy = 'score';
+    let selectedStudents = new Set();
+    let isMultiSelectMode = false;
+
+    // Apply saved display size
+    const studentGrid = dashboard.querySelector('.student-grid');
+    if (studentGrid) {
+      studentGrid.dataset.displaySize = displaySize;
+    }
+
+    // Event delegation for better performance
+    dashboard.addEventListener('click', handleDashboardClick);
+    dashboard.addEventListener('keydown', handleKeyboard);
+    dashboard.addEventListener('contextmenu', handleContextMenu);
+
+    function handleDashboardClick(e) {
+      const target = e.target.closest('[data-action]');
+      if (!target) return;
+
+      const action = target.dataset.action;
+      const studentCard = target.closest('.student-card');
+      const studentId = studentCard?.dataset.studentId;
+
+      switch (action) {
+        case 'back':
+          dispatchCustomEvent('dashboard-back');
+          break;
+        
+        case 'add-student':
+          dispatchCustomEvent('add-student-click');
+          break;
+        
+        case 'sort':
+          toggleSortMenu(target);
+          break;
+        
+        case 'display-size':
+          cycleDisplaySize();
+          break;
+        
+        case 'class-tools':
+          dispatchCustomEvent('class-tools-toggle');
+          break;
+        
+        case 'lucky-draw':
+          dispatchCustomEvent('open-lucky-draw');
+          break;
+        
+        case 'egg-road':
+          dispatchCustomEvent('open-egg-road');
+          break;
+        
+        case 'attendance':
+          dispatchCustomEvent('toggle-attendance-mode');
+          break;
+        
+        case 'timer':
+          dispatchCustomEvent('open-timer');
+          break;
+        
+        case 'buzzer':
+          dispatchCustomEvent('activate-buzzer');
+          break;
+        
+        case 'whiteboard':
+          dispatchCustomEvent('open-whiteboard');
+          break;
+        
+        case 'reports':
+          dispatchCustomEvent('open-reports');
+          break;
+        
+        case 'assignments':
+          dispatchCustomEvent('open-assignments');
+          break;
+        
+        case 'whole-class':
+          dispatchCustomEvent('whole-class-action');
+          break;
+        
+        case 'award-point':
+        case 'remove-point':
+          if (studentId) {
+            const points = parseInt(target.dataset.points || '1');
+            const isPositive = action === 'award-point';
+            handlePointChange(studentId, isPositive ? points : -points, target);
+          }
+          break;
+      }
+    }
+
+    function handleKeyboard(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        const studentCard = e.target.closest('.student-card');
+        if (studentCard && e.target.classList.contains('student-card')) {
+          e.preventDefault();
+          dispatchCustomEvent('student-select', { studentId: studentCard.dataset.studentId });
+        }
+      }
+      
+      if (e.key === 'Escape') {
+        // Close any open menus
+        isMultiSelectMode = false;
+        selectedStudents.clear();
+        updateMultiSelectUI();
+      }
+    }
+
+    function handleContextMenu(e) {
+      const studentCard = e.target.closest('.student-card');
+      if (studentCard) {
+        e.preventDefault();
+        dispatchCustomEvent('student-context-menu', {
+          studentId: studentCard.dataset.studentId,
+          x: e.clientX,
+          y: e.clientY
+        });
+      }
+    }
+
+    function toggleSortMenu(button) {
+      // Simple sort toggle for demo
+      sortBy = sortBy === 'score' ? 'name' : 'score';
+      dispatchCustomEvent('sort-change', { sortBy });
+      
+      // Visual feedback
+      button.classList.add('active');
+      setTimeout(() => button.classList.remove('active'), 200);
+    }
+
+    function cycleDisplaySize() {
+      const sizes = ['compact', 'regular', 'spacious'];
+      const currentIndex = sizes.indexOf(displaySize);
+      displaySize = sizes[(currentIndex + 1) % sizes.length];
+      
+      localStorage.setItem('displaySize', displaySize);
+      
+      if (studentGrid) {
+        studentGrid.dataset.displaySize = displaySize;
+      }
+      
+      dispatchCustomEvent('display-size-change', { displaySize });
+    }
+
+    function handlePointChange(studentId, points, button) {
+      // Animate button
+      button.style.transform = 'scale(0.9)';
+      setTimeout(() => button.style.transform = 'scale(1)', 150);
+      
+      // Dispatch event for point change
+      dispatchCustomEvent('student-points-change', {
+        studentId,
+        points,
+        timestamp: Date.now()
+      });
+      
+      // Show floating point animation
+      showFloatingPoints(button, points);
+    }
+
+    function showFloatingPoints(origin, points) {
+      const rect = origin.getBoundingClientRect();
+      const floatEl = document.createElement('div');
+      floatEl.className = 'floating-points';
+      floatEl.textContent = points > 0 ? `+${points}` : points;
+      floatEl.style.cssText = `
+        position: fixed;
+        left: ${rect.left + rect.width / 2}px;
+        top: ${rect.top}px;
+        font-size: 24px;
+        font-weight: 800;
+        color: ${points > 0 ? '#4CAF50' : '#FF5252'};
+        pointer-events: none;
+        z-index: 1000;
+        animation: floatUp 1s ease-out forwards;
+      `;
+      
+      document.body.appendChild(floatEl);
+      
+      setTimeout(() => floatEl.remove(), 1000);
+    }
+
+    function updateMultiSelectUI() {
+      const cards = dashboard.querySelectorAll('.student-card');
+      cards.forEach(card => {
+        const isSelected = selectedStudents.has(card.dataset.studentId);
+        card.classList.toggle('selected', isSelected);
+      });
+    }
+
+    function dispatchCustomEvent(name, detail = {}) {
+      dashboard.dispatchEvent(new CustomEvent(name, {
+        bubbles: true,
+        detail
+      }));
+    }
+
+    // Add floating points animation styles
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes floatUp {
+        0% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(-40px) scale(1.2);
+        }
+      }
+      
+      .student-card.selected {
+        outline: 3px solid #4CAF50;
+        outline-offset: 2px;
+      }
+      
+      .icon-btn.active,
+      .action-btn.active {
+        background: rgba(99, 102, 241, 0.2);
+        color: #6366F1;
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Listen for external events
+    dashboard.addEventListener('student-update', (e) => {
+      // Handle student updates from other components
+      console.log('Student updated:', e.detail);
+    });
+
+    dashboard.addEventListener('level-up', (e) => {
+      // Trigger level up celebration
+      dispatchCustomEvent('show-level-up', e.detail);
+    });
+
+    // Long press detection for mobile
+    let pressTimer;
+    dashboard.addEventListener('touchstart', (e) => {
+      const studentCard = e.target.closest('.student-card');
+      if (studentCard) {
+        pressTimer = setTimeout(() => {
+          dispatchCustomEvent('student-long-press', {
+            studentId: studentCard.dataset.studentId
+          });
+        }, 500);
+      }
+    }, { passive: true });
+
+    dashboard.addEventListener('touchend', () => {
+      clearTimeout(pressTimer);
+    });
+
+    dashboard.addEventListener('touchmove', () => {
+      clearTimeout(pressTimer);
+    });
+
+    console.log('ClassDashboard initialized for class:', dashboard.dataset.classId);
+  });
+</script>
