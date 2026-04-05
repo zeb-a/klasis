@@ -1,0 +1,279 @@
+---
+interface Props {
+  student?: {
+    name: string;
+    avatar?: string;
+    gender?: string;
+    score?: number;
+  };
+  isVisible: boolean;
+}
+
+const { student, isVisible } = Astro.props;
+
+if (!isVisible || !student) {
+  return null;
+}
+
+const level = Math.floor((student.score || 0) / 50) + 1;
+
+// Simple avatar fallback using initials
+const getAvatarFallback = (name: string, gender?: string) => {
+  const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const colors = {
+    male: ['#4A90D9', '#357ABD'],
+    female: ['#D94A90', '#BD357A'],
+    default: ['#9B59B6', '#8E44AD']
+  };
+  const colorSet = gender && colors[gender as keyof typeof colors] 
+    ? colors[gender as keyof typeof colors] 
+    : colors.default;
+  
+  return `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150'><rect fill='${colorSet[0]}' width='150' height='150'/><text x='50%' y='50%' dy='.35em' text-anchor='middle' fill='white' font-size='60' font-family='Arial' font-weight='bold'>${initials}</text></svg>`;
+};
+
+const displayAvatar = student.avatar || getAvatarFallback(student.name, student.gender);
+---
+
+<div class="level-up-overlay" role="dialog" aria-label="Level Up Celebration">
+  <!-- Disco Light Beams -->
+  <div class="disco-lights">
+    <div class="beam beam-red"></div>
+    <div class="beam beam-blue"></div>
+    <div class="beam beam-green"></div>
+    <div class="beam beam-yellow"></div>
+  </div>
+
+  <!-- LEVEL UP Text -->
+  <div class="level-up-text">LEVEL UP!</div>
+
+  <!-- Student Info Container -->
+  <div class="student-container">
+    <!-- Avatar -->
+    <div class="avatar-wrapper">
+      <img 
+        src={displayAvatar} 
+        alt={student.name} 
+        loading="lazy"
+        class="student-avatar"
+      />
+    </div>
+
+    <!-- Name -->
+    <div class="student-name">{student.name}</div>
+
+    <!-- Level Badge -->
+    <div class="level-badge">{level}</div>
+  </div>
+
+  <!-- Close button for accessibility -->
+  <button 
+    class="close-btn" 
+    onclick="this.closest('.level-up-overlay')?.remove()"
+    aria-label="Close celebration"
+  >
+    ✕
+  </button>
+</div>
+
+<style>
+  .level-up-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-family: "Comic Sans MS", "Chalkboard SE", "Bradley Hand", cursive, sans-serif;
+  }
+
+  /* Disco Lights */
+  .disco-lights {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .beam {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    height: 150vh;
+    transform: translate(-50%, -50%);
+    transform-origin: center;
+  }
+
+  .beam-red {
+    width: 150px;
+    background: linear-gradient(45deg, transparent, rgba(255, 0, 0, 0.6), transparent);
+    animation: beam-rotate-red 2s linear infinite;
+  }
+
+  .beam-blue {
+    width: 120px;
+    background: linear-gradient(45deg, transparent, rgba(0, 100, 255, 0.6), transparent);
+    transform: translate(-50%, -50%) rotate(90deg);
+    animation: beam-rotate-blue 2.5s linear infinite reverse;
+  }
+
+  .beam-green {
+    width: 100px;
+    background: linear-gradient(45deg, transparent, rgba(0, 255, 0, 0.6), transparent);
+    transform: translate(-50%, -50%) rotate(180deg);
+    animation: beam-rotate-green 3s linear infinite;
+  }
+
+  .beam-yellow {
+    width: 130px;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 0, 0.6), transparent);
+    transform: translate(-50%, -50%) rotate(270deg);
+    animation: beam-rotate-yellow 1.8s linear infinite reverse;
+  }
+
+  /* LEVEL UP Text */
+  .level-up-text {
+    position: absolute;
+    top: 10%;
+    font-size: clamp(3rem, 8vw, 6rem);
+    font-weight: 900;
+    background: linear-gradient(45deg, #FF6B6B, #4ECDC4, #45B7D1, #FFA07A, #98D8C8, #FFD700);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.8), 0 0 60px rgba(255, 255, 255, 0.4);
+    z-index: 10;
+    animation: bounce-rainbow 1.5s ease-in-out infinite;
+    letter-spacing: 2px;
+    transform: rotate(-2deg);
+  }
+
+  /* Student Container */
+  .student-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+
+  .avatar-wrapper {
+    width: clamp(100px, 20vw, 150px);
+    height: clamp(100px, 20vw, 150px);
+    border-radius: 50%;
+    border: 4px solid #FFD700;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  .student-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .student-name {
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+    font-weight: 800;
+    background: linear-gradient(45deg, #FF69B4, #FFB6C1, #FFC0CB, #FFD700);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 0 20px rgba(255, 105, 180, 0.8), 0 0 40px rgba(255, 105, 180, 0.4);
+    margin-bottom: 10px;
+    transform: rotate(1deg);
+    letter-spacing: 1px;
+  }
+
+  .level-badge {
+    position: absolute;
+    bottom: 80px;
+    right: -40px;
+    background: linear-gradient(135deg, #FF69B4 0%, #FFB6C1 25%, #FFD700 50%, #98FB98 75%, #87CEEB 100%);
+    color: white;
+    width: clamp(50px, 10vw, 70px);
+    height: clamp(50px, 10vw, 70px);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+    border: 4px solid white;
+    box-shadow: 0 0 30px rgba(255, 105, 180, 0.8), 0 0 60px rgba(255, 105, 180, 0.4);
+    transform: rotate(3deg);
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+  }
+
+  .close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid white;
+    color: white;
+    font-size: 1.5rem;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 20;
+    transition: all 0.3s ease;
+  }
+
+  .close-btn:hover {
+    background: rgba(255, 255, 255, 0.4);
+    transform: scale(1.1);
+  }
+
+  /* Animations */
+  @keyframes beam-rotate-red {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+  }
+
+  @keyframes beam-rotate-blue {
+    from { transform: translate(-50%, -50%) rotate(90deg); }
+    to { transform: translate(-50%, -50%) rotate(450deg); }
+  }
+
+  @keyframes beam-rotate-green {
+    from { transform: translate(-50%, -50%) rotate(180deg); }
+    to { transform: translate(-50%, -50%) rotate(540deg); }
+  }
+
+  @keyframes beam-rotate-yellow {
+    from { transform: translate(-50%, -50%) rotate(270deg); }
+    to { transform: translate(-50%, -50%) rotate(630deg); }
+  }
+
+  @keyframes bounce-rainbow {
+    0% { transform: rotate(-2deg) scale(1) translateY(0px); }
+    25% { transform: rotate(2deg) scale(1.1) translateY(-10px); }
+    50% { transform: rotate(-1deg) scale(1.05) translateY(-5px); }
+    75% { transform: rotate(1deg) scale(1.1) translateY(-8px); }
+    100% { transform: rotate(-2deg) scale(1) translateY(0px); }
+  }
+</style>
+
+<script>
+  // Auto-close after 3 seconds
+  setTimeout(() => {
+    const overlay = document.querySelector('.level-up-overlay');
+    if (overlay) {
+      overlay.style.opacity = '0';
+      overlay.style.transition = 'opacity 0.5s ease';
+      setTimeout(() => overlay.remove(), 500);
+    }
+  }, 3000);
+
+  // Dispatch custom event when closed
+  document.querySelector('.close-btn')?.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('levelup-closed'));
+  });
+</script>

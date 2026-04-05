@@ -1,0 +1,541 @@
+---
+interface Props {
+  isOpen?: boolean;
+  onClose?: () => void;
+  onSelectSticker?: (stickerId: string | null) => void;
+  selectedStickerId?: string | null;
+  cardType?: 'wow' | 'nono';
+}
+
+const { 
+  isOpen = false, 
+  selectedStickerId = null, 
+  cardType = 'wow' 
+} = Astro.props;
+
+// POSITIVE REWARD STICKERS
+const POSITIVE_STICKERS = [
+  { id: '100', file: '100.json', name: '100 Points', color: '#FFD700' },
+  { id: 'balloon', file: 'balloon.json', name: 'Balloon', color: '#E91E63' },
+  { id: 'birthday-cake', file: 'birthday-cake.json', name: 'Birthday Cake', color: '#FF9800' },
+  { id: 'butterfly', file: 'butterfly.json', name: 'Butterfly', color: '#9C27B0' },
+  { id: 'clap', file: 'clap.json', name: 'Clap', color: '#FF9800' },
+  { id: 'clapping', file: 'clapping.json', name: 'Clapping', color: '#FF9800' },
+  { id: 'cool-badge', file: 'cool-badge.json', name: 'Cool Badge', color: '#2196F3' },
+  { id: 'crystal-ball', file: 'crystal-ball.json', name: 'Crystal Ball', color: '#9C27B0' },
+  { id: 'dance', file: 'dance.json', name: 'Dance', color: '#E91E63' },
+  { id: 'fist-pump', file: 'fist-pupm.json', name: 'Fist Pump', color: '#4CAF50' },
+  { id: 'glowing-star', file: 'glowing-star.json', name: 'Glowing Star', color: '#FFD700' },
+  { id: 'gold-medal', file: 'gold-medal.json', name: 'Gold Medal', color: '#FFD700' },
+  { id: 'good-job', file: 'good-job.json', name: 'Good Job', color: '#4CAF50' },
+  { id: 'graduation-cap', file: 'graduation-cap.json', name: 'Graduation', color: '#2196F3' },
+  { id: 'hand-shake', file: 'hand-shake.json', name: 'Handshake', color: '#4CAF50' },
+  { id: 'light-bulb', file: 'light-bulb.json', name: 'Light Bulb', color: '#FFD700' },
+  { id: 'on-target', file: 'on-target.json', name: 'On Target', color: '#FF9800' },
+  { id: 'party-popper', file: 'Party-popper.json', name: 'Party Popper', color: '#E91E63' },
+  { id: 'rainbow', file: 'rainbow.json', name: 'Rainbow', color: '#9C27B0' },
+  { id: 'rose', file: 'rose.json', name: 'Rose', color: '#E91E63' },
+  { id: 'silver-medal', file: 'silver-medal.json', name: 'Silver Medal', color: '#90A4AE' },
+  { id: 'star-struck', file: 'star-struck.json', name: 'Star Struck', color: '#FFD700' },
+  { id: 'strong', file: 'strong.json', name: 'Strong', color: '#FF9800' },
+  { id: 'trophy', file: 'trophy.json', name: 'Trophy', color: '#FFD700' },
+  { id: 'trumpet', file: 'trumpet.json', name: 'Trumpet', color: '#FFD700' },
+  { id: 'uni-corn', file: 'uni-corn.json', name: 'Unicorn', color: '#9C27B0' },
+  { id: 'wand', file: 'wand.json', name: 'Magic Wand', color: '#9C27B0' },
+  { id: 'canoe', file: 'canoe.json', name: 'Canoe', color: '#2196F3' },
+  { id: 'dino', file: 'dino.json', name: 'Dino', color: '#4CAF50' },
+  { id: 'salute', file: 'salute.json', name: 'Salute', color: '#4CAF50' },
+  { id: 'raised-eyebrows', file: 'raised-eyebrows.json', name: 'Raised Eyebrows', color: '#FF9800' }
+];
+
+// NEGATIVE / GENTLE REMINDER STICKERS
+const NEGATIVE_STICKERS = [
+  { id: 'big-frown', file: 'big-frown.json', name: 'Big Frown', color: '#90A4AE' },
+  { id: 'distress', file: 'distress.json', name: 'Distress', color: '#FF9800' },
+  { id: 'ferris', file: 'ferris.json', name: 'Ferris Wheel', color: '#9C27B0' },
+  { id: 'no-no', file: 'No No.json', name: 'No No', color: '#F44336' },
+  { id: 'disappointed', file: 'disappointed.json', name: 'Disappointed', color: '#90A4AE' },
+  { id: 'head-shake', file: 'head-shake.json', name: 'Head Shake', color: '#FF9800' },
+  { id: 'no-evil-monkey', file: 'no-evil-monkey.json', name: 'No Evil', color: '#795548' },
+  { id: 'poop', file: 'poop.json', name: 'Poop', color: '#795548' },
+  { id: 'bomb', file: 'bomb.json', name: 'Bomb', color: '#F44336' },
+  { id: 'robot', file: 'sun.json', name: 'Robot', color: '#607D8B' },
+  { id: 'screaming', file: 'screaming.json', name: 'Screaming', color: '#F44336' },
+  { id: 'snowman', file: 'snowman.json', name: 'Snowman', color: '#2196F3' },
+  { id: 'volcano', file: 'volcano.json', name: 'Volcano', color: '#F44336' },
+  { id: 'camera-flash', file: 'camera-flash.json', name: 'Attention', color: '#FF9800' },
+  { id: 'scratching-my-head', file: 'scratching-my-head.json', name: 'Confused', color: '#607D8B' }
+];
+
+const activeTab = cardType === 'wow' ? 'positive' : 'reminder';
+const stickers = activeTab === 'positive' ? POSITIVE_STICKERS : NEGATIVE_STICKERS;
+---
+
+<div class="sticker-picker-overlay" role="dialog" aria-label="Choose Sticker" data-sticker-picker="true">
+  <div class="sticker-picker-modal" onclick="event.stopPropagation()">
+    <!-- Header -->
+    <div class="picker-header">
+      <h2 class="picker-title">Choose Sticker</h2>
+      <button 
+        class="picker-close-btn" 
+        onclick="closePicker()"
+        aria-label="Close"
+      >
+        ✕
+      </button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="picker-tabs">
+      <button 
+        class="tab-btn tab-positive"
+        data-tab="positive"
+        onclick="switchTab('positive')"
+      >
+        ✨ Positive Rewards ({POSITIVE_STICKERS.length})
+      </button>
+      <button 
+        class="tab-btn tab-reminder"
+        data-tab="reminder"
+        onclick="switchTab('reminder')"
+      >
+        💭 Gentle Reminders ({NEGATIVE_STICKERS.length})
+      </button>
+    </div>
+
+    <!-- Sticker Grid -->
+    <div class="picker-content">
+      <div class="sticker-grid">
+        <!-- No Sticker Option -->
+        <button
+          class="sticker-option no-sticker"
+          data-sticker-id=""
+          onclick="selectSticker(null)"
+        >
+          <span class="no-sticker-icon">✕</span>
+          <span class="sticker-name">No sticker</span>
+        </button>
+
+        <!-- Sticker Options -->
+        {stickers.map((sticker) => (
+          <button
+            class={`sticker-option ${selectedStickerId === sticker.id ? 'selected' : ''}`}
+            data-sticker-id={sticker.id}
+            data-sticker-color={sticker.color}
+            onclick={`selectSticker('${sticker.id}')`}
+          >
+            <div 
+              class="sticker-display" 
+              data-sticker-id={sticker.id}
+              style={`background: ${sticker.color}`}
+            ></div>
+            <span class="sticker-name">{sticker.name}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="picker-footer">
+      <button 
+        class="footer-btn cancel-btn"
+        onclick="closePicker()"
+      >
+        Cancel
+      </button>
+      <button 
+        class="footer-btn done-btn"
+        onclick="closePicker()"
+      >
+        Done
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Overlay */
+  .sticker-picker-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Modal */
+  .sticker-picker-modal {
+    background: white;
+    border-radius: 24px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    animation: slideUp 0.3s ease;
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: scale(0.9) translateY(20px);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1) translateY(0);
+      opacity: 1;
+    }
+  }
+
+  /* Header */
+  .picker-header {
+    padding: 24px;
+    border-bottom: 1px solid #E5E7EB;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .picker-title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 800;
+    color: #1F2937;
+  }
+
+  .picker-close-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: none;
+    background: #F3F4F6;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: #6B7280;
+    transition: all 0.2s;
+  }
+
+  .picker-close-btn:hover {
+    background: #E5E7EB;
+  }
+
+  /* Tabs */
+  .picker-tabs {
+    display: flex;
+    padding: 16px;
+    gap: 8px;
+    background: #F9FAFB;
+    border-bottom: 1px solid #E5E7EB;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    background: #E5E7EB;
+    color: #6B7280;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tab-positive.active,
+  .tab-positive:hover {
+    background: #4CAF50;
+    color: white;
+  }
+
+  .tab-reminder.active,
+  .tab-reminder:hover {
+    background: #F44336;
+    color: white;
+  }
+
+  /* Content */
+  .picker-content {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .sticker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 12px;
+  }
+
+  /* Sticker Option */
+  .sticker-option {
+    background: #F9FAFB;
+    border: 2px solid #E5E7EB;
+    border-radius: 16px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-height: 120px;
+    justify-content: center;
+  }
+
+  .sticker-option:hover {
+    transform: scale(1.05);
+  }
+
+  .sticker-option.selected {
+    background: #F0FDF4;
+    border-color: #4CAF50;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.25);
+  }
+
+  .sticker-option.no-sticker {
+    background: #F3F4F6;
+  }
+
+  .sticker-option.no-sticker.selected {
+    border-color: #64748B;
+  }
+
+  .no-sticker-icon {
+    font-size: 28px;
+    line-height: 1;
+  }
+
+  .sticker-display {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 
+      0 4px 8px rgba(0, 0, 0, 0.2),
+      0 6px 16px rgba(0, 0, 0, 0.15);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease;
+  }
+
+  .sticker-option:hover .sticker-display {
+    transform: scale(1.1);
+  }
+
+  .sticker-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: #374151;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  /* Footer */
+  .picker-footer {
+    padding: 16px;
+    border-top: 1px solid #E5E7EB;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    background: #F9FAFB;
+  }
+
+  .footer-btn {
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .cancel-btn {
+    border: 1px solid #D1D5DB;
+    background: white;
+    color: #6B7280;
+  }
+
+  .cancel-btn:hover {
+    background: #F3F4F6;
+  }
+
+  .done-btn {
+    border: none;
+    background: #4CAF50;
+    color: white;
+  }
+
+  .done-btn:hover {
+    background: #45a049;
+    transform: translateY(-2px);
+  }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .sticker-picker-modal {
+      width: 95%;
+      max-height: 90vh;
+    }
+
+    .picker-header {
+      padding: 16px;
+    }
+
+    .picker-title {
+      font-size: 20px;
+    }
+
+    .picker-tabs {
+      padding: 12px;
+      gap: 6px;
+    }
+
+    .tab-btn {
+      padding: 10px;
+      font-size: 12px;
+    }
+
+    .picker-content {
+      padding: 16px;
+    }
+
+    .sticker-grid {
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 10px;
+    }
+
+    .sticker-option {
+      min-height: 100px;
+      padding: 10px;
+    }
+
+    .sticker-display {
+      width: 40px;
+      height: 40px;
+    }
+
+    .sticker-name {
+      font-size: 10px;
+    }
+  }
+</style>
+
+<script>
+  let currentTab = 'positive';
+  let selectedSticker = null;
+
+  // Initialize
+  function init() {
+    const initialTab = document.querySelector('[data-sticker-picker="true"]')?.dataset.cardType === 'nono' 
+      ? 'reminder' 
+      : 'positive';
+    switchTab(initialTab);
+  }
+
+  // Switch tabs
+  function switchTab(tab) {
+    currentTab = tab;
+    
+    // Update tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.classList.remove('active');
+    });
+    document.querySelector(`.tab-${tab}`)?.classList.add('active');
+    
+    // Filter stickers by type
+    document.querySelectorAll('.sticker-option:not(.no-sticker)').forEach(option => {
+      const stickerId = option.dataset.stickerId;
+      const isPositive = POSITIVE_STICKERS.some(s => s.id === stickerId);
+      
+      if (tab === 'positive' && isPositive) {
+        option.style.display = 'flex';
+      } else if (tab === 'reminder' && !isPositive) {
+        option.style.display = 'flex';
+      } else {
+        option.style.display = 'none';
+      }
+    });
+  }
+
+  // Select sticker
+  function selectSticker(stickerId) {
+    selectedSticker = stickerId;
+    
+    // Update visual selection
+    document.querySelectorAll('.sticker-option').forEach(option => {
+      option.classList.remove('selected');
+    });
+    
+    const selectedOption = document.querySelector(`[data-sticker-id="${stickerId || ''}"]`);
+    if (selectedOption) {
+      selectedOption.classList.add('selected');
+      
+      // Update border color for non-empty selection
+      if (stickerId) {
+        const color = selectedOption.dataset.stickerColor;
+        selectedOption.style.borderColor = color;
+        selectedOption.style.background = `${color}10`; // 10% opacity
+      }
+    }
+    
+    // Dispatch custom event
+    window.dispatchEvent(new CustomEvent('sticker-select', {
+      detail: { stickerId }
+    }));
+  }
+
+  // Close picker
+  function closePicker() {
+    const overlay = document.querySelector('.sticker-picker-overlay');
+    if (overlay) {
+      overlay.style.opacity = '0';
+      overlay.style.transition = 'opacity 0.2s ease';
+      setTimeout(() => {
+        overlay.remove();
+        
+        // Dispatch close event with selected sticker
+        window.dispatchEvent(new CustomEvent('sticker-picker:close', {
+          detail: { stickerId: selectedSticker }
+        }));
+      }, 200);
+    }
+  }
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closePicker();
+    }
+    
+    if (e.key === 'Enter' && selectedSticker !== undefined) {
+      closePicker();
+    }
+  });
+
+  // Handle click outside
+  document.querySelector('.sticker-picker-overlay')?.addEventListener('click', (e) => {
+    if (e.target.classList.contains('sticker-picker-overlay')) {
+      closePicker();
+    }
+  });
+
+  // Define sticker arrays for runtime access
+  const POSITIVE_STICKERS = JSON.parse(`${JSON.stringify(POSITIVE_STICKERS)}`);
+  const NEGATIVE_STICKERS = JSON.parse(`${JSON.stringify(NEGATIVE_STICKERS)}`);
+
+  // Initialize on load
+  init();
+</script>
