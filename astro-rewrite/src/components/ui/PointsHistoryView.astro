@@ -847,7 +847,8 @@ allEvents.forEach(event => {
     let showConfirmModal = false;
     let clearTarget = 'all';
     
-    const allEvents = ${JSON.stringify(allEvents)};
+    const allEventsStr = JSON.stringify(allEvents);
+    const allEvents = allEventsStr;
     
     // Elements
     const overlay = document.querySelector('.history-modal-overlay');
