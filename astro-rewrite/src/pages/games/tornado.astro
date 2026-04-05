@@ -1,8 +1,14 @@
 ---
 import MainLayout from '../../layouts/MainLayout.astro';
-import TornadoGame from '../../components/games/TornadoGame.jsx';
+import TornadoGame from '../../components/games/TornadoGame.astro';
 ---
 
 <MainLayout title="Tornado Challenge - Klasiz.fun">
-    <TornadoGame client:load />
+    <div id="tornado-game-container"></div>
+    <script>
+        // Load the game component dynamically
+        import('../../components/games/TornadoGame.astro').then(module => {
+            console.log('TornadoGame loaded');
+        });
+    </script>
 </MainLayout>
