@@ -1,0 +1,304 @@
+---
+/**
+ * App Router Layout - Main application shell
+ * 
+ * This replaces App.jsx as the central router and state manager.
+ * In Astro, we use a combination of:
+ * - Server-side routing via file-based pages
+ * - Client-side state via localStorage + custom events
+ * - Islands architecture for interactive components
+ */
+
+import { themeInitScript, useTheme } from '../lib/theme';
+import { pageHelpInitScript } from '../lib/pageHelp';
+import { errorHandlingInitScript } from '../lib/errorBoundary';
+import { appStateInitScript } from '../lib/appState';
+
+export interface Props {
+	title: string;
+	description?: string;
+}
+
+const { title, description = "Klasiz.fun - Modern Classroom Management" } = Astro.props;
+
+// Initialize all core infrastructure scripts
+const initScripts = `
+${themeInitScript()}
+${pageHelpInitScript()}
+${errorHandlingInitScript()}
+${appStateInitScript()}
+`;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+    
+    <!-- All core initialization scripts -->
+    <script is:inline>{initScripts}</script>
+    
+    <!-- Tailwind CSS -->
+    <style is:global>
+        @tailwind base;
+        @tailwind components;
+        @tailwind utilities;
+        
+        :root {
+            --safe-area-inset-top: env(safe-area-inset-top, 0px);
+            --safe-area-inset-right: env(safe-area-inset-right, 0px);
+            --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-area-inset-left: env(safe-area-inset-left, 0px);
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        }
+        
+        /* Dark mode support */
+        .dark {
+            color-scheme: dark;
+        }
+    </style>
+    
+    <!-- Alpine.js for reactive client-side behavior -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen dark:bg-gray-900 dark:text-white transition-colors duration-200">
+    <!-- Error boundary fallback (hidden by default, shown on error) -->
+    <div id="error-boundary-fallback" style="display: none;" role="alert" aria-live="polite">
+        <!-- Will be populated by error handling script -->
+    </div>
+    
+    <!-- Loading splash screen (removed after app loads) -->
+    <div id="app-loading-splash" class="fixed inset-0 bg-white dark:bg-gray-900 flex items-center justify-center z-50 transition-opacity duration-300">
+        <div class="text-center">
+            <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <span class="text-white font-bold text-3xl">K</span>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Klasiz.fun</h1>
+            <p class="text-gray-500 dark:text-gray-400 mt-2">Loading...</p>
+        </div>
+    </div>
+    
+    <!-- Main application container -->
+    <div id="app-root" x-data="appRouter()" x-init="init()">
+        <slot />
+    </div>
+    
+    <!-- Global app router script -->
+    <script>
+        function appRouter() {
+            return {
+                user: null,
+                view: 'portal',
+                activeClassId: null,
+                classes: [],
+                behaviors: [],
+                showProfileModal: false,
+                isAssignmentStudioOpen: false,
+                
+                init() {
+                    // Remove loading splash
+                    this.removeLoadingSplash();
+                    
+                    // Load initial state
+                    this.loadState();
+                    
+                    // Set up event listeners
+                    this.setupEventListeners();
+                    
+                    // Handle initial route
+                    this.handleInitialRoute();
+                },
+                
+                removeLoadingSplash() {
+                    const el = document.getElementById('app-loading-splash');
+                    if (!el) return;
+                    
+                    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                    if (reduceMotion) {
+                        el.remove();
+                        return;
+                    }
+                    
+                    el.classList.add('opacity-0');
+                    setTimeout(() => el.remove(), 300);
+                },
+                
+                loadState() {
+                    // Load user from localStorage
+                    const stored = localStorage.getItem('classABC_logged_in');
+                    const token = localStorage.getItem('classABC_pb_token') || localStorage.getItem('classABC_token');
+                    if (stored && token) {
+                        try {
+                            this.user = JSON.parse(stored);
+                        } catch (e) {
+                            console.warn('Failed to parse user data');
+                        }
+                    }
+                    
+                    // Load current view from pathname
+                    const path = window.location.pathname.replace(/^\/+/, '');
+                    const validViews = ['portal', 'dashboard', 'egg', 'settings', 'setup', 'torenado', 'lesson-planner'];
+                    this.view = validViews.includes(path) ? path : 'portal';
+                    
+                    // Load active class from sessionStorage
+                    this.activeClassId = sessionStorage.getItem('active_class_id');
+                    
+                    // Load classes
+                    if (this.user?.email) {
+                        const cached = localStorage.getItem(\`classABC_data_\${this.user.email}\`);
+                        if (cached) {
+                            try {
+                                this.classes = JSON.parse(cached);
+                            } catch (e) {
+                                this.classes = [];
+                            }
+                        }
+                    }
+                    
+                    // Load behaviors
+                    const behavData = localStorage.getItem('classABC_behaviors');
+                    if (behavData) {
+                        try {
+                            this.behaviors = JSON.parse(behavData);
+                        } catch (e) {
+                            this.behaviors = this.getDefaultBehaviors();
+                        }
+                    } else {
+                        this.behaviors = this.getDefaultBehaviors();
+                    }
+                },
+                
+                getDefaultBehaviors() {
+                    return [
+                        { id: 1, label: 'Helped Friend', pts: 1, type: 'wow' },
+                        { id: 2, label: 'Great Work', pts: 2, type: 'wow' },
+                        { id: 3, label: 'On Task', pts: 1, type: 'wow' },
+                        { id: 4, label: 'Kindness', pts: 1, type: 'wow' },
+                        { id: 5, label: 'Noisy', pts: -1, type: 'nono' },
+                        { id: 6, label: 'Disruptive', pts: -2, type: 'nono' }
+                    ];
+                },
+                
+                setupEventListeners() {
+                    // Listen for navigation events
+                    window.addEventListener('navigate', (e) => {
+                        this.view = e.detail.view;
+                    });
+                    
+                    // Listen for auth changes
+                    window.addEventListener('auth-change', (e) => {
+                        this.user = e.detail;
+                        if (!this.user) {
+                            this.classes = [];
+                            this.activeClassId = null;
+                        }
+                    });
+                    
+                    // Listen for classes changes
+                    window.addEventListener('classes-change', (e) => {
+                        this.classes = e.detail;
+                    });
+                    
+                    // Listen for behaviors changes
+                    window.addEventListener('behaviors-change', (e) => {
+                        this.behaviors = e.detail;
+                    });
+                    
+                    // Listen for active class changes
+                    window.addEventListener('active-class-change', (e) => {
+                        this.activeClassId = e.detail.id;
+                    });
+                    
+                    // Listen for profile modal toggle
+                    window.addEventListener('profile-modal-toggle', (e) => {
+                        this.showProfileModal = e.detail.open;
+                    });
+                    
+                    // Listen for assignment studio toggle
+                    window.addEventListener('assignment-studio-toggle', (e) => {
+                        this.isAssignmentStudioOpen = e.detail.open;
+                    });
+                    
+                    // Handle browser back/forward
+                    window.addEventListener('popstate', () => {
+                        const path = window.location.pathname.replace(/^\/+/, '');
+                        const validViews = ['portal', 'dashboard', 'egg', 'settings', 'setup', 'torenado', 'lesson-planner'];
+                        if (validViews.includes(path)) {
+                            this.view = path;
+                        }
+                    });
+                },
+                
+                handleInitialRoute() {
+                    // Check for special routes (password reset, email verification, etc.)
+                    const hash = window.location.hash || '';
+                    const path = window.location.pathname || '';
+                    
+                    // Password reset
+                    const resetMatch = hash.match(/#\/auth\/reset-password\/([^/]+)/) || path.match(/\/auth\/reset-password\/([^/]+)/);
+                    if (resetMatch) {
+                        // Will be handled by dedicated page component
+                        return;
+                    }
+                    
+                    // Email verification
+                    const verifyMatch = hash.match(/#\/auth\/confirm-verification\/([^/]+)/) || path.match(/\/auth\/confirm-verification\/([^/]+)/);
+                    if (verifyMatch) {
+                        // Will be handled by dedicated page component
+                        return;
+                    }
+                    
+                    // Convert legacy hash routes to pathname
+                    if (hash && hash.startsWith('#') && !hash.startsWith('#/auth/')) {
+                        const legacy = hash.replace(/^#/, '');
+                        if (legacy.startsWith('dashboard-')) {
+                            const tab = legacy.replace(/^dashboard-/, '');
+                            const next = new URL(window.location.href);
+                            next.pathname = '/dashboard';
+                            if (tab && tab !== 'students') {
+                                next.searchParams.set('tab', tab);
+                            } else {
+                                next.searchParams.delete('tab');
+                            }
+                            next.hash = '';
+                            window.history.replaceState(null, '', \`\${next.pathname}\${next.search}\`);
+                        } else {
+                            window.history.replaceState(null, '', \`/\${legacy}\`);
+                        }
+                    }
+                },
+                
+                navigate(view) {
+                    if (view === this.view) return;
+                    window.history.pushState({ view, timestamp: Date.now() }, '', \`/\${view}\`);
+                    this.view = view;
+                    window.dispatchEvent(new CustomEvent('navigate', { detail: { view } }));
+                },
+                
+                goBack() {
+                    window.history.back();
+                },
+                
+                logout() {
+                    localStorage.removeItem('classABC_logged_in');
+                    localStorage.removeItem('classABC_pb_token');
+                    localStorage.removeItem('classABC_token');
+                    this.user = null;
+                    this.classes = [];
+                    this.activeClassId = null;
+                    this.view = 'portal';
+                    window.history.pushState({}, '', '/portal');
+                    window.dispatchEvent(new CustomEvent('logout'));
+                }
+            }
+        }
+    </script>
+</body>
+</html>
