@@ -1,0 +1,1290 @@
+--- astro-rewrite/src/components/teacher/TeacherWorkspace.astro (原始)
+
+
++++ astro-rewrite/src/components/teacher/TeacherWorkspace.astro (修改后)
+---
+// TeacherWorkspace.astro - Main teacher dashboard with collapsible class rail
+// Converted from React to Astro with Alpine.js for reactivity
+interface Props {
+  user?: any;
+  classes?: any[];
+  activeClass?: any;
+  activeClassId?: string | number;
+  behaviors?: any[];
+}
+
+const { user, classes = [], activeClass, activeClassId, behaviors = [] } = Astro.props;
+
+const TEACHER_CLASS_RAIL_PX = 280;
+const TEACHER_CLASS_RAIL_COLLAPSED_PX = 68;
+const DOCK_FLOAT_MARGIN_PX = 16;
+const RAIL_CLASS_MENU_W = 168;
+const RAIL_CLASS_MENU_H = 148;
+
+const isDark = false; // Will be controlled by theme
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teacher Workspace</title>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <style>
+    :root {
+      --teacher-rail-width: {TEACHER_CLASS_RAIL_PX}px;
+      --teacher-rail-collapsed-width: {TEACHER_CLASS_RAIL_COLLAPSED_PX}px;
+      --dock-float-margin: {DOCK_FLOAT_MARGIN_PX}px;
+      --rail-menu-w: {RAIL_CLASS_MENU_W}px;
+      --rail-menu-h: {RAIL_CLASS_MENU_H}px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      overflow: hidden;
+    }
+
+    .teacher-workspace {
+      display: flex;
+      height: 100vh;
+      width: 100%;
+      overflow: hidden;
+      background: #F4F1EA;
+    }
+
+    .teacher-workspace.dark {
+      background: #0f172a;
+    }
+
+    /* Class Rail */
+    .class-rail {
+      display: flex;
+      flex-direction: column;
+      width: var(--teacher-rail-width);
+      flex-shrink: 0;
+      border-right: 1px solid rgba(15,23,42,0.08);
+      background: rgba(255,255,255,0.96);
+      min-height: 0;
+      overflow: hidden;
+      position: relative;
+      transition: transform 0.15s linear, opacity 0.12s linear;
+    }
+
+    .dark .class-rail {
+      border-right-color: rgba(148,163,184,0.2);
+      background: rgba(15,23,42,0.95);
+    }
+
+    .class-rail.collapsed {
+      transform: translateX(-100%);
+      opacity: 0;
+      pointer-events: none;
+      width: 0;
+    }
+
+    .class-rail-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(15,23,42,0.06);
+      flex-shrink: 0;
+    }
+
+    .dark .class-rail-header {
+      border-bottom-color: rgba(148,163,184,0.15);
+    }
+
+    .class-rail-title {
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #1e293b;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, #1e293b, #475569);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      padding-bottom: 6px;
+      margin-bottom: 4px;
+      border-bottom: 1px solid rgba(15,23,42,0.12);
+      display: block;
+      width: 100%;
+    }
+
+    .dark .class-rail-title {
+      color: #e2e8f0;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+      background: linear-gradient(135deg, #e2e8f0, #94a3b8);
+      border-bottom-color: rgba(148,163,184,0.25);
+    }
+
+    .rail-toggle-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: 1px solid rgba(15,23,42,0.1);
+      background: #fff;
+      cursor: pointer;
+      color: #0f172a;
+      transition: background 0.15s ease;
+    }
+
+    .dark .rail-toggle-btn {
+      border-color: rgba(148,163,184,0.25);
+      background: rgba(30,41,59,0.6);
+      color: #e2e8f0;
+    }
+
+    .rail-toggle-btn:hover {
+      background: rgba(15,23,42,0.05);
+    }
+
+    .dark .rail-toggle-btn:hover {
+      background: rgba(148,163,184,0.1);
+    }
+
+    /* Class List */
+    .class-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 10px 12px;
+    }
+
+    .class-item {
+      position: relative;
+      margin-bottom: 6px;
+      opacity: 1;
+      transition: opacity 0.15s ease;
+    }
+
+    .class-item.dragging {
+      opacity: 0.45;
+    }
+
+    .class-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: flex-start;
+      width: 100%;
+      text-align: left;
+      padding: 10px 40px 10px 6px;
+      border-radius: 14px;
+      border: 1px solid rgba(15,23,42,0.06);
+      background: rgba(255,255,255,0.85);
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .dark .class-card {
+      border-color: rgba(148,163,184,0.15);
+      background: rgba(30,41,59,0.6);
+    }
+
+    .class-card.active {
+      border: 2px solid #4CAF50;
+      background: rgba(76,175,80,0.1);
+    }
+
+    .dark .class-card.active {
+      background: rgba(34,197,94,0.12);
+    }
+
+    .class-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .dark .class-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .drag-handle {
+      display: flex;
+      align-items: center;
+      color: rgba(100,116,139,0.4);
+      cursor: grab;
+      flex-shrink: 0;
+      margin-right: -4px;
+    }
+
+    .dark .drag-handle {
+      color: rgba(148,163,184,0.5);
+    }
+
+    .class-avatar {
+      position: relative;
+      width: 52px;
+      height: 52px;
+      flex-shrink: 0;
+    }
+
+    .class-avatar img {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      object-fit: cover;
+    }
+
+    .student-badge {
+      position: absolute;
+      right: -4px;
+      bottom: -4px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: rgba(79,70,229,0.1);
+      color: #4F46E5;
+      border: 1px solid rgba(79,70,229,0.12);
+      font-size: 11px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      line-height: 1;
+    }
+
+    .class-card.active .student-badge {
+      background: rgba(76,175,80,0.16);
+      color: #15803d;
+      border-color: rgba(76,175,80,0.2);
+    }
+
+    .dark .student-badge {
+      background: rgba(148,163,184,0.20);
+      color: #E2E8F0;
+      border-color: rgba(148,163,184,0.22);
+    }
+
+    .dark .class-card.active .student-badge {
+      background: rgba(34,197,94,0.25);
+      color: #DCFCE7;
+    }
+
+    .class-name {
+      font-weight: 600;
+      font-size: 13px;
+      color: #0f172a;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+
+    .dark .class-name {
+      color: #f1f5f9;
+    }
+
+    .class-card.active .class-name {
+      font-weight: 800;
+    }
+
+    .class-count {
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(79,70,229,0.1);
+      color: #4F46E5;
+      font-weight: 900;
+      font-size: 12px;
+      flex-shrink: 0;
+      border: 1px solid rgba(79,70,229,0.10);
+      line-height: 1.1;
+    }
+
+    .dark .class-count {
+      background: rgba(148,163,184,0.18);
+      color: #E2E8F0;
+      border-color: rgba(148,163,184,0.18);
+    }
+
+    .class-card.active .class-count {
+      background: rgba(76,175,80,0.16);
+      color: #15803d;
+      border-color: rgba(76,175,80,0.2);
+    }
+
+    .actions-btn {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: none;
+      background: rgba(255,255,255,0.9);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .dark .actions-btn {
+      background: rgba(15,23,42,0.5);
+      color: #94a3b8;
+    }
+
+    .actions-btn:hover {
+      background: #fff;
+    }
+
+    .dark .actions-btn:hover {
+      background: rgba(30,41,59,0.7);
+    }
+
+    /* Rail Footer Buttons */
+    .rail-footer {
+      padding: 12px;
+      border-top: 1px solid rgba(15,23,42,0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .dark .rail-footer {
+      border-top-color: rgba(148,163,184,0.15);
+    }
+
+    .add-class-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px dashed rgba(76,175,80,0.45);
+      background: rgba(76,175,80,0.06);
+      color: #15803d;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .add-class-btn:hover {
+      transform: scale(1.02);
+      box-shadow: 0 4px 12px rgba(21,128,61,0.25);
+    }
+
+    .import-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 10px;
+      border-radius: 12px;
+      border: 2px dashed rgba(59, 130, 246, 0.45);
+      background: rgba(59, 130, 246, 0.06);
+      color: #1d4ed8;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      box-sizing: border-box;
+    }
+
+    .import-btn:hover {
+      box-shadow: 0 4px 12px rgba(29,78,216,0.25);
+    }
+
+    /* Archived Section */
+    .archived-section {
+      padding: 8px 12px 10px;
+      border-top: 1px solid rgba(15,23,42,0.06);
+      flex-shrink: 0;
+    }
+
+    .dark .archived-section {
+      border-top-color: rgba(148,163,184,0.15);
+    }
+
+    .archived-container {
+      border: 1px solid rgba(15,23,42,0.08);
+      border-radius: 12px;
+      padding: 6px;
+      background: rgba(248,250,252,0.88);
+    }
+
+    .dark .archived-container {
+      border-color: rgba(148,163,184,0.2);
+      background: rgba(30,41,59,0.45);
+    }
+
+    .archived-header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #64748b;
+      padding: 6px 6px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .dark .archived-header {
+      color: #94a3b8;
+    }
+
+    .archived-count {
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 900;
+      color: #475569;
+      background: rgba(148,163,184,0.2);
+    }
+
+    .dark .archived-count {
+      color: #e2e8f0;
+    }
+
+    .archived-list {
+      max-height: 190px;
+      overflow-y: auto;
+      padding: 4px 2px 2px;
+    }
+
+    .archived-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      text-align: left;
+      padding: 8px;
+      border-radius: 10px;
+      border: 1px solid rgba(15,23,42,0.06);
+      background: rgba(255,255,255,0.9);
+      cursor: pointer;
+      margin-bottom: 6px;
+      opacity: 0.9;
+    }
+
+    .dark .archived-item {
+      border-color: rgba(148,163,184,0.15);
+      background: rgba(15,23,42,0.5);
+    }
+
+    .archived-item img {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      object-fit: cover;
+      filter: grayscale(0.45);
+    }
+
+    .archived-item .name {
+      font-weight: 700;
+      font-size: 12px;
+      color: #334155;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+
+    .dark .archived-item .name {
+      color: #cbd5e1;
+    }
+
+    .archived-item .count {
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #E2E8F0;
+      color: #475569;
+      font-weight: 900;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+
+    .dark .archived-item .count {
+      background: rgba(148,163,184,0.2);
+      color: #e2e8f0;
+    }
+
+    /* Expand Rail Button (when collapsed) */
+    .expand-rail-btn {
+      position: fixed;
+      left: 4px;
+      top: 8px;
+      z-index: 120001;
+      width: 40px;
+      height: 52px;
+      border-radius: 14px;
+      border: 1px solid rgba(15,23,42,0.14);
+      background: rgba(255,255,255,0.94);
+      color: #334155;
+      box-shadow: 0 8px 20px rgba(15,23,42,0.18);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: transform 180ms ease, box-shadow 180ms ease;
+    }
+
+    .dark .expand-rail-btn {
+      border-color: rgba(148,163,184,0.35);
+      background: rgba(15,23,42,0.88);
+      color: #e2e8f0;
+      box-shadow: 0 10px 24px rgba(2,6,23,0.45);
+    }
+
+    .expand-rail-btn:hover {
+      transform: translateX(2px);
+    }
+
+    /* Main Content Area */
+    .main-content {
+      flex: 1;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      align-self: stretch;
+      background: #ffffff;
+    }
+
+    .dark .main-content {
+      background: #0f172a;
+    }
+
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      text-align: center;
+      color: #64748b;
+      font-size: 16px;
+      font-weight: 600;
+      gap: 12px;
+    }
+
+    .dark .empty-state {
+      color: #94a3b8;
+    }
+
+    .empty-state p {
+      margin: 0;
+      max-width: 340px;
+      line-height: 1.5;
+    }
+
+    /* Class Actions Menu (Portaled) */
+    .class-actions-menu {
+      position: fixed;
+      z-index: 400001;
+      min-width: var(--rail-menu-w);
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+      border: 1px solid rgba(15,23,42,0.08);
+      overflow: hidden;
+    }
+
+    .dark .class-actions-menu {
+      background: rgba(15,23,42,0.65);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-color: rgba(148,163,184,0.22);
+    }
+
+    .class-actions-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 10px 12px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 14px;
+      color: #0f172a;
+    }
+
+    .dark .class-actions-item {
+      color: #e2e8f0;
+    }
+
+    .class-actions-item:hover {
+      background: rgba(15,23,42,0.05);
+    }
+
+    .dark .class-actions-item:hover {
+      background: rgba(148,163,184,0.1);
+    }
+
+    .class-actions-item.delete {
+      color: #DC2626;
+    }
+
+    /* Archived Class Prompt Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      padding: 20px;
+    }
+
+    .modal-content {
+      max-width: 520px;
+      background: rgba(255,255,255,0.98);
+      border: 1px solid rgba(15,23,42,0.08);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+      color: #0f172a;
+    }
+
+    .dark .modal-content {
+      background: rgba(15,23,42,0.95);
+      border-color: rgba(148,163,184,0.2);
+      color: #e2e8f0;
+    }
+
+    .modal-content h3 {
+      margin: 0 0 8px;
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .modal-content p {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .modal-actions {
+      margin-top: 18px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .modal-btn {
+      border: 1px solid rgba(148,163,184,0.28);
+      border-radius: 12px;
+      background: transparent;
+      padding: 10px 14px;
+      font-weight: 800;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .modal-btn.primary {
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #6366F1 0%, #7C3AED 100%);
+      padding: 10px 14px;
+      font-weight: 800;
+      font-size: 14px;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    /* Icons */
+    .icon {
+      width: 16px;
+      height: 16px;
+    }
+
+    .icon-sm {
+      width: 14px;
+      height: 14px;
+    }
+
+    .icon-lg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .icon-xl {
+      width: 22px;
+      height: 22px;
+    }
+  </style>
+</head>
+<body>
+  <div
+    class="teacher-workspace"
+    x-data="teacherWorkspace({
+      user: {user ? JSON.stringify(user) : 'null'},
+      classes: {classes.length > 0 ? JSON.stringify(classes) : '[]'},
+      activeClass: {activeClass ? JSON.stringify(activeClass) : 'null'},
+      activeClassId: '{activeClassId ?? ''}',
+      behaviors: {behaviors.length > 0 ? JSON.stringify(behaviors) : '[]'}
+    })"
+    :class="{ dark: isDark }"
+  >
+    <!-- Class Rail -->
+    <aside
+      class="class-rail"
+      :class="{ collapsed: railCollapsed }"
+      data-teacher-class-rail
+      role="navigation"
+      aria-label="My Classes"
+    >
+      <!-- Rail Header -->
+      <div class="class-rail-header">
+        <span class="class-rail-title" x-show="!railCollapsed">My Classes</span>
+        <button
+          type="button"
+          class="rail-toggle-btn"
+          :title="railCollapsed ? 'Expand rail' : 'Collapse rail'"
+          @click="railCollapsed = !railCollapsed"
+        >
+          <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path x-show="railCollapsed" d="M9 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/>
+            <path x-show="!railCollapsed" d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Class List -->
+      <div class="class-list">
+        <template x-for="cls in orderedActiveClasses" :key="cls.id">
+          <div
+            class="class-item"
+            :class="{ dragging: draggingId === String(cls.id) }"
+            draggable="true"
+            @dragstart="handleClassDragStart($event, cls.id)"
+            @dragover="handleClassDragOver($event, cls.id)"
+            @dragend="handleClassDragEnd"
+          >
+            <button
+              type="button"
+              class="class-card"
+              :class="{ active: String(cls.id) === String(activeClassId) }"
+              :title="`${cls.name} (${cls.students?.length || 0})`"
+              @click="handleSelectClass(cls.id)"
+            >
+              <span
+                class="drag-handle"
+                title="Drag to reorder"
+                x-show="!railCollapsed"
+              >
+                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 3h6M9 7h6M9 11h6M9 15h6M9 19h6" stroke-linecap="round"/>
+                </svg>
+              </span>
+
+              <div class="class-avatar">
+                <img :src="cls.avatar || getDefaultAvatar(cls.name)" :alt="cls.name || 'class'" />
+                <span
+                  class="student-badge"
+                  x-show="railCollapsed"
+                  x-text="cls.students?.length || 0"
+                  :aria-label="`${cls.students?.length || 0} students`"
+                ></span>
+              </div>
+
+              <span
+                class="class-name"
+                x-show="!railCollapsed"
+                x-text="cls.name"
+              ></span>
+
+              <span
+                class="class-count"
+                x-show="!railCollapsed"
+                x-text="cls.students?.length || 0"
+              ></span>
+            </button>
+
+            <button
+              type="button"
+              class="actions-btn"
+              aria-label="Class actions"
+              data-class-actions-button
+              x-show="!railCollapsed"
+              @click.stop="toggleClassActionsMenu(cls, $event)"
+            >
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="1"/>
+                <circle cx="12" cy="5" r="1"/>
+                <circle cx="12" cy="19" r="1"/>
+              </svg>
+            </button>
+          </div>
+        </template>
+      </div>
+
+      <!-- Rail Footer -->
+      <div class="rail-footer">
+        <button
+          type="button"
+          class="add-class-btn"
+          @click="addModalOpen = true"
+          title="Add new class"
+        >
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span x-show="!railCollapsed">Add new class</span>
+        </button>
+
+        <label
+          for="teacher-class-import-input"
+          class="import-btn"
+        >
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Import classes
+        </label>
+        <input
+          type="file"
+          id="teacher-class-import-input"
+          style="display: none"
+          accept=".json,.csv"
+          @change="handleImport"
+        />
+      </div>
+
+      <!-- Collapsible Tools -->
+      <div x-data="teacherRailTools({ user: {user ? JSON.stringify(user) : 'null'}, classes: {classes.length > 0 ? JSON.stringify(classes) : '[]'}, railCollapsed })">
+        <!-- Tools will be rendered here -->
+      </div>
+
+      <!-- Archived Classes Indicator (when collapsed) -->
+      <div
+        x-show="railCollapsed && archivedClasses.length > 0"
+        style="padding: 8px; border-top: 1px solid rgba(148,163,184,0.15); display: flex; justify-content: center; flex-shrink: 0;"
+        :style="{ borderTop: isDark ? '1px solid rgba(148,163,184,0.15)' : '1px solid rgba(15,23,42,0.06)' }"
+      >
+        <button
+          type="button"
+          @click="railCollapsed = false"
+          title="Archived classes"
+          style="display: flex; align-items: center; justify-content: center; width: 44px; padding: 10px; border-radius: 12px; border: 1px solid rgba(148,163,184,0.30); background: rgba(51,65,85,0.62); color: #e2e8f0; cursor: pointer; position: relative;"
+          :style="{
+            background: isDark ? 'rgba(51,65,85,0.62)' : 'rgba(241,245,249,0.95)',
+            color: isDark ? '#e2e8f0' : '#475569',
+            border: isDark ? '1px solid rgba(148,163,184,0.30)' : '1px solid rgba(15,23,42,0.06)'
+          }"
+        >
+          <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span
+            style="position: absolute; right: -2px; top: -2px; min-width: 16px; height: 16px; border-radius: 999px; background: #7C3AED; color: #fff; font-size: 10px; font-weight: 900; display: flex; align-items: center; justify-content: center; padding: 0 4px; box-sizing: border-box;"
+            x-text="archivedClasses.length"
+          ></span>
+        </button>
+      </div>
+
+      <!-- Archived Classes Section -->
+      <div
+        x-show="!railCollapsed && archivedClasses.length > 0"
+        class="archived-section"
+      >
+        <div class="archived-container">
+          <button
+            type="button"
+            class="archived-header"
+            @click="archivedSectionCollapsed = !archivedSectionCollapsed"
+          >
+            <span>Archived Classes</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px;">
+              <span class="archived-count" x-text="archivedClasses.length"></span>
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path x-show="archivedSectionCollapsed" d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
+                <path x-show="!archivedSectionCollapsed" d="M18 15l-6-6-6 6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+          </button>
+
+          <div
+            class="archived-list"
+            x-show="!archivedSectionCollapsed"
+            x-transition
+          >
+            <template x-for="cls in archivedClasses" :key="'archived-' + cls.id">
+              <button
+                type="button"
+                class="archived-item"
+                @click="handleSelectClass(cls.id)"
+              >
+                <img :src="cls.avatar || getDefaultAvatar(cls.name)" :alt="cls.name || 'class'" />
+                <span class="name" x-text="cls.name"></span>
+                <span class="count" x-text="cls.students?.length || 0"></span>
+              </button>
+            </template>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Expand Rail Button (visible when collapsed) -->
+    <button
+      type="button"
+      class="expand-rail-btn"
+      x-show="railCollapsed"
+      @click="railCollapsed = false"
+      title="Expand rail"
+      aria-label="Expand rail"
+    >
+      <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+
+    <!-- Class Actions Menu (Portaled) -->
+    <template x-if="classActionsMenu && !railCollapsed">
+      <div
+        class="class-actions-menu"
+        :style="{ left: classActionsMenu.left + 'px', top: classActionsMenu.top + 'px' }"
+        data-class-actions-menu
+        @click.stop
+      >
+        <button
+          type="button"
+          class="class-actions-item"
+          data-class-actions-item
+          @click="openEditClass(classActionsMenu.cls); classActionsMenu = null"
+        >
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Edit class
+        </button>
+
+        <template x-if="classActionsMenu.cls?.id !== 'demo-class'">
+          <button
+            type="button"
+            class="class-actions-item"
+            @click="archiveClass(classActionsMenu.cls); classActionsMenu = null"
+          >
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Archive class
+          </button>
+        </template>
+
+        <template x-if="classActionsMenu.cls?.id !== 'demo-class'">
+          <button
+            type="button"
+            class="class-actions-item delete"
+            @click="requestDeleteClass(classActionsMenu.cls.id); classActionsMenu = null"
+          >
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Delete class
+          </button>
+        </template>
+      </div>
+    </template>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+      <!-- Archived Class Prompt Modal -->
+      <template x-if="archivedClassPrompt">
+        <div class="modal-overlay" @click="archivedClassPrompt = null">
+          <div class="modal-content" @click.stop>
+            <h3>Archived Class</h3>
+            <p>
+              <strong x-text="archivedClassPrompt.name"></strong> is archived. Do you want to unarchive this class and move it back to My Classes?
+            </p>
+            <div class="modal-actions">
+              <button
+                type="button"
+                class="modal-btn"
+                @click="archivedClassPrompt = null"
+              >
+                Back to panel
+              </button>
+              <button
+                type="button"
+                class="modal-btn primary"
+                @click="unarchiveClass(archivedClassPrompt)"
+              >
+                Unarchive class
+              </button>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- Class Dashboard or Empty State -->
+      <template x-if="activeClass">
+        <div style="flex: 1; min-height: 0; display: flex; flex-direction: column; align-self: stretch;">
+          <!-- ClassDashboard component would be inserted here -->
+          <div style="flex: 1; display: flex; align-items: center; justify-content: center; color: #64748b;">
+            Class Dashboard would render here
+          </div>
+        </div>
+      </template>
+
+      <template x-if="!activeClass">
+        <div class="empty-state">
+          <p x-text="activeClasses.length === 0 ? 'No classes yet. Add your first class!' : 'Select a class to open'"></p>
+        </div>
+      </template>
+    </div>
+  </div>
+
+  <script>
+    function teacherWorkspace({ user, classes, activeClass, activeClassId, behaviors }) {
+      return {
+        user: typeof user === 'string' ? JSON.parse(user) : user,
+        classes: typeof classes === 'string' ? JSON.parse(classes) : classes,
+        activeClass: typeof activeClass === 'string' ? JSON.parse(activeClass) : activeClass,
+        activeClassId: activeClassId,
+        behaviors: typeof behaviors === 'string' ? JSON.parse(behaviors) : behaviors,
+
+        railCollapsed: false,
+        addModalOpen: false,
+        archivedClassPrompt: null,
+        archivedSectionCollapsed: true,
+        classActionsMenu: null,
+        draggingId: null,
+        classOrder: [],
+        isDark: false,
+
+        init() {
+          // Load class order from localStorage
+          const orderKey = this.user?.email ? `classABC_classOrder_${this.user.email}` : null;
+          if (orderKey) {
+            try {
+              this.classOrder = JSON.parse(localStorage.getItem(orderKey) || '[]');
+            } catch (e) {
+              this.classOrder = [];
+            }
+          }
+
+          // Check for dark mode
+          this.isDark = document.documentElement.classList.contains('dark') ||
+                       window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+          // Listen for theme changes
+          const observer = new MutationObserver(() => {
+            this.isDark = document.documentElement.classList.contains('dark');
+          });
+          observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+        },
+
+        get activeClasses() {
+          return (this.classes || []).filter(c => !c.archived);
+        },
+
+        get archivedClasses() {
+          return (this.classes || []).filter(c => c.archived);
+        },
+
+        get orderedActiveClasses() {
+          if (!this.classOrder.length) return this.activeClasses;
+          const idx = {};
+          this.classOrder.forEach((id, i) => { idx[String(id)] = i; });
+          return [...this.activeClasses].sort((a, b) => {
+            const ai = idx[String(a.id)] ?? 9999;
+            const bi = idx[String(b.id)] ?? 9999;
+            return ai - bi;
+          });
+        },
+
+        getDefaultAvatar(name) {
+          // Simple avatar generator - replace with actual implementation
+          const hash = name ? name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) : 0;
+          const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8'];
+          return `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='${colors[hash % colors.length]}' width='100' height='100'/><text x='50' y='55' font-size='40' text-anchor='middle' fill='white' font-weight='bold'>${(name || '?').charAt(0).toUpperCase()}</text></svg>`;
+        },
+
+        handleSelectClass(classId) {
+          const cls = (this.classes || []).find(c => String(c.id) === String(classId));
+          if (cls?.archived) {
+            this.archivedClassPrompt = cls;
+            this.classActionsMenu = null;
+            return;
+          }
+          this.archivedClassPrompt = null;
+          this.railCollapsed = true;
+          this.classActionsMenu = null;
+
+          // Dispatch custom event for class selection
+          window.dispatchEvent(new CustomEvent('class-selected', { detail: { classId } }));
+        },
+
+        toggleClassActionsMenu(cls, event) {
+          if (this.classActionsMenu?.cls?.id === cls.id) {
+            this.classActionsMenu = null;
+          } else {
+            const rect = event.currentTarget.getBoundingClientRect();
+            const gap = 6;
+            let top = rect.bottom + gap;
+            let left = rect.right - RAIL_CLASS_MENU_W;
+            left = Math.max(8, Math.min(left, window.innerWidth - RAIL_CLASS_MENU_W - 8));
+            if (top + RAIL_CLASS_MENU_H > window.innerHeight - 8) {
+              top = Math.max(8, rect.top - RAIL_CLASS_MENU_H - gap);
+            }
+            this.classActionsMenu = { cls, top, left };
+          }
+        },
+
+        handleClassDragStart(event, classId) {
+          this.draggingId = String(classId);
+          event.dataTransfer.effectAllowed = 'move';
+          if (this.classOrder.length === 0) {
+            this.classOrder = this.orderedActiveClasses.map(c => String(c.id));
+          }
+        },
+
+        handleClassDragOver(event, classId) {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = 'move';
+          const overId = String(classId);
+          const dragId = this.draggingId;
+          if (!dragId || dragId === overId) return;
+
+          const base = this.classOrder.length ? this.classOrder.map(String) : this.orderedActiveClasses.map(c => String(c.id));
+          const dragIdx = base.indexOf(dragId);
+          const overIdx = base.indexOf(overId);
+          if (dragIdx < 0 || overIdx < 0) return;
+
+          const next = [...base];
+          next.splice(dragIdx, 1);
+          next.splice(overIdx, 0, dragId);
+          this.classOrder = next;
+        },
+
+        handleClassDragEnd() {
+          this.draggingId = null;
+          if (!this.classOrder.length) return;
+
+          const orderKey = this.user?.email ? `classABC_classOrder_${this.user.email}` : null;
+          if (orderKey) {
+            localStorage.setItem(orderKey, JSON.stringify(this.classOrder));
+          }
+
+          // Could save to backend here
+          window.dispatchEvent(new CustomEvent('class-order-saved', { detail: { order: this.classOrder } }));
+        },
+
+        openEditClass(cls) {
+          window.dispatchEvent(new CustomEvent('edit-class', { detail: { class: cls } }));
+        },
+
+        archiveClass(cls) {
+          if (String(this.activeClassId) === String(cls.id)) {
+            window.dispatchEvent(new CustomEvent('back-from-dashboard'));
+          }
+
+          this.classes = this.classes.map(c =>
+            String(c.id) === String(cls.id)
+              ? { ...c, archived: true, archivedAt: new Date().toISOString(), archivedReason: 'manual' }
+              : c
+          );
+
+          window.dispatchEvent(new CustomEvent('classes-updated', { detail: { classes: this.classes } }));
+        },
+
+        requestDeleteClass(classId) {
+          window.dispatchEvent(new CustomEvent('delete-class-request', { detail: { classId } }));
+        },
+
+        unarchiveClass(cls) {
+          this.classes = this.classes.map(c =>
+            String(c.id) === String(cls.id)
+              ? { ...c, archived: false, archivedAt: null, archivedReason: null, lastInteractionAt: new Date().toISOString() }
+              : c
+          );
+          this.archivedClassPrompt = null;
+          window.dispatchEvent(new CustomEvent('classes-updated', { detail: { classes: this.classes } }));
+        },
+
+        handleImport(event) {
+          const file = event.target.files[0];
+          if (!file) return;
+
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              const data = JSON.parse(e.target.result);
+              window.dispatchEvent(new CustomEvent('import-classes', { detail: { data } }));
+            } catch (err) {
+              alert('Failed to parse import file');
+            }
+          };
+          reader.readAsText(file);
+          event.target.value = '';
+        }
+      };
+    }
+
+    function teacherRailTools({ user, classes, railCollapsed }) {
+      return {
+        user: typeof user === 'string' ? JSON.parse(user) : user,
+        classes: typeof classes === 'string' ? JSON.parse(classes) : classes,
+        railCollapsed: railCollapsed,
+
+        openLessonPlanner() {
+          window.dispatchEvent(new CustomEvent('open-lesson-planner'));
+        },
+
+        openProfile() {
+          window.dispatchEvent(new CustomEvent('open-profile'));
+        },
+
+        logout() {
+          if (confirm('Are you sure you want to logout?')) {
+            window.dispatchEvent(new CustomEvent('logout'));
+          }
+        },
+
+        exportBackup() {
+          const data = {
+            user: this.user,
+            classes: this.classes,
+            exportedAt: new Date().toISOString()
+          };
+          const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `teacher-backup-${new Date().toISOString().split('T')[0]}.json`;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+      };
+    }
+  </script>
+</body>
+</html>

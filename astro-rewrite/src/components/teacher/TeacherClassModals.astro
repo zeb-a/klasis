@@ -1,8 +1,12 @@
+--- astro-rewrite/src/components/teacher/TeacherClassModals.astro (原始)
+
+
++++ astro-rewrite/src/components/teacher/TeacherClassModals.astro (修改后)
 ---
 /**
  * Teacher Class Modals Component for Astro
  * Add / edit / delete class modals with glass-style design
- * 
+ *
  * Features:
  * - Class creation with avatar preset picker
  * - Grade selection (Pre-K through 12th)
@@ -12,85 +16,85 @@
  */
 
 interface Props {
-	classes?: any[];
-	user?: any;
-	isOpen?: boolean;
-	mode?: 'add' | 'edit';
-	editingClass?: any;
+        classes?: any[];
+        user?: any;
+        isOpen?: boolean;
+        mode?: 'add' | 'edit';
+        editingClass?: any;
 }
 
-const { 
-	classes = [], 
-	user, 
-	isOpen = false, 
-	mode = 'add',
-	editingClass 
+const {
+        classes = [],
+        user,
+        isOpen = false,
+        mode = 'add',
+        editingClass
 } = Astro.props;
 
 // Grade options from Pre-K to K-12
 const GRADE_OPTIONS = [
-	{ value: 'pre-k', label: 'Pre-K' },
-	{ value: 'kindergarten', label: 'Kindergarten' },
-	{ value: '1st', label: '1st Grade' },
-	{ value: '2nd', label: '2nd Grade' },
-	{ value: '3rd', label: '3rd Grade' },
-	{ value: '4th', label: '4th Grade' },
-	{ value: '5th', label: '5th Grade' },
-	{ value: '6th', label: '6th Grade' },
-	{ value: '7th', label: '7th Grade' },
-	{ value: '8th', label: '8th Grade' },
-	{ value: '9th', label: '9th Grade' },
-	{ value: '10th', label: '10th Grade' },
-	{ value: '11th', label: '11th Grade' },
-	{ value: '12th', label: '12th Grade' }
+        { value: 'pre-k', label: 'Pre-K' },
+        { value: 'kindergarten', label: 'Kindergarten' },
+        { value: '1st', label: '1st Grade' },
+        { value: '2nd', label: '2nd Grade' },
+        { value: '3rd', label: '3rd Grade' },
+        { value: '4th', label: '4th Grade' },
+        { value: '5th', label: '5th Grade' },
+        { value: '6th', label: '6th Grade' },
+        { value: '7th', label: '7th Grade' },
+        { value: '8th', label: '8th Grade' },
+        { value: '9th', label: '9th Grade' },
+        { value: '10th', label: '10th Grade' },
+        { value: '11th', label: '11th Grade' },
+        { value: '12th', label: '12th Grade' }
 ];
 
 // Background color options
 const BACKGROUND_COLORS = [
-	{ value: '', label: 'Default', color: '#F4F1EA' },
-	{ value: '#FEF3C7', label: 'Warm Yellow', color: '#FEF3C7' },
-	{ value: '#DBEAFE', label: 'Sky Blue', color: '#DBEAFE' },
-	{ value: '#E9D5FF', label: 'Lavender', color: '#E9D5FF' },
-	{ value: '#FCE7F3', label: 'Pink', color: '#FCE7F3' },
-	{ value: '#D1FAE5', label: 'Mint', color: '#D1FAE5' },
-	{ value: '#FED7AA', label: 'Peach', color: '#FED7AA' },
-	{ value: '#E5E7EB', label: 'Light Gray', color: '#E5E7EB' },
-	{ value: '#1F2937', label: 'Dark Gray', color: '#1F2937' },
-	{ value: '#1E293B', label: 'Dark Blue', color: '#1E293B' },
-	{ value: '#18181B', label: 'Black', color: '#18181B' }
+        { value: '', label: 'Default', color: '#F4F1EA' },
+        { value: '#FEF3C7', label: 'Warm Yellow', color: '#FEF3C7' },
+        { value: '#DBEAFE', label: 'Sky Blue', color: '#DBEAFE' },
+        { value: '#E9D5FF', label: 'Lavender', color: '#E9D5FF' },
+        { value: '#FCE7F3', label: 'Pink', color: '#FCE7F3' },
+        { value: '#D1FAE5', label: 'Mint', color: '#D1FAE5' },
+        { value: '#FED7AA', label: 'Peach', color: '#FED7AA' },
+        { value: '#E5E7EB', label: 'Light Gray', color: '#E5E7EB' },
+        { value: '#1F2937', label: 'Dark Gray', color: '#1F2937' },
+        { value: '#1E293B', label: 'Dark Blue', color: '#1E293B' },
+        { value: '#18181B', label: 'Black', color: '#18181B' }
 ];
 
 // Avatar options
 const AVATAR_OPTIONS = [
-	{ name: 'Alex', label: 'Alex' },
-	{ name: 'Sam', label: 'Sam' },
-	{ name: 'Jordan', label: 'Jordan' },
-	{ name: 'Taylor', label: 'Taylor' },
-	{ name: 'Casey', label: 'Casey' },
-	{ name: 'Riley', label: 'Riley' },
-	{ name: 'Avery', label: 'Avery' },
-	{ name: 'Quinn', label: 'Quinn' },
-	{ name: 'Skylar', label: 'Skylar' },
-	{ name: 'Reese', label: 'Reese' },
-	{ name: 'Rowan', label: 'Rowan' },
-	{ name: 'Emerson', label: 'Emerson' },
-	{ name: 'Finley', label: 'Finley' },
-	{ name: 'Parker', label: 'Parker' },
-	{ name: 'Dakota', label: 'Dakota' },
-	{ name: 'Phoenix', label: 'Phoenix' }
+        { name: 'Alex', label: 'Alex' },
+        { name: 'Sam', label: 'Sam' },
+        { name: 'Jordan', label: 'Jordan' },
+        { name: 'Taylor', label: 'Taylor' },
+        { name: 'Casey', label: 'Casey' },
+        { name: 'Riley', label: 'Riley' },
+        { name: 'Avery', label: 'Avery' },
+        { name: 'Quinn', label: 'Quinn' },
+        { name: 'Skylar', label: 'Skylar' },
+        { name: 'Reese', label: 'Reese' },
+        { name: 'Rowan', label: 'Rowan' },
+        { name: 'Emerson', label: 'Emerson' },
+        { name: 'Finley', label: 'Finley' },
+        { name: 'Parker', label: 'Parker' },
+        { name: 'Dakota', label: 'Dakota' },
+        { name: 'Phoenix', label: 'Phoenix' }
 ];
 
 function avatarByCharacter(name: string): string {
-	const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#e0e7ff"/><circle cx="50" cy="40" r="18" fill="#fbbf24"/><ellipse cx="50" cy="75" rx="25" ry="20" fill="#fbbf24"/></svg>`;
-	return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#e0e7ff"/><circle cx="50" cy="40" r="18" fill="#fbbf24"/><ellipse cx="50" cy="75" rx="25" ry="20" fill="#fbbf24"/></svg>`;
+        return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
 function boringAvatar(name: string): string {
-	const initial = (name || '?').charAt(0).toUpperCase();
-	const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
-	const color = colors[name.length % colors.length];
-	const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="${color}"/><text x="50" y="55" text-anchor="middle" fill="white" font-size="40" font-weight="bold">${initial}</text></svg>`;
-	return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+        const initial = (name || '?').charAt(0).toUpperCase();
+        const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+        const color = colors[name.length % colors.length];
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="${color}"/><text x="50" y="55" text-anchor="middle" fill="white" font-size="40" font-weight="bold">${initial}</text></svg>`;
+        return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
 const initialName = mode === 'edit' && editingClass ? editingClass.name : '';
@@ -100,637 +104,637 @@ const initialAvatar = mode === 'edit' && editingClass ? (editingClass.avatar || 
 ---
 
 <style>
-	.modal-overlay {
-		position: fixed;
-		inset: 0;
-		background: rgba(15, 23, 42, 0.38);
-		z-index: 50000;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 16px;
-		opacity: 0;
-		visibility: hidden;
-		transition: opacity 0.3s ease, visibility 0.3s ease;
-	}
-	
-	.modal-overlay.active {
-		opacity: 1;
-		visibility: visible;
-	}
-	
-	.modal-shell {
-		background: linear-gradient(145deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 50%, rgba(241, 245, 249, 0.98) 100%);
-		border: 1px solid rgba(203, 213, 225, 0.4);
-		box-shadow: 0 0 0 1px rgba(255,255,255,0.8) inset, 0 20px 40px -12px rgba(0, 0, 0, 0.08), 0 0 60px -20px rgba(0, 0, 0, 0.04);
-		border-radius: 24px;
-		width: 100%;
-		max-width: 520px;
-		max-height: 90vh;
-		overflow: auto;
-		transform: scale(0.95) translateY(20px);
-		transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
-	}
-	
-	.modal-overlay.active .modal-shell {
-		transform: scale(1) translateY(0);
-	}
-	
-	.modal-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-start;
-		padding: 24px 24px 0;
-	}
-	
-	.modal-title {
-		margin: 0 0 4px;
-		font-size: 22px;
-		font-weight: 800;
-		color: #0f172a;
-	}
-	
-	.modal-subtitle {
-		margin: 0;
-		font-size: 13px;
-		color: #64748b;
-	}
-	
-	.close-btn {
-		background: rgba(241,245,249,0.8);
-		border: none;
-		padding: 8px;
-		border-radius: 10px;
-		cursor: pointer;
-		color: #64748b;
-		transition: all 0.2s ease;
-	}
-	
-	.close-btn:hover {
-		background: rgba(203,213,225,0.8);
-		color: #0f172a;
-	}
-	
-	.modal-body {
-		padding: 24px;
-	}
-	
-	.form-section {
-		display: flex;
-		gap: 16px;
-		margin-bottom: 20px;
-	}
-	
-	.avatar-column {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 8px;
-		flex-shrink: 0;
-	}
-	
-	.avatar-preview-btn {
-		padding: 3px;
-		border-radius: 20px;
-		border: none;
-		cursor: pointer;
-		background: linear-gradient(135deg, #22c55e, #6366f1);
-		box-shadow: 0 8px 24px rgba(99,102,241,0.2);
-	}
-	
-	.avatar-preview-container {
-		width: 88px;
-		height: 88px;
-		border-radius: 17px;
-		overflow: hidden;
-		border: 3px solid #fff;
-		background: #f8fafc;
-	}
-	
-	.avatar-preview {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
-	
-	.avatar-actions {
-		display: flex;
-		flex-direction: column;
-		gap: 4px;
-		align-items: center;
-	}
-	
-	.avatar-action-btn {
-		background: none;
-		border: none;
-		font-size: 12px;
-		font-weight: 700;
-		cursor: pointer;
-		padding: 2px 4px;
-	}
-	
-	.avatar-action-btn.primary {
-		color: #22c55e;
-	}
-	
-	.avatar-action-btn.secondary {
-		color: #64748b;
-		display: inline-flex;
-		align-items: center;
-		gap: 4px;
-	}
-	
-	.fields-column {
-		flex: 1;
-		min-width: 0;
-	}
-	
-	.field-group {
-		margin-bottom: 16px;
-	}
-	
-	.field-label {
-		display: block;
-		font-size: 11px;
-		font-weight: 700;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		color: #64748b;
-		margin-bottom: 6px;
-	}
-	
-	.field-input {
-		width: 100%;
-		box-sizing: border-box;
-		padding: 12px 14px;
-		border-radius: 12px;
-		border: 1px solid #e2e8f0;
-		font-size: 15px;
-		outline: none;
-		background: #f8fafc;
-		color: #0f172a;
-		transition: border-color 0.15s linear;
-	}
-	
-	.field-input:focus {
-		border-color: #6366f1;
-	}
-	
-	select.field-input {
-		cursor: pointer;
-	}
-	
-	.color-picker-grid {
-		display: grid;
-		grid-template-columns: repeat(6, 1fr);
-		gap: 8px;
-		margin-top: 8px;
-	}
-	
-	.color-option {
-		width: 100%;
-		aspect-ratio: 1;
-		border-radius: 10px;
-		border: 2px solid #e2e8f0;
-		cursor: pointer;
-		transition: all 0.2s ease;
-	}
-	
-	.color-option:hover {
-		transform: scale(1.1);
-	}
-	
-	.color-option.selected {
-		border-color: #22c55e;
-		box-shadow: 0 0 0 3px rgba(34,197,94,0.2);
-	}
-	
-	.preset-picker {
-		padding: 0 4px;
-	}
-	
-	.preset-hint {
-		font-size: 13px;
-		color: #64748b;
-		margin-bottom: 14px;
-		line-height: 1.5;
-	}
-	
-	.character-grid {
-		display: grid;
-		grid-template-columns: repeat(4, 1fr);
-		gap: 10px;
-		max-height: 220px;
-		overflow-y: auto;
-		padding: 4px;
-	}
-	
-	.character-btn {
-		border: 2px solid #e2e8f0;
-		border-radius: 12px;
-		padding: 4px;
-		cursor: pointer;
-		background: #fff;
-		transition: transform 0.12s linear;
-	}
-	
-	.character-btn:hover {
-		transform: scale(1.05);
-	}
-	
-	.character-btn.selected {
-		border-color: #22c55e;
-		background: rgba(34,197,94,0.12);
-	}
-	
-	.character-thumb {
-		width: 100%;
-		aspect-ratio: 1;
-		border-radius: 8px;
-		display: block;
-	}
-	
-	.modal-footer {
-		display: flex;
-		gap: 10px;
-		padding: 0 24px 24px;
-	}
-	
-	.btn {
-		flex: 1;
-		padding: 12px 16px;
-		border-radius: 12px;
-		font-weight: 700;
-		font-size: 14px;
-		cursor: pointer;
-		transition: all 0.2s ease;
-	}
-	
-	.btn-primary {
-		background: linear-gradient(135deg, #22c55e, #16a34a);
-		color: #fff;
-		border: none;
-	}
-	
-	.btn-primary:hover {
-		transform: translateY(-1px);
-		box-shadow: 0 6px 20px rgba(34,197,94,0.3);
-	}
-	
-	.btn-secondary {
-		background: #f1f5f9;
-		color: #0f172a;
-		border: 1px solid #e2e8f0;
-	}
-	
-	.btn-secondary:hover {
-		background: #e2e8f0;
-	}
-	
-	.btn-danger {
-		background: #DC2626;
-		color: #fff;
-		border: none;
-	}
-	
-	.btn-danger:hover {
-		background: #b91c1c;
-	}
-	
-	/* Dark mode */
-	:root.dark .modal-shell {
-		background: linear-gradient(145deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 50%, rgba(30, 41, 59, 0.95) 100%);
-		border-color: rgba(71, 85, 105, 0.3);
-		box-shadow: 0 0 0 1px rgba(255,255,255,0.03) inset, 0 20px 40px -12px rgba(0,0,0,0.4), 0 0 60px -20px rgba(0,0,0,0.2);
-	}
-	
-	:root.dark .modal-title {
-		color: #f1f5f9;
-	}
-	
-	:root.dark .modal-subtitle {
-		color: #94a3b8;
-	}
-	
-	:root.dark .close-btn {
-		background: rgba(30,41,59,0.6);
-		color: #94a3b8;
-	}
-	
-	:root.dark .close-btn:hover {
-		background: rgba(51,65,85,0.6);
-		color: #f1f5f9;
-	}
-	
-	:root.dark .field-input {
-		background: rgba(15, 23, 42, 0.55);
-		border-color: rgba(148, 163, 184, 0.22);
-		color: #f1f5f9;
-	}
-	
-	:root.dark .field-input:focus {
-		border-color: #818cf8;
-	}
-	
-	:root.dark .character-btn {
-		background: rgba(15, 23, 42, 0.45);
-		border-color: rgba(148, 163, 184, 0.2);
-	}
-	
-	:root.dark .character-btn.selected {
-		background: rgba(34,197,94,0.12);
-	}
-	
-	:root.dark .btn-secondary {
-		background: rgba(30,41,59,0.55);
-		border-color: rgba(148,163,184,0.2);
-		color: #e2e8f0;
-	}
-	
-	:root.dark .btn-secondary:hover {
-		background: rgba(51,65,85,0.55);
-	}
-	
-	.hidden {
-		display: none !important;
-	}
+        .modal-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(15, 23, 42, 0.38);
+                z-index: 50000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 16px;
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .modal-overlay.active {
+                opacity: 1;
+                visibility: visible;
+        }
+
+        .modal-shell {
+                background: linear-gradient(145deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 50%, rgba(241, 245, 249, 0.98) 100%);
+                border: 1px solid rgba(203, 213, 225, 0.4);
+                box-shadow: 0 0 0 1px rgba(255,255,255,0.8) inset, 0 20px 40px -12px rgba(0, 0, 0, 0.08), 0 0 60px -20px rgba(0, 0, 0, 0.04);
+                border-radius: 24px;
+                width: 100%;
+                max-width: 520px;
+                max-height: 90vh;
+                overflow: auto;
+                transform: scale(0.95) translateY(20px);
+                transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+
+        .modal-overlay.active .modal-shell {
+                transform: scale(1) translateY(0);
+        }
+
+        .modal-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                padding: 24px 24px 0;
+        }
+
+        .modal-title {
+                margin: 0 0 4px;
+                font-size: 22px;
+                font-weight: 800;
+                color: #0f172a;
+        }
+
+        .modal-subtitle {
+                margin: 0;
+                font-size: 13px;
+                color: #64748b;
+        }
+
+        .close-btn {
+                background: rgba(241,245,249,0.8);
+                border: none;
+                padding: 8px;
+                border-radius: 10px;
+                cursor: pointer;
+                color: #64748b;
+                transition: all 0.2s ease;
+        }
+
+        .close-btn:hover {
+                background: rgba(203,213,225,0.8);
+                color: #0f172a;
+        }
+
+        .modal-body {
+                padding: 24px;
+        }
+
+        .form-section {
+                display: flex;
+                gap: 16px;
+                margin-bottom: 20px;
+        }
+
+        .avatar-column {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 8px;
+                flex-shrink: 0;
+        }
+
+        .avatar-preview-btn {
+                padding: 3px;
+                border-radius: 20px;
+                border: none;
+                cursor: pointer;
+                background: linear-gradient(135deg, #22c55e, #6366f1);
+                box-shadow: 0 8px 24px rgba(99,102,241,0.2);
+        }
+
+        .avatar-preview-container {
+                width: 88px;
+                height: 88px;
+                border-radius: 17px;
+                overflow: hidden;
+                border: 3px solid #fff;
+                background: #f8fafc;
+        }
+
+        .avatar-preview {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+        }
+
+        .avatar-actions {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+                align-items: center;
+        }
+
+        .avatar-action-btn {
+                background: none;
+                border: none;
+                font-size: 12px;
+                font-weight: 700;
+                cursor: pointer;
+                padding: 2px 4px;
+        }
+
+        .avatar-action-btn.primary {
+                color: #22c55e;
+        }
+
+        .avatar-action-btn.secondary {
+                color: #64748b;
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+        }
+
+        .fields-column {
+                flex: 1;
+                min-width: 0;
+        }
+
+        .field-group {
+                margin-bottom: 16px;
+        }
+
+        .field-label {
+                display: block;
+                font-size: 11px;
+                font-weight: 700;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                color: #64748b;
+                margin-bottom: 6px;
+        }
+
+        .field-input {
+                width: 100%;
+                box-sizing: border-box;
+                padding: 12px 14px;
+                border-radius: 12px;
+                border: 1px solid #e2e8f0;
+                font-size: 15px;
+                outline: none;
+                background: #f8fafc;
+                color: #0f172a;
+                transition: border-color 0.15s linear;
+        }
+
+        .field-input:focus {
+                border-color: #6366f1;
+        }
+
+        select.field-input {
+                cursor: pointer;
+        }
+
+        .color-picker-grid {
+                display: grid;
+                grid-template-columns: repeat(6, 1fr);
+                gap: 8px;
+                margin-top: 8px;
+        }
+
+        .color-option {
+                width: 100%;
+                aspect-ratio: 1;
+                border-radius: 10px;
+                border: 2px solid #e2e8f0;
+                cursor: pointer;
+                transition: all 0.2s ease;
+        }
+
+        .color-option:hover {
+                transform: scale(1.1);
+        }
+
+        .color-option.selected {
+                border-color: #22c55e;
+                box-shadow: 0 0 0 3px rgba(34,197,94,0.2);
+        }
+
+        .preset-picker {
+                padding: 0 4px;
+        }
+
+        .preset-hint {
+                font-size: 13px;
+                color: #64748b;
+                margin-bottom: 14px;
+                line-height: 1.5;
+        }
+
+        .character-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 10px;
+                max-height: 220px;
+                overflow-y: auto;
+                padding: 4px;
+        }
+
+        .character-btn {
+                border: 2px solid #e2e8f0;
+                border-radius: 12px;
+                padding: 4px;
+                cursor: pointer;
+                background: #fff;
+                transition: transform 0.12s linear;
+        }
+
+        .character-btn:hover {
+                transform: scale(1.05);
+        }
+
+        .character-btn.selected {
+                border-color: #22c55e;
+                background: rgba(34,197,94,0.12);
+        }
+
+        .character-thumb {
+                width: 100%;
+                aspect-ratio: 1;
+                border-radius: 8px;
+                display: block;
+        }
+
+        .modal-footer {
+                display: flex;
+                gap: 10px;
+                padding: 0 24px 24px;
+        }
+
+        .btn {
+                flex: 1;
+                padding: 12px 16px;
+                border-radius: 12px;
+                font-weight: 700;
+                font-size: 14px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+                background: linear-gradient(135deg, #22c55e, #16a34a);
+                color: #fff;
+                border: none;
+        }
+
+        .btn-primary:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 6px 20px rgba(34,197,94,0.3);
+        }
+
+        .btn-secondary {
+                background: #f1f5f9;
+                color: #0f172a;
+                border: 1px solid #e2e8f0;
+        }
+
+        .btn-secondary:hover {
+                background: #e2e8f0;
+        }
+
+        .btn-danger {
+                background: #DC2626;
+                color: #fff;
+                border: none;
+        }
+
+        .btn-danger:hover {
+                background: #b91c1c;
+        }
+
+        /* Dark mode */
+        :root.dark .modal-shell {
+                background: linear-gradient(145deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 50%, rgba(30, 41, 59, 0.95) 100%);
+                border-color: rgba(71, 85, 105, 0.3);
+                box-shadow: 0 0 0 1px rgba(255,255,255,0.03) inset, 0 20px 40px -12px rgba(0,0,0,0.4), 0 0 60px -20px rgba(0,0,0,0.2);
+        }
+
+        :root.dark .modal-title {
+                color: #f1f5f9;
+        }
+
+        :root.dark .modal-subtitle {
+                color: #94a3b8;
+        }
+
+        :root.dark .close-btn {
+                background: rgba(30,41,59,0.6);
+                color: #94a3b8;
+        }
+
+        :root.dark .close-btn:hover {
+                background: rgba(51,65,85,0.6);
+                color: #f1f5f9;
+        }
+
+        :root.dark .field-input {
+                background: rgba(15, 23, 42, 0.55);
+                border-color: rgba(148, 163, 184, 0.22);
+                color: #f1f5f9;
+        }
+
+        :root.dark .field-input:focus {
+                border-color: #818cf8;
+        }
+
+        :root.dark .character-btn {
+                background: rgba(15, 23, 42, 0.45);
+                border-color: rgba(148, 163, 184, 0.2);
+        }
+
+        :root.dark .character-btn.selected {
+                background: rgba(34,197,94,0.12);
+        }
+
+        :root.dark .btn-secondary {
+                background: rgba(30,41,59,0.55);
+                border-color: rgba(148,163,184,0.2);
+                color: #e2e8f0;
+        }
+
+        :root.dark .btn-secondary:hover {
+                background: rgba(51,65,85,0.55);
+        }
+
+        .hidden {
+                display: none !important;
+        }
 </style>
 
-<div 
-	class="modal-overlay" 
-	id="class-modal-overlay"
-	role="dialog" 
-	aria-modal="true"
+<div
+        class="modal-overlay"
+        id="class-modal-overlay"
+        role="dialog"
+        aria-modal="true"
 >
-	<div class="modal-shell" onclick="event.stopPropagation()">
-		<div class="modal-header">
-			<div>
-				<h2 class="modal-title" id="modal-title">{mode === 'edit' ? 'Edit Class' : 'Create New Class'}</h2>
-				<p class="modal-subtitle" id="modal-subtitle">Set up your class details and appearance</p>
-			</div>
-			<button type="button" class="close-btn" id="close-modal-btn" aria-label="Close">
-				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<path d="M18 6 6 18"/>
-					<path d="m6 6 12 12"/>
-				</svg>
-			</button>
-		</div>
-		
-		<div class="modal-body">
-			<!-- Avatar Section -->
-			<div class="form-section">
-				<div class="avatar-column">
-					<button type="button" class="avatar-preview-btn" id="avatar-picker-trigger">
-						<div class="avatar-preview-container">
-							<img src={initialAvatar} alt="" class="avatar-preview" id="avatar-preview" />
-						</div>
-					</button>
-					<div class="avatar-actions">
-						<button type="button" class="avatar-action-btn primary" id="change-avatar-btn">Change</button>
-						<button type="button" class="avatar-action-btn secondary" id="shuffle-avatar-btn">
-							<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-								<path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l14.2-12.6c.8-1.1 2-1.7 3.3-1.7H22"/>
-								<path d="M2 6h1.4c1.3 0 2.5.6 3.3 1.7l14.2 12.6c.8 1.1 2 1.7 3.3 1.7H22"/>
-							</svg>
-							Shuffle
-						</button>
-					</div>
-				</div>
-				
-				<div class="fields-column">
-					<div class="field-group">
-						<label for="class-name-input" class="field-label">Class Name</label>
-						<input 
-							type="text" 
-							id="class-name-input" 
-							class="field-input" 
-							placeholder="e.g., Ms. Johnson's 3rd Grade"
-							value={initialName}
-						/>
-					</div>
-					
-					<div class="field-group">
-						<label for="class-grade-select" class="field-label">Grade Level</label>
-						<select id="class-grade-select" class="field-input">
-							<option value="">Select Grade</option>
-							${GRADE_OPTIONS.map(opt => `
-								<option value="${opt.value}" ${opt.value === initialGrade ? 'selected' : ''}>${opt.label}</option>
-							`).join('')}
-						</select>
-					</div>
-					
-					<div class="field-group">
-						<label class="field-label">Background Color</label>
-						<div class="color-picker-grid" id="color-picker-grid">
-							${BACKGROUND_COLORS.map(opt => `
-								<button 
-									type="button" 
-									class="color-option ${opt.color === initialBgColor ? 'selected' : ''}"
-									data-color="${opt.color}"
-									title="${opt.label}"
-									style="background: ${opt.color}"
-								></button>
-							`).join('')}
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		
-		<!-- Character Picker (hidden by default) -->
-		<div class="modal-body hidden" id="character-picker-section">
-			<p class="preset-hint">Choose a character avatar for your class</p>
-			<div class="character-grid" id="character-grid">
-				${AVATAR_OPTIONS.map(char => `
-					<button 
-						type="button" 
-						class="character-btn"
-						data-character="${char.name}"
-						title="${char.label}"
-					>
-						<img src="${avatarByCharacter(char.name)}" alt="" class="character-thumb" />
-					</button>
-				`).join('')}
-			</div>
-			<button type="button" class="btn btn-secondary" id="done-character-btn" style="margin-top: 16px; width: 100%;">Done</button>
-		</div>
-		
-		<div class="modal-footer" id="modal-footer">
-			<button type="button" class="btn btn-secondary" id="cancel-btn">Cancel</button>
-			<button type="button" class="btn btn-primary" id="save-btn">
-				{mode === 'edit' ? 'Save Changes' : 'Create Class'}
-			</button>
-		</div>
-	</div>
+        <div class="modal-shell" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                        <div>
+                                <h2 class="modal-title" id="modal-title">{mode === 'edit' ? 'Edit Class' : 'Create New Class'}</h2>
+                                <p class="modal-subtitle" id="modal-subtitle">Set up your class details and appearance</p>
+                        </div>
+                        <button type="button" class="close-btn" id="close-modal-btn" aria-label="Close">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M18 6 6 18"/>
+                                        <path d="m6 6 12 12"/>
+                                </svg>
+                        </button>
+                </div>
+
+                <div class="modal-body">
+                        <!-- Avatar Section -->
+                        <div class="form-section">
+                                <div class="avatar-column">
+                                        <button type="button" class="avatar-preview-btn" id="avatar-picker-trigger">
+                                                <div class="avatar-preview-container">
+                                                        <img src={initialAvatar} alt="" class="avatar-preview" id="avatar-preview" />
+                                                </div>
+                                        </button>
+                                        <div class="avatar-actions">
+                                                <button type="button" class="avatar-action-btn primary" id="change-avatar-btn">Change</button>
+                                                <button type="button" class="avatar-action-btn secondary" id="shuffle-avatar-btn">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                                <path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l14.2-12.6c.8-1.1 2-1.7 3.3-1.7H22"/>
+                                                                <path d="M2 6h1.4c1.3 0 2.5.6 3.3 1.7l14.2 12.6c.8 1.1 2 1.7 3.3 1.7H22"/>
+                                                        </svg>
+                                                        Shuffle
+                                                </button>
+                                        </div>
+                                </div>
+
+                                <div class="fields-column">
+                                        <div class="field-group">
+                                                <label for="class-name-input" class="field-label">Class Name</label>
+                                                <input
+                                                        type="text"
+                                                        id="class-name-input"
+                                                        class="field-input"
+                                                        placeholder="e.g., Ms. Johnson's 3rd Grade"
+                                                        value={initialName}
+                                                />
+                                        </div>
+
+                                        <div class="field-group">
+                                                <label for="class-grade-select" class="field-label">Grade Level</label>
+                                                <select id="class-grade-select" class="field-input">
+                                                        <option value="">Select Grade</option>
+                                                        ${GRADE_OPTIONS.map(opt => `
+                                                                <option value="${opt.value}" ${opt.value === initialGrade ? 'selected' : ''}>${opt.label}</option>
+                                                        `).join('')}
+                                                </select>
+                                        </div>
+
+                                        <div class="field-group">
+                                                <label class="field-label">Background Color</label>
+                                                <div class="color-picker-grid" id="color-picker-grid">
+                                                        ${BACKGROUND_COLORS.map(opt => `
+                                                                <button
+                                                                        type="button"
+                                                                        class="color-option ${opt.color === initialBgColor ? 'selected' : ''}"
+                                                                        data-color="${opt.color}"
+                                                                        title="${opt.label}"
+                                                                        style="background: ${opt.color}"
+                                                                ></button>
+                                                        `).join('')}
+                                                </div>
+                                        </div>
+                                </div>
+                        </div>
+                </div>
+
+                <!-- Character Picker (hidden by default) -->
+                <div class="modal-body hidden" id="character-picker-section">
+                        <p class="preset-hint">Choose a character avatar for your class</p>
+                        <div class="character-grid" id="character-grid">
+                                ${AVATAR_OPTIONS.map(char => `
+                                        <button
+                                                type="button"
+                                                class="character-btn"
+                                                data-character="${char.name}"
+                                                title="${char.label}"
+                                        >
+                                                <img src="${avatarByCharacter(char.name)}" alt="" class="character-thumb" />
+                                        </button>
+                                `).join('')}
+                        </div>
+                        <button type="button" class="btn btn-secondary" id="done-character-btn" style="margin-top: 16px; width: 100%;">Done</button>
+                </div>
+
+                <div class="modal-footer" id="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="cancel-btn">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="save-btn">
+                                {mode === 'edit' ? 'Save Changes' : 'Create Class'}
+                        </button>
+                </div>
+        </div>
 </div>
 
 <script>
 (function() {
-	// Elements
-	const overlay = document.getElementById('class-modal-overlay') as HTMLDivElement;
-	const closeBtn = document.getElementById('close-modal-btn') as HTMLButtonElement;
-	const cancelBtn = document.getElementById('cancel-btn') as HTMLButtonElement;
-	const saveBtn = document.getElementById('save-btn') as HTMLButtonElement;
-	const nameInput = document.getElementById('class-name-input') as HTMLInputElement;
-	const gradeSelect = document.getElementById('class-grade-select') as HTMLSelectElement;
-	const colorPickerGrid = document.getElementById('color-picker-grid') as HTMLDivElement;
-	const avatarPreview = document.getElementById('avatar-preview') as HTMLImageElement;
-	const avatarPickerTrigger = document.getElementById('avatar-picker-trigger') as HTMLButtonElement;
-	const changeAvatarBtn = document.getElementById('change-avatar-btn') as HTMLButtonElement;
-	const shuffleAvatarBtn = document.getElementById('shuffle-avatar-btn') as HTMLButtonElement;
-	const characterPickerSection = document.getElementById('character-picker-section') as HTMLDivElement;
-	const characterGrid = document.getElementById('character-grid') as HTMLDivElement;
-	const doneCharacterBtn = document.getElementById('done-character-btn') as HTMLButtonElement;
-	const modalFooter = document.getElementById('modal-footer') as HTMLDivElement;
-	
-	const mode = '${mode}';
-	const editingClassId = ${editingClass?.id ? JSON.stringify(editingClass.id) : 'null'};
-	const classes = ${JSON.stringify(classes)};
-	
-	let selectedColor = '${initialBgColor}';
-	let selectedCharacter = 'Alex';
-	let showingCharacterPicker = false;
-	
-	function updateAvatar(character: string) {
-		const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#e0e7ff"/><circle cx="50" cy="40" r="18" fill="#fbbf24"/><ellipse cx="50" cy="75" rx="25" ry="20" fill="#fbbf24"/></svg>`;
-		avatarPreview.src = `data:image/svg+xml,${encodeURIComponent(svg)}`;
-		selectedCharacter = character;
-	}
-	
-	function showCharacterPicker() {
-		showingCharacterPicker = true;
-		characterPickerSection.classList.remove('hidden');
-		modalFooter.classList.add('hidden');
-		
-		// Update selected state
-		const buttons = characterGrid.querySelectorAll('.character-btn') as NodeListOf<HTMLButtonElement>;
-		buttons.forEach(btn => {
-			if (btn.dataset.character === selectedCharacter) {
-				btn.classList.add('selected');
-			} else {
-				btn.classList.remove('selected');
-			}
-		});
-	}
-	
-	function hideCharacterPicker() {
-		showingCharacterPicker = false;
-		characterPickerSection.classList.add('hidden');
-		modalFooter.classList.remove('hidden');
-	}
-	
-	// Close modal
-	function closeModal() {
-		overlay.classList.remove('active');
-		setTimeout(() => {
-			window.dispatchEvent(new CustomEvent('class-modal-closed'));
-		}, 300);
-	}
-	
-	// Save class
-	function saveClass() {
-		const name = nameInput.value.trim();
-		if (!name) {
-			alert('Please enter a class name');
-			nameInput.focus();
-			return;
-		}
-		
-		const grade = gradeSelect.value;
-		const avatar = avatarPreview.src;
-		
-		const classData = {
-			id: mode === 'edit' ? editingClassId : Date.now().toString(),
-			name,
-			avatar,
-			avatar_character: selectedCharacter,
-			avatar_seed: '',
-			background_color: selectedColor,
-			grade,
-			students: mode === 'edit' ? (classes.find((c: any) => c.id === editingClassId)?.students || []) : []
-		};
-		
-		if (mode === 'edit') {
-			window.dispatchEvent(new CustomEvent('class-updated', { detail: classData }));
-		} else {
-			window.dispatchEvent(new CustomEvent('class-created', { detail: classData }));
-		}
-		
-		closeModal();
-	}
-	
-	// Event listeners
-	closeBtn?.addEventListener('click', closeModal);
-	cancelBtn?.addEventListener('click', closeModal);
-	saveBtn?.addEventListener('click', saveClass);
-	
-	// Overlay click to close
-	overlay?.addEventListener('click', (e) => {
-		if (e.target === overlay) {
-			closeModal();
-		}
-	});
-	
-	// Color picker
-	colorPickerGrid?.addEventListener('click', (e) => {
-		const target = e.target as HTMLElement;
-		if (target.classList.contains('color-option')) {
-			const buttons = colorPickerGrid.querySelectorAll('.color-option') as NodeListOf<HTMLButtonElement>;
-			buttons.forEach(btn => btn.classList.remove('selected'));
-			target.classList.add('selected');
-			selectedColor = target.dataset.color || '';
-		}
-	});
-	
-	// Avatar picker
-	avatarPickerTrigger?.addEventListener('click', showCharacterPicker);
-	changeAvatarBtn?.addEventListener('click', showCharacterPicker);
-	
-	// Shuffle avatar
-	shuffleAvatarBtn?.addEventListener('click', () => {
-		const avatarOptions = ['Alex', 'Sam', 'Jordan', 'Taylor', 'Casey', 'Riley', 'Avery', 'Quinn'];
-		const random = avatarOptions[Math.floor(Math.random() * avatarOptions.length)];
-		updateAvatar(random);
-		
-		// Update character grid selection
-		const buttons = characterGrid.querySelectorAll('.character-btn') as NodeListOf<HTMLButtonElement>;
-		buttons.forEach(btn => {
-			if (btn.dataset.character === random) {
-				btn.classList.add('selected');
-			} else {
-				btn.classList.remove('selected');
-			}
-		});
-	});
-	
-	// Character selection
-	characterGrid?.addEventListener('click', (e) => {
-		const target = e.target as HTMLElement;
-		const btn = target.closest('.character-btn') as HTMLButtonElement;
-		if (btn) {
-			const buttons = characterGrid.querySelectorAll('.character-btn') as NodeListOf<HTMLButtonElement>;
-			buttons.forEach(b => b.classList.remove('selected'));
-			btn.classList.add('selected');
-			updateAvatar(btn.dataset.character || 'Alex');
-		}
-	});
-	
-	doneCharacterBtn?.addEventListener('click', hideCharacterPicker);
-	
-	// Keyboard shortcuts
-	document.addEventListener('keydown', (e) => {
-		if (!overlay.classList.contains('active')) return;
-		
-		if (e.key === 'Escape') {
-			closeModal();
-		} else if (e.key === 'Enter' && !showingCharacterPicker) {
-			saveClass();
-		}
-	});
-	
-	// Open modal on load if in edit mode
-	if (mode === 'edit' || ${JSON.stringify(isOpen)}) {
-		overlay.classList.add('active');
-	}
+        // Elements
+        const overlay = document.getElementById('class-modal-overlay') as HTMLDivElement;
+        const closeBtn = document.getElementById('close-modal-btn') as HTMLButtonElement;
+        const cancelBtn = document.getElementById('cancel-btn') as HTMLButtonElement;
+        const saveBtn = document.getElementById('save-btn') as HTMLButtonElement;
+        const nameInput = document.getElementById('class-name-input') as HTMLInputElement;
+        const gradeSelect = document.getElementById('class-grade-select') as HTMLSelectElement;
+        const colorPickerGrid = document.getElementById('color-picker-grid') as HTMLDivElement;
+        const avatarPreview = document.getElementById('avatar-preview') as HTMLImageElement;
+        const avatarPickerTrigger = document.getElementById('avatar-picker-trigger') as HTMLButtonElement;
+        const changeAvatarBtn = document.getElementById('change-avatar-btn') as HTMLButtonElement;
+        const shuffleAvatarBtn = document.getElementById('shuffle-avatar-btn') as HTMLButtonElement;
+        const characterPickerSection = document.getElementById('character-picker-section') as HTMLDivElement;
+        const characterGrid = document.getElementById('character-grid') as HTMLDivElement;
+        const doneCharacterBtn = document.getElementById('done-character-btn') as HTMLButtonElement;
+        const modalFooter = document.getElementById('modal-footer') as HTMLDivElement;
+
+        const mode = '${mode}';
+        const editingClassId = ${editingClass?.id ? JSON.stringify(editingClass.id) : 'null'};
+        const classes = ${JSON.stringify(classes)};
+
+        let selectedColor = '${initialBgColor}';
+        let selectedCharacter = 'Alex';
+        let showingCharacterPicker = false;
+
+        function updateAvatar(character: string) {
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#e0e7ff"/><circle cx="50" cy="40" r="18" fill="#fbbf24"/><ellipse cx="50" cy="75" rx="25" ry="20" fill="#fbbf24"/></svg>`;
+                avatarPreview.src = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+                selectedCharacter = character;
+        }
+
+        function showCharacterPicker() {
+                showingCharacterPicker = true;
+                characterPickerSection.classList.remove('hidden');
+                modalFooter.classList.add('hidden');
+
+                // Update selected state
+                const buttons = characterGrid.querySelectorAll('.character-btn') as NodeListOf<HTMLButtonElement>;
+                buttons.forEach(btn => {
+                        if (btn.dataset.character === selectedCharacter) {
+                                btn.classList.add('selected');
+                        } else {
+                                btn.classList.remove('selected');
+                        }
+                });
+        }
+
+        function hideCharacterPicker() {
+                showingCharacterPicker = false;
+                characterPickerSection.classList.add('hidden');
+                modalFooter.classList.remove('hidden');
+        }
+
+        // Close modal
+        function closeModal() {
+                overlay.classList.remove('active');
+                setTimeout(() => {
+                        window.dispatchEvent(new CustomEvent('class-modal-closed'));
+                }, 300);
+        }
+
+        // Save class
+        function saveClass() {
+                const name = nameInput.value.trim();
+                if (!name) {
+                        alert('Please enter a class name');
+                        nameInput.focus();
+                        return;
+                }
+
+                const grade = gradeSelect.value;
+                const avatar = avatarPreview.src;
+
+                const classData = {
+                        id: mode === 'edit' ? editingClassId : Date.now().toString(),
+                        name,
+                        avatar,
+                        avatar_character: selectedCharacter,
+                        avatar_seed: '',
+                        background_color: selectedColor,
+                        grade,
+                        students: mode === 'edit' ? (classes.find((c: any) => c.id === editingClassId)?.students || []) : []
+                };
+
+                if (mode === 'edit') {
+                        window.dispatchEvent(new CustomEvent('class-updated', { detail: classData }));
+                } else {
+                        window.dispatchEvent(new CustomEvent('class-created', { detail: classData }));
+                }
+
+                closeModal();
+        }
+
+        // Event listeners
+        closeBtn?.addEventListener('click', closeModal);
+        cancelBtn?.addEventListener('click', closeModal);
+        saveBtn?.addEventListener('click', saveClass);
+
+        // Overlay click to close
+        overlay?.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                        closeModal();
+                }
+        });
+
+        // Color picker
+        colorPickerGrid?.addEventListener('click', (e) => {
+                const target = e.target as HTMLElement;
+                if (target.classList.contains('color-option')) {
+                        const buttons = colorPickerGrid.querySelectorAll('.color-option') as NodeListOf<HTMLButtonElement>;
+                        buttons.forEach(btn => btn.classList.remove('selected'));
+                        target.classList.add('selected');
+                        selectedColor = target.dataset.color || '';
+                }
+        });
+
+        // Avatar picker
+        avatarPickerTrigger?.addEventListener('click', showCharacterPicker);
+        changeAvatarBtn?.addEventListener('click', showCharacterPicker);
+
+        // Shuffle avatar
+        shuffleAvatarBtn?.addEventListener('click', () => {
+                const avatarOptions = ['Alex', 'Sam', 'Jordan', 'Taylor', 'Casey', 'Riley', 'Avery', 'Quinn'];
+                const random = avatarOptions[Math.floor(Math.random() * avatarOptions.length)];
+                updateAvatar(random);
+
+                // Update character grid selection
+                const buttons = characterGrid.querySelectorAll('.character-btn') as NodeListOf<HTMLButtonElement>;
+                buttons.forEach(btn => {
+                        if (btn.dataset.character === random) {
+                                btn.classList.add('selected');
+                        } else {
+                                btn.classList.remove('selected');
+                        }
+                });
+        });
+
+        // Character selection
+        characterGrid?.addEventListener('click', (e) => {
+                const target = e.target as HTMLElement;
+                const btn = target.closest('.character-btn') as HTMLButtonElement;
+                if (btn) {
+                        const buttons = characterGrid.querySelectorAll('.character-btn') as NodeListOf<HTMLButtonElement>;
+                        buttons.forEach(b => b.classList.remove('selected'));
+                        btn.classList.add('selected');
+                        updateAvatar(btn.dataset.character || 'Alex');
+                }
+        });
+
+        doneCharacterBtn?.addEventListener('click', hideCharacterPicker);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+                if (!overlay.classList.contains('active')) return;
+
+                if (e.key === 'Escape') {
+                        closeModal();
+                } else if (e.key === 'Enter' && !showingCharacterPicker) {
+                        saveClass();
+                }
+        });
+
+        // Open modal on load if in edit mode
+        if (mode === 'edit' || ${JSON.stringify(isOpen)}) {
+                overlay.classList.add('active');
+        }
 })();
 </script>
