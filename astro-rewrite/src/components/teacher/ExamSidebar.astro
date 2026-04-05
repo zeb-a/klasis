@@ -1,0 +1,589 @@
+---
+/**
+ * Exam Sidebar Component for Astro
+ * Allows teachers to add exam scores with brief or detailed mode
+ * 
+ * Features:
+ * - Exam name, subject, date input
+ * - Brief/Detailed scoring mode toggle
+ * - Section management for detailed mode
+ * - Student score entry
+ * - Benchmark score setting
+ */
+
+interface Props {
+	isOpen?: boolean;
+	className?: string;
+}
+
+const { isOpen = false, className = '' } = Astro.props;
+---
+
+<style>
+	.sidebar-overlay {
+		position: fixed;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.5);
+		z-index: 9999;
+		opacity: 0;
+		visibility: hidden;
+		transition: opacity 0.3s ease;
+	}
+
+	.sidebar-overlay.active {
+		opacity: 1;
+		visibility: visible;
+	}
+
+	.exam-sidebar {
+		position: fixed;
+		top: 0;
+		right: 0;
+		width: 450px;
+		height: 100vh;
+		background: #fff;
+		z-index: 10000;
+		box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+		display: flex;
+		flex-direction: column;
+		transform: translateX(100%);
+		transition: transform 0.3s ease;
+	}
+
+	.exam-sidebar.active {
+		transform: translateX(0);
+	}
+
+	.sidebar-header {
+		padding: 20px;
+		border-bottom: 1px solid #e0e0e0;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+	}
+
+	.sidebar-header h2 {
+		margin: 0;
+		color: #fff;
+		font-size: 20px;
+		font-weight: bold;
+	}
+
+	.sidebar-header p {
+		margin: 4px 0 0 0;
+		color: rgba(255, 255, 255, 0.9);
+		font-size: 13px;
+	}
+
+	.close-btn {
+		background: rgba(255, 255, 255, 0.2);
+		border: none;
+		color: #fff;
+		padding: 8px;
+		border-radius: 8px;
+		cursor: pointer;
+		transition: background-color 0.2s;
+	}
+
+	.close-btn:hover {
+		background: rgba(255, 255, 255, 0.3);
+	}
+
+	.sidebar-content {
+		flex: 1;
+		overflow: auto;
+		padding: 20px;
+	}
+
+	.form-group {
+		margin-bottom: 20px;
+	}
+
+	.form-label {
+		display: block;
+		font-size: 13px;
+		font-weight: bold;
+		color: #555;
+		margin-bottom: 8px;
+	}
+
+	.form-input {
+		width: 100%;
+		padding: 12px 14px;
+		border: 2px solid #e0e0e0;
+		border-radius: 10px;
+		font-size: 14px;
+		box-sizing: border-box;
+		transition: all 0.2s;
+	}
+
+	.form-input:focus {
+		outline: none;
+		border-color: #4CAF50;
+		box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+	}
+
+	.mode-toggle {
+		display: flex;
+		gap: 10px;
+	}
+
+	.mode-btn {
+		flex: 1;
+		padding: 10px;
+		border: 2px solid #e0e0e0;
+		border-radius: 8px;
+		background: #fff;
+		color: #666;
+		font-weight: bold;
+		font-size: 13px;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.mode-btn.active {
+		border-color: #4CAF50;
+		background: #E8F5E9;
+		color: #2E7D32;
+	}
+
+	.section-row {
+		display: flex;
+		gap: 8px;
+		margin-bottom: 10px;
+		align-items: center;
+	}
+
+	.section-name {
+		flex: 2;
+	}
+
+	.section-score {
+		flex: 1;
+	}
+
+	.remove-section-btn {
+		padding: 8px;
+		background: #ffebee;
+		color: #d32f2f;
+		border: none;
+		border-radius: 6px;
+		cursor: pointer;
+		transition: background-color 0.2s;
+	}
+
+	.remove-section-btn:hover {
+		background: #ffcdd2;
+	}
+
+	.add-section-btn {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		padding: 6px 12px;
+		background: #4CAF50;
+		color: #fff;
+		border: none;
+		border-radius: 6px;
+		font-size: 12px;
+		font-weight: bold;
+		cursor: pointer;
+		transition: background-color 0.2s;
+	}
+
+	.add-section-btn:hover {
+		background: #45a049;
+	}
+
+	.student-row {
+		padding: 10px 14px;
+		margin-bottom: 8px;
+		background: #fafafa;
+		border-radius: 10px;
+		border: 1px solid #e0e0e0;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+	}
+
+	.student-row:hover {
+		background: #f5f5f5;
+	}
+
+	.student-name {
+		font-size: 14px;
+		font-weight: bold;
+		color: #333;
+		flex: 0 0 auto;
+	}
+
+	.benchmark-input {
+		width: 80px;
+		padding: 6px 10px;
+		border: 2px solid #4CAF50;
+		border-radius: 6px;
+		font-size: 12px;
+		background: #E8F5E9;
+	}
+
+	.sidebar-footer {
+		padding: 16px 20px;
+		border-top: 1px solid #e0e0e0;
+		display: flex;
+		gap: 12px;
+		background: #fafafa;
+	}
+
+	.footer-btn {
+		flex: 1;
+		padding: 12px;
+		border-radius: 8px;
+		font-weight: bold;
+		font-size: 14px;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.cancel-btn {
+		border: 2px solid #e0e0e0;
+		background: #fff;
+		color: #666;
+	}
+
+	.cancel-btn:hover {
+		background: #f5f5f5;
+	}
+
+	.save-btn {
+		border: none;
+		background: #4CAF50;
+		color: #fff;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 6px;
+	}
+
+	.save-btn:hover {
+		background: #45a049;
+	}
+
+	.empty-state {
+		padding: 20px;
+		text-align: center;
+		background: #f5f5f5;
+		border-radius: 8px;
+		border: 2px dashed #ddd;
+		color: #888;
+		font-size: 13px;
+	}
+
+	@media (max-width: 768px) {
+		.exam-sidebar {
+			width: 100%;
+		}
+	}
+</style>
+
+<div class="exam-sidebar-wrapper" data-exam-sidebar-wrapper>
+	<div class="sidebar-overlay" data-sidebar-overlay onclick="closeSidebar"></div>
+	
+	<div class="exam-sidebar" data-exam-sidebar>
+		<div class="sidebar-header">
+			<div>
+				<h2>Add Exam Scores</h2>
+				<p>Enter exam details and student scores</p>
+			</div>
+			<button class="close-btn" onclick="closeSidebar" aria-label="Close">
+				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+				</svg>
+			</button>
+		</div>
+
+		<div class="sidebar-content">
+			<!-- Exam Name -->
+			<div class="form-group">
+				<label class="form-label">Exam Name *</label>
+				<input type="text" class="form-input" id="exam-name" placeholder="e.g., Midterm Exam, Quiz 1" />
+			</div>
+
+			<!-- Subject -->
+			<div class="form-group">
+				<label class="form-label">Subject *</label>
+				<input type="text" class="form-input" id="exam-subject" placeholder="e.g., Math, English, Science" />
+			</div>
+
+			<!-- Date -->
+			<div class="form-group">
+				<label class="form-label">Date *</label>
+				<input type="date" class="form-input" id="exam-date" />
+			</div>
+
+			<!-- Mode Toggle -->
+			<div class="form-group">
+				<label class="form-label">Scoring Mode</label>
+				<div class="mode-toggle">
+					<button class="mode-btn active" data-mode="brief" onclick="setMode">Brief</button>
+					<button class="mode-btn" data-mode="detailed" onclick="setMode">Detailed</button>
+				</div>
+				<p style="font-size: 12px; color: #888; margin-top: 6px;">
+					Brief: Total score only | Detailed: Break down by sections
+				</p>
+			</div>
+
+			<!-- Sections (Detailed Mode) -->
+			<div class="form-group" data-sections-container style="display: none;">
+				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+					<label class="form-label" style="margin: 0;">Sections *</label>
+					<button class="add-section-btn" onclick="addSection">
+						<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+						Add Section
+					</button>
+				</div>
+				<div data-sections-list></div>
+				<div class="empty-state" data-sections-empty>No sections added yet. Click "Add Section" to create one.</div>
+			</div>
+
+			<!-- Student Scores -->
+			<div class="form-group">
+				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #e0e0e0;">
+					<label class="form-label" style="margin: 0;">Student Scores *</label>
+					<div style="display: flex; align-items: center; gap: 8px;">
+						<span style="font-size: 12px; color: #888;">Benchmark:</span>
+						<input type="number" class="benchmark-input" id="benchmark" placeholder="Score" />
+					</div>
+				</div>
+				<div data-students-list>
+					<!-- Students will be populated by JavaScript -->
+				</div>
+			</div>
+		</div>
+
+		<div class="sidebar-footer">
+			<button class="footer-btn cancel-btn" onclick="closeSidebar">Cancel</button>
+			<button class="footer-btn save-btn" onclick="saveExam">
+				<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+				Save Exam
+			</button>
+		</div>
+	</div>
+</div>
+
+<script>
+	let currentMode = 'brief';
+	let sections: any[] = [];
+	let studentScores: Map<string, any> = new Map();
+	let students: any[] = [];
+
+	function closeSidebar() {
+		const wrapper = document.querySelector('[data-exam-sidebar-wrapper]');
+		const overlay = wrapper?.querySelector('[data-sidebar-overlay]');
+		const sidebar = wrapper?.querySelector('[data-exam-sidebar]');
+		
+		overlay?.classList.remove('active');
+		sidebar?.classList.remove('active');
+		
+		setTimeout(() => {
+			window.dispatchEvent(new CustomEvent('exam-sidebar-closed'));
+		}, 300);
+	}
+
+	function openSidebar() {
+		const wrapper = document.querySelector('[data-exam-sidebar-wrapper]');
+		const overlay = wrapper?.querySelector('[data-sidebar-overlay]');
+		const sidebar = wrapper?.querySelector('[data-exam-sidebar]');
+		
+		overlay?.classList.add('active');
+		sidebar?.classList.add('active');
+		
+		// Set default date
+		const dateInput = document.getElementById('exam-date') as HTMLInputElement;
+		if (dateInput) {
+			dateInput.value = new Date().toISOString().split('T')[0];
+		}
+		
+		loadStudents();
+	}
+
+	function setMode(event: Event) {
+		const btn = event.target as HTMLElement;
+		const mode = btn.getAttribute('data-mode');
+		if (!mode) return;
+		
+		currentMode = mode;
+		
+		// Update button styles
+		document.querySelectorAll('.mode-btn').forEach(b => {
+			b.classList.toggle('active', b === btn);
+		});
+		
+		// Show/hide sections
+		const sectionsContainer = document.querySelector('[data-sections-container]') as HTMLElement;
+		if (sectionsContainer) {
+			sectionsContainer.style.display = mode === 'detailed' ? 'block' : 'none';
+		}
+		
+		renderStudents();
+	}
+
+	function addSection() {
+		sections.push({ name: '', maxScore: '' });
+		renderSections();
+	}
+
+	function removeSection(index: number) {
+		sections.splice(index, 1);
+		renderSections();
+	}
+
+	function updateSection(index: number, field: string, value: string) {
+		sections[index][field] = value;
+	}
+
+	function renderSections() {
+		const container = document.querySelector('[data-sections-list]');
+		const emptyState = document.querySelector('[data-sections-empty]') as HTMLElement;
+		
+		if (!container) return;
+		
+		if (sections.length === 0) {
+			if (emptyState) emptyState.style.display = 'block';
+			container.innerHTML = '';
+			return;
+		}
+		
+		if (emptyState) emptyState.style.display = 'none';
+		
+		container.innerHTML = sections.map((section, index) => `
+			<div class="section-row">
+				<input type="text" class="form-input section-name" placeholder="Section name (e.g., Reading)" value="${escapeHtml(section.name)}" oninput="updateSection(${index}, 'name', this.value)" />
+				<input type="number" class="form-input section-score" placeholder="Max score" value="${section.maxScore}" oninput="updateSection(${index}, 'maxScore', this.value)" />
+				<button class="remove-section-btn" onclick="removeSection(${index})">
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+				</button>
+			</div>
+		`).join('');
+	}
+
+	function loadStudents() {
+		// Load from localStorage or use demo data
+		try {
+			const saved = localStorage.getItem('classABC_students');
+			if (saved) {
+				students = JSON.parse(saved);
+			} else {
+				students = [
+					{ id: '1', name: 'Student 1' },
+					{ id: '2', name: 'Student 2' },
+					{ id: '3', name: 'Student 3' }
+				];
+			}
+		} catch (e) {
+			students = [];
+		}
+		
+		renderStudents();
+	}
+
+	function renderStudents() {
+		const container = document.querySelector('[data-students-list]');
+		if (!container) return;
+		
+		container.innerHTML = students.map(student => {
+			const score = studentScores.get(student.id) || { totalScore: '', sections: {} };
+			
+			if (currentMode === 'brief') {
+				return `
+					<div class="student-row">
+						<span class="student-name">${escapeHtml(student.name)}</span>
+						<input type="number" class="form-input" style="width: 100px;" placeholder="Score" 
+							value="${score.totalScore}" 
+							oninput="updateStudentScore('${student.id}', 'totalScore', this.value)" />
+					</div>
+				`;
+			} else {
+				// Detailed mode
+				return `
+					<div class="student-row">
+						<span class="student-name">${escapeHtml(student.name)}</span>
+						<div style="display: flex; gap: 8px;">
+							${sections.map(section => `
+								<input type="number" class="form-input" style="width: 90px;" 
+									placeholder="${escapeHtml(section.name)}" 
+									max="${section.maxScore}"
+									value="${score.sections?.[section.name] || ''}"
+									oninput="updateSectionScore('${student.id}', '${escapeHtml(section.name)}', this.value)" />
+							`).join('')}
+						</div>
+					</div>
+				`;
+			}
+		}).join('');
+	}
+
+	function updateStudentScore(studentId: string, field: string, value: string) {
+		const current = studentScores.get(studentId) || { totalScore: '', sections: {} };
+		studentScores.set(studentId, { ...current, [field]: value });
+	}
+
+	function updateSectionScore(studentId: string, sectionName: string, value: string) {
+		const current = studentScores.get(studentId) || { totalScore: '', sections: {} };
+		studentScores.set(studentId, { 
+			...current, 
+			sections: { ...current.sections, [sectionName]: value } 
+		});
+	}
+
+	function saveExam() {
+		const examName = (document.getElementById('exam-name') as HTMLInputElement).value.trim();
+		const subject = (document.getElementById('exam-subject') as HTMLInputElement).value.trim();
+		const date = (document.getElementById('exam-date') as HTMLInputElement).value;
+		const benchmark = (document.getElementById('benchmark') as HTMLInputElement).value;
+		
+		if (!examName || !subject || !date) {
+			alert('Please fill in exam name, subject, and date.');
+			return;
+		}
+		
+		if (!benchmark || Number(benchmark) <= 0) {
+			alert('Please enter a benchmark score.');
+			return;
+		}
+		
+		// Build exam data
+		const examData = {
+			exam_name: examName,
+			subject: subject,
+			exam_date: date,
+			mode: currentMode,
+			benchmark: Number(benchmark),
+			sections: currentMode === 'detailed' ? sections : [],
+			scores: Object.fromEntries(studentScores)
+		};
+		
+		// Dispatch event for parent to handle
+		window.dispatchEvent(new CustomEvent('exam-save', { detail: examData }));
+		
+		// Show success message
+		if (window.showToast) {
+			window.showToast('Exam saved successfully!', 'success');
+		}
+		
+		closeSidebar();
+	}
+
+	function escapeHtml(text: string): string {
+		const div = document.createElement('div');
+		div.textContent = text;
+		return div.innerHTML;
+	}
+
+	// Expose open function globally
+	window.openExamSidebar = openSidebar;
+	
+	// Listen for external open events
+	window.addEventListener('open-exam-sidebar', openSidebar);
+</script>

@@ -1,0 +1,219 @@
+---
+/**
+ * Animated Modal Component for Astro
+ * Provides smooth, consistent animations for all modals
+ * 
+ * Props:
+ * - isOpen: boolean - Whether the modal is visible
+ * - variant: 'center' | 'slideUp' | 'scale' | 'fade' - Animation variant
+ * - closeOnClickOverlay: boolean - Close modal when clicking overlay
+ * - zIndex: number - Modal z-index
+ * - title: string - Optional modal title
+ */
+
+interface Props {
+	isOpen?: boolean;
+	variant?: 'center' | 'slideUp' | 'scale' | 'fade';
+	closeOnClickOverlay?: boolean;
+	zIndex?: number;
+	title?: string;
+	showCloseButton?: boolean;
+	class?: string;
+}
+
+const { 
+	isOpen = false, 
+	variant = 'center', 
+	closeOnClickOverlay = true, 
+	zIndex = 5000,
+	title = '',
+	showCloseButton = true,
+	class: customClass = ''
+} = Astro.props;
+---
+
+<style define:vars={{ '--modal-z-index': zIndex }}>
+	.modal-overlay {
+		position: fixed;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.6);
+		backdrop-filter: blur(8px);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: var(--modal-z-index);
+		opacity: 0;
+		visibility: hidden;
+		transition: opacity 0.25s ease-in-out, visibility 0.25s ease-in-out;
+	}
+
+	.modal-overlay.active {
+		opacity: 1;
+		visibility: visible;
+	}
+
+	.modal-content {
+		background: #fff;
+		border-radius: 20px;
+		box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+		max-width: 90vw;
+		max-height: 90vh;
+		overflow: auto;
+		transform: scale(0.9) translateY(20px);
+		opacity: 0;
+		transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+	}
+
+	.modal-overlay.active .modal-content {
+		transform: scale(1) translateY(0);
+		opacity: 1;
+	}
+
+	/* SlideUp Variant */
+	.modal-overlay.slide-up .modal-content {
+		transform: translateY(100px) scale(0.95);
+	}
+
+	.modal-overlay.slide-up.active .modal-content {
+		transform: translateY(0) scale(1);
+	}
+
+	/* Scale Variant */
+	.modal-overlay.scale .modal-content {
+		transform: scale(0.5);
+	}
+
+	.modal-overlay.scale.active .modal-content {
+		transform: scale(1);
+	}
+
+	/* Fade Variant */
+	.modal-overlay.fade .modal-content {
+		transform: none;
+	}
+
+	.modal-overlay.fade.active .modal-content {
+		opacity: 1;
+	}
+
+	.modal-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 20px 24px;
+		border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+	}
+
+	.modal-title {
+		font-size: 18px;
+		font-weight: 700;
+		color: #1f2937;
+		margin: 0;
+	}
+
+	.modal-close-btn {
+		background: rgba(0, 0, 0, 0.05);
+		border: none;
+		border-radius: 8px;
+		padding: 8px;
+		cursor: pointer;
+		transition: background-color 0.2s;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: #6b7280;
+	}
+
+	.modal-close-btn:hover {
+		background: rgba(0, 0, 0, 0.1);
+	}
+
+	.modal-body {
+		padding: 24px;
+	}
+
+	@media (max-width: 640px) {
+		.modal-content {
+			max-width: 95vw;
+			border-radius: 16px;
+		}
+
+		.modal-header {
+			padding: 16px 20px;
+		}
+
+		.modal-body {
+			padding: 20px;
+		}
+	}
+</style>
+
+<div 
+	class={`modal-overlay ${variant === 'slideUp' ? 'slide-up' : variant === 'scale' ? 'scale' : variant === 'fade' ? 'fade' : ''} ${isOpen ? 'active' : ''} ${customClass}`}
+	data-modal-overlay
+>
+	<div class="modal-content" role="dialog" aria-modal="true" aria-labelledby={title ? 'modal-title' : undefined}>
+		{(title || showCloseButton) && (
+			<div class="modal-header">
+				{title && <h2 id="modal-title" class="modal-title">{title}</h2>}
+				{showCloseButton && (
+					<button 
+						class="modal-close-btn" 
+						onclick="closeModal"
+						aria-label="Close modal"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<line x1="18" y1="6" x2="6" y2="18"></line>
+							<line x1="6" y1="6" x2="18" y2="18"></line>
+						</svg>
+					</button>
+				)}
+			</div>
+		)}
+		<div class="modal-body">
+			<slot />
+		</div>
+	</div>
+</div>
+
+<script>
+	const OVERLAY_ATTR = 'data-modal-overlay';
+	
+	function closeModal(event) {
+		const overlay = event.target.closest(`[${OVERLAY_ATTR}]`);
+		if (!overlay) return;
+		
+		// Check if click was on overlay (not content)
+		const isOverlayClick = event.target === overlay || event.target.closest('.modal-overlay');
+		if (!isOverlayClick) return;
+		
+		overlay.classList.remove('active');
+		
+		setTimeout(() => {
+			overlay.style.display = 'none';
+			window.dispatchEvent(new CustomEvent('modal-closed'));
+		}, 300);
+	}
+
+	// Initialize modal state on load
+	document.addEventListener('DOMContentLoaded', () => {
+		const overlays = document.querySelectorAll(`[${OVERLAY_ATTR}]`);
+		overlays.forEach(overlay => {
+			if (!overlay.classList.contains('active')) {
+				overlay.style.display = 'none';
+			}
+		});
+	});
+
+	// Listen for open modal events
+	window.addEventListener('open-modal', (e) => {
+		const { targetId } = e.detail || {};
+		if (targetId) {
+			const overlay = document.querySelector(`[${OVERLAY_ATTR}][id="${targetId}"]`);
+			if (overlay) {
+				overlay.style.display = 'flex';
+				setTimeout(() => overlay.classList.add('active'), 10);
+			}
+		}
+	});
+</script>
