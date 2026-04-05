@@ -1,6 +1,7 @@
 ---
 import MainLayout from '../layouts/MainLayout.astro';
 import { Dices, Trophy, Settings, Award, Home, Camera, SmilePlus, Sliders, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, ArrowUpDown, CheckSquare, BarChart2, ClipboardList, Maximize, Minimize, MessageSquare, Clock, CheckCircle, Siren, Zap, MoreVertical, X, Check, Users, Crown, Gamepad2, LogOut, User, Heart, Sun, Moon, Plus, Edit2, Trash2, Presentation, Star, Target, Activity } from 'lucide-react';
+import { store } from '../lib/appState.js';
 ---
 
 <MainLayout title="Class Dashboard - Klasiz.fun" description="Manage your classroom and students">
@@ -420,7 +421,7 @@ import { Dices, Trophy, Settings, Award, Home, Camera, SmilePlus, Sliders, Chevr
                 showBulkAddModal: false,
                 showBehaviorModal: false,
                 newStudentName: '',
-                selectedAvatar: '👦',
+                selectedAvatarIndex: 0,
                 students: [],
                 behaviors: [],
                 classes: [],
@@ -429,23 +430,22 @@ import { Dices, Trophy, Settings, Award, Home, Camera, SmilePlus, Sliders, Chevr
                 loading: true,
                 error: null,
                 avatarOptions: ['👦', '👧', '👨', '👩', '🧑', '👶', '👴', '👵', '🦸', '🦸‍♀️', '🧙', '🧙‍♀️'],
-                apiBaseUrl: 'http://localhost:3001/api',
                 
                 get filteredStudents() {
                     if (!this.searchQuery) return this.students;
                     return this.students.filter(student => 
-                        student.name.toLowerCase().includes(this.searchQuery.toLowerCase())
+                        student.firstName.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                        student.lastName.toLowerCase().includes(this.searchQuery.toLowerCase())
                     );
                 },
                 
                 get quickBehaviors() {
-                    return this.behaviors.slice(0, 3);
+                    return store.getState().behaviorCards.slice(0, 3);
                 },
                 
-                async init() {
+                init() {
                     // Check authentication
-                    const token = localStorage.getItem('authToken');
-                    if (!token) {
+                    if (!store.isAuthenticated()) {
                         window.location.href = '/login';
                         return;
                     }
@@ -454,94 +454,37 @@ import { Dices, Trophy, Settings, Award, Home, Camera, SmilePlus, Sliders, Chevr
                     const saved = localStorage.getItem('displaySize');
                     if (saved) this.displaySize = saved;
                     
-                    // Load data in sequence
-                    try {
-                        await this.loadUser();
-                        await this.loadClasses();
-                        await this.loadCurrentClass();
-                    } catch (error) {
-                        console.error('Init error:', error);
-                        this.error = 'Failed to initialize dashboard';
+                    // Load user from store
+                    this.user = store.getState().currentUser || { name: 'Teacher' };
+                    
+                    // Load classes and students from store
+                    this.classes = store.getState().classes;
+                    this.behaviors = store.getState().behaviorCards;
+                    
+                    // Get class ID from URL
+                    const classId = new URLSearchParams(window.location.search).get('class');
+                    
+                    if (classId) {
+                        this.currentClass = this.classes.find(c => c.id === classId);
+                        if (this.currentClass) {
+                            this.students = store.getStudentsByClass(classId);
+                        }
+                    } else if (this.classes.length > 0) {
+                        // Use first class if none specified
+                        this.currentClass = this.classes[0];
+                        this.students = store.getStudentsByClass(this.currentClass.id);
                     }
                     
                     this.loading = false;
-                },
-                
-                async loadUser() {
-                    try {
-                        const token = localStorage.getItem('authToken');
-                        const response = await fetch(`${this.apiBaseUrl}/auth/me`, {
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        });
-                        
-                        if (response.ok) {
-                            const data = await response.json();
-                            this.user = data.user;
-                        } else {
-                            this.logout();
+                    
+                    // Listen for state updates
+                    window.addEventListener('state-updated', (e) => {
+                        this.classes = e.detail.classes;
+                        this.behaviors = e.detail.behaviorCards;
+                        if (this.currentClass) {
+                            this.students = store.getStudentsByClass(this.currentClass.id);
                         }
-                    } catch (error) {
-                        this.error = 'Failed to load user data';
-                        console.error('Load user error:', error);
-                    }
-                },
-                
-                async loadClasses() {
-                    try {
-                        const token = localStorage.getItem('authToken');
-                        const response = await fetch(`${this.apiBaseUrl}/classes`, {
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        });
-                        
-                        if (response.ok) {
-                            this.classes = await response.json();
-                        } else {
-                            this.error = 'Failed to load classes';
-                        }
-                    } catch (error) {
-                        this.error = 'Failed to load classes';
-                        console.error('Load classes error:', error);
-                    }
-                },
-                
-                async loadCurrentClass() {
-                    try {
-                        const classId = new URLSearchParams(window.location.search).get('class');
-                        if (!classId) {
-                            // If no class specified, try to load the first class
-                            if (this.classes.length > 0) {
-                                const firstClass = this.classes[0];
-                                await this.loadClassData(firstClass.id);
-                            }
-                            return;
-                        }
-                        
-                        await this.loadClassData(classId);
-                    } catch (error) {
-                        this.error = 'Failed to load class data';
-                        console.error('Load class error:', error);
-                    }
-                },
-                
-                async loadClassData(classId) {
-                    try {
-                        const token = localStorage.getItem('authToken');
-                        const response = await fetch(`${this.apiBaseUrl}/classes/${classId}`, {
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        });
-                        
-                        if (response.ok) {
-                            const data = await response.json();
-                            this.currentClass = data;
-                            this.students = data.students || [];
-                            this.behaviors = data.behaviors || [];
-                        } else {
-                            this.error = 'Failed to load class data';
-                        }
-                    } catch (error) {
-                        this.error = 'Failed to load class data';
-                        console.error('Load class data error:', error);
-                    }
+                    });
                 },
                 
                 setActiveTab(tab) {
@@ -583,7 +526,7 @@ import { Dices, Trophy, Settings, Award, Home, Camera, SmilePlus, Sliders, Chevr
                     this.showBehaviorModal = true;
                 },
                 
-                async addStudent() {
+                addStudent() {
                     if (!this.newStudentName.trim()) return;
                     
                     if (!this.currentClass || !this.currentClass.id) {
@@ -591,124 +534,43 @@ import { Dices, Trophy, Settings, Award, Home, Camera, SmilePlus, Sliders, Chevr
                         return;
                     }
                     
-                    try {
-                        const token = localStorage.getItem('authToken');
-                        const response = await fetch(`${this.apiBaseUrl}/students`, {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${token}`,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                classId: this.currentClass.id,
-                                name: this.newStudentName,
-                                avatar: this.selectedAvatar
-                            })
-                        });
-                        
-                        if (response.ok) {
-                            const newStudent = await response.json();
-                            this.students.push(newStudent);
-                            this.showAddSingleModal = false;
-                            this.newStudentName = '';
-                            this.selectedAvatar = '👦';
-                        } else {
-                            const errorData = await response.json();
-                            alert(errorData.error || 'Failed to add student');
-                        }
-                    } catch (error) {
-                        alert('Error adding student');
-                        console.error('Add student error:', error);
-                    }
-                },
-                
-                async editStudent(student) {
-                    const newName = prompt('Edit student name:', student.name);
-                    if (!newName || newName === student.name) return;
+                    const firstName = this.newStudentName.trim().split(' ')[0];
+                    const lastName = this.newStudentName.trim().split(' ')[1] || '';
                     
-                    try {
-                        const token = localStorage.getItem('authToken');
-                        const response = await fetch(`${this.apiBaseUrl}/students/${student.id}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Authorization': `Bearer ${token}`,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                name: newName,
-                                avatar: student.avatar
-                            })
-                        });
-                        
-                        if (response.ok) {
-                            const updatedStudent = await response.json();
-                            const index = this.students.findIndex(s => s.id === student.id);
-                            if (index !== -1) {
-                                this.students[index] = updatedStudent;
-                            }
-                        } else {
-                            alert('Failed to update student');
-                        }
-                    } catch (error) {
-                        alert('Error updating student');
-                        console.error('Update student error:', error);
-                    }
+                    store.addStudent(this.currentClass.id, firstName, lastName, this.selectedAvatarIndex);
+                    
+                    this.students = store.getStudentsByClass(this.currentClass.id);
+                    this.showAddSingleModal = false;
+                    this.newStudentName = '';
+                    this.selectedAvatarIndex = 0;
                 },
                 
-                async deleteStudent(studentId) {
+                editStudent(student) {
+                    const newName = prompt('Edit student name:', `${student.firstName} ${student.lastName}`.trim());
+                    if (!newName || newName === `${student.firstName} ${student.lastName}`.trim()) return;
+                    
+                    const [firstName, lastName = ''] = newName.split(' ');
+                    store.updateStudent(student.id, { firstName, lastName });
+                    this.students = store.getStudentsByClass(this.currentClass.id);
+                },
+                
+                deleteStudent(studentId) {
                     if (!confirm('Are you sure you want to remove this student?')) return;
                     
-                    try {
-                        const token = localStorage.getItem('authToken');
-                        const response = await fetch(`${this.apiBaseUrl}/students/${studentId}`, {
-                            method: 'DELETE',
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        });
-                        
-                        if (response.ok) {
-                            this.students = this.students.filter(s => s.id !== studentId);
-                        } else {
-                            alert('Failed to delete student');
-                        }
-                    } catch (error) {
-                        alert('Error deleting student');
-                        console.error('Delete student error:', error);
-                    }
+                    store.deleteStudent(studentId);
+                    this.students = store.getStudentsByClass(this.currentClass.id);
                 },
                 
-                async givePoints(studentId, points, label) {
-                    try {
-                        const token = localStorage.getItem('authToken');
-                        const response = await fetch(`${this.apiBaseUrl}/points`, {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${token}`,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                studentId,
-                                points,
-                                label
-                            })
-                        });
-                        
-                        if (response.ok) {
-                            const updatedStudent = await response.json();
-                            const index = this.students.findIndex(s => s.id === studentId);
-                            if (index !== -1) {
-                                // Animate the points change
-                                this.animatePoints(studentId, points);
-                                // Play sound effect
-                                this.playPointsSound(points);
-                                // Update student data
-                                this.students[index] = updatedStudent;
-                            }
-                        } else {
-                            alert('Failed to give points');
-                        }
-                    } catch (error) {
-                        alert('Error giving points');
-                        console.error('Give points error:', error);
+                givePoints(studentId, points, label) {
+                    const student = store.awardPoints(studentId, points, label);
+                    
+                    if (student) {
+                        // Animate the points change
+                        this.animatePoints(studentId, points);
+                        // Play sound effect
+                        this.playPointsSound(points);
+                        // Update local students list
+                        this.students = store.getStudentsByClass(this.currentClass.id);
                     }
                 },
                 
@@ -774,13 +636,19 @@ import { Dices, Trophy, Settings, Award, Home, Camera, SmilePlus, Sliders, Chevr
                 },
                 
                 applyBehavior(behavior) {
-                    // Apply to all selected students or show student selection
-                    alert(`Apply ${behavior.label} to students - Feature coming soon!`);
+                    // Apply behavior points to all students in the class
+                    if (!this.currentClass) return;
+                    
+                    this.students.forEach(student => {
+                        store.awardPoints(student.id, behavior.points || 0, behavior.title);
+                    });
+                    
+                    this.students = store.getStudentsByClass(this.currentClass.id);
                     this.showBehaviorModal = false;
                 },
                 
                 logout() {
-                    localStorage.removeItem('authToken');
+                    store.logout();
                     window.location.href = '/login';
                 }
             }

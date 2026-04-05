@@ -6,22 +6,66 @@ node_modules/
 dist/
 build/
 *.js
-*.mjs
+*.css
+*.map
 
-# Logs and temp files
-*.log
-*.tmp
+# Cache directories
+.cache/
+.output/
 
-# Environment
+# Environment variables
 .env
 .env.local
-.env.*
+*.env
 
-# Editors
-.vscode/
-.idea/
+# Logs
+*.log
 
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+# Python artifacts (if any Python files exist)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
+
+# Testing
+.mypy_cache/
+.pytest_cache/
+.nyc_output/
+coverage/lcov-report/
+
+# Distribution / packaging
+.pytest_cache/
+.tox/
+.eggs/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Local configuration
+.env*
+!.env.example
+
+# Node.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Astro specific
+astro/
 ```
