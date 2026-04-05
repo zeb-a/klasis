@@ -1,0 +1,131 @@
+---
+import { DAILY_STAGES, PLACEHOLDERS } from '../../templates/lessonTemplates';
+
+interface DailyTemplateProps {
+  data: Record<string, any>;
+  onChange: (data: Record<string, any>) => void;
+  highlightedCells: Array<{ type: string; index?: number; field?: string }>;
+  clearHighlight: () => void;
+}
+
+const DailyTemplate = ({ data = {}, onChange, highlightedCells = [], clearHighlight }: DailyTemplateProps) => {
+  const d = data || {};
+  const stages = d.stages || DAILY_STAGES.map((s) => ({
+    stage: s.stage,
+    method: s.method,
+    teacherActions: '',
+    studentActions: '',
+    assessment: ''
+  }));
+
+  const updateStage = (index: number, field: string, value: string) => {
+    const next = [...stages];
+    if (!next[index]) {
+      next[index] = { ...DAILY_STAGES[index], teacherActions: '', studentActions: '', assessment: '' };
+    }
+    next[index] = { ...next[index], [field]: value };
+    onChange({ ...d, stages: next });
+    clearHighlight?.();
+  };
+
+  const isHighlighted = (type: string, index: number | null = null, field: string | null = null) => {
+    if (!highlightedCells || highlightedCells.length === 0) return false;
+    if (type === 'objective') {
+      return highlightedCells.some(c => c.type === 'objective');
+    }
+    if (type === 'materials') {
+      return highlightedCells.some(c => c.type === 'materials');
+    }
+    if (type === 'stage' && index !== null && field !== null) {
+      return highlightedCells.some(c => c.type === 'stage' && c.index === index && c.field === field);
+    }
+    return false;
+  };
+
+  const ph = PLACEHOLDERS.daily;
+
+  return (
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+      <div>
+        <label style="font-weight: 600; font-size: 13px; color: #374151; margin-bottom: 6px; display: block;">Objective</label>
+        <textarea
+          rows={2}
+          style={`width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #E5E7EB; font-size: 14px; font-family: inherit; background-color: #ffffff; min-height: 60px; ${isHighlighted('objective') ? 'border: 3px solid #DC2626; background-color: #FFEBEE; box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.2);' : ''}`}
+          placeholder={ph.objective}
+          value={d.objective ?? ''}
+          onChange={(e) => { onChange({ ...d, objective: e.target.value }); clearHighlight?.(); }}
+        />
+      </div>
+      <div>
+        <label style="font-weight: 600; font-size: 13px; color: #374151; margin-bottom: 6px; display: block;">Materials</label>
+        <input
+          type="text"
+          style={`width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #E5E7EB; font-size: 14px; font-family: inherit; background-color: #ffffff; ${isHighlighted('materials') ? 'border: 3px solid #DC2626; background-color: #FFEBEE; box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.2);' : ''}`}
+          placeholder={ph.materials}
+          value={d.materials ?? ''}
+          onChange={(e) => { onChange({ ...d, materials: e.target.value }); clearHighlight?.(); }}
+        />
+      </div>
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+          <thead>
+            <tr style="background: #F3F4F6; border-bottom: 2px solid #E5E7EB;">
+              <th style="padding: 10px; text-align: left;">Stage</th>
+              <th style="padding: 10px; text-align: left;">Method</th>
+              <th style="padding: 10px; text-align: left;">Teacher Actions</th>
+              <th style="padding: 10px; text-align: left;">Student Actions</th>
+              <th style="padding: 10px; text-align: left;">Assessment</th>
+            </tr>
+          </thead>
+          <tbody>
+            {DAILY_STAGES.map((s, i) => (
+              <tr key={s.stage} style="border-bottom: 1px solid #E5E7EB;">
+                <td style="padding: 10px; font-weight: 600; vertical-align: top;">{s.stage}</td>
+                <td style="padding: 10px; color: #6B7280; vertical-align: top;">{s.method}</td>
+                <td style="padding: 10px; vertical-align: top;">
+                  <textarea
+                    rows={2}
+                    style={`width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #E5E7EB; font-size: 14px; font-family: inherit; background-color: #ffffff; min-height: 50px; margin: 0; ${isHighlighted('stage', i, 'teacherActions') ? 'border: 3px solid #DC2626; background-color: #FFEBEE; box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.2);' : ''}`}
+                    placeholder={s.teacherActionsPlaceholder}
+                    value={(stages[i] && stages[i].teacherActions) ?? ''}
+                    onChange={(e) => updateStage(i, 'teacherActions', e.target.value)}
+                  />
+                </td>
+                <td style="padding: 10px; vertical-align: top;">
+                  <textarea
+                    rows={2}
+                    style={`width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #E5E7EB; font-size: 14px; font-family: inherit; background-color: #ffffff; min-height: 50px; margin: 0; ${isHighlighted('stage', i, 'studentActions') ? 'border: 3px solid #DC2626; background-color: #FFEBEE; box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.2);' : ''}`}
+                    placeholder={s.studentActionsPlaceholder}
+                    value={(stages[i] && stages[i].studentActions) ?? ''}
+                    onChange={(e) => updateStage(i, 'studentActions', e.target.value)}
+                  />
+                </td>
+                <td style="padding: 10px; vertical-align: top;">
+                  <textarea
+                    rows={2}
+                    style={`width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #E5E7EB; font-size: 14px; font-family: inherit; background-color: #ffffff; min-height: 50px; margin: 0; ${isHighlighted('stage', i, 'assessment') ? 'border: 3px solid #DC2626; background-color: #FFEBEE; box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.2);' : ''}`}
+                    placeholder={s.assessmentPlaceholder}
+                    value={(stages[i] && stages[i].assessment) ?? ''}
+                    onChange={(e) => updateStage(i, 'assessment', e.target.value)}
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <label style="font-weight: 600; font-size: 13px; color: #374151; margin-bottom: 6px; display: block;">Notes</label>
+        <textarea
+          rows={2}
+          style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #E5E7EB; font-size: 14px; font-family: inherit; background-color: #ffffff; min-height: 60px;"
+          placeholder={ph.notes}
+          value={d.notes ?? ''}
+          onChange={(e) => onChange({ ...d, notes: e.target.value })}
+        />
+      </div>
+    </div>
+  );
+};
+
+export default DailyTemplate;

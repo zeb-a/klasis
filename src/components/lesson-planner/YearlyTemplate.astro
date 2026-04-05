@@ -1,0 +1,105 @@
+---
+import { YEARLY_SECTION_LABELS, PLACEHOLDERS } from '../../templates/lessonTemplates';
+
+interface YearlyTemplateProps {
+  data: Record<string, any>;
+  onChange: (data: Record<string, any>) => void;
+  highlightedCells: Array<{ type: string; index?: number; field?: string }>;
+  clearHighlight: () => void;
+}
+
+const YearlyTemplate = ({ data = {}, onChange, highlightedCells = [], clearHighlight }: YearlyTemplateProps) => {
+  const d = data || {};
+  const rows = d.rows || YEARLY_SECTION_LABELS.map((section) => ({
+    section,
+    focus: '',
+    languageTarget: '',
+    assessment: ''
+  }));
+  const ph = PLACEHOLDERS.yearly;
+
+  const updateRow = (index: number, field: string, value: string) => {
+    const next = [...rows];
+    if (!next[index]) {
+      next[index] = { section: YEARLY_SECTION_LABELS[index], focus: '', languageTarget: '', assessment: '' };
+    }
+    next[index] = { ...next[index], [field]: value };
+    onChange({ ...d, rows: next });
+    clearHighlight?.();
+  };
+
+  const isHighlighted = (index: number, field: string) => {
+    if (!highlightedCells || highlightedCells.length === 0) return false;
+    return highlightedCells.some(c => c.type === 'row' && c.index === index && c.field === field);
+  };
+
+  const inputStyle = "width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13px; font-family: inherit; box-sizing: border-box; background: linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(248,250,252,0.8) 100%); transition: all 0.2s ease;";
+  const highlightedInputStyle = "border: 3px solid #DC2626; background: #FFEBEE; box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.3);";
+---
+
+<div style="display: flex; flex-direction: column; gap: 20px;">
+  <div style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+      <thead>
+        <tr style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: #fff; border-bottom: 2px solid #0ea5e9;">
+          <th style="padding: 12px 14px; text-align: left; font-weight: 600; font-size: 12px; letter-spacing: 0.5px;">Section</th>
+          <th style="padding: 12px 14px; text-align: left; font-weight: 600; font-size: 12px; letter-spacing: 0.5px;">Focus</th>
+          <th style="padding: 12px 14px; text-align: left; font-weight: 600; font-size: 12px; letter-spacing: 0.5px;">Language Target</th>
+          <th style="padding: 12px 14px; text-align: left; font-weight: 600; font-size: 12px; letter-spacing: 0.5px;">Assessment</th>
+        </tr>
+      </thead>
+      <tbody>
+        {YEARLY_SECTION_LABELS.map((section, i) => (
+          <tr 
+            key={section} 
+            style={{ 
+              borderBottom: '1px solid #e2e8f0', 
+              background: i % 2 === 0 ? 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(14, 165, 233, 0.02) 100%)' : 'linear-gradient(90deg, rgba(248,250,252,1) 0%, rgba(14, 165, 233, 0.03) 100%)',
+              transition: 'background 0.2s ease',
+              cursor: 'pointer'
+            }}
+          >
+            <td style="padding: 10px 14px; font-weight: 600; color: #0ea5e9; min-width: 140px; font-size: 12px; letter-spacing: 0.3px;">{section}</td>
+            <td style="padding: 8px 12px;">
+              <textarea
+                rows={2}
+                style={`${inputStyle}; min-height: 60px; padding: 10px 12px; resize: vertical; ${isHighlighted(i, 'focus') ? highlightedInputStyle : ''}`}
+                placeholder={ph.desiredResults}
+                value={(rows[i] && rows[i].focus) ?? ''}
+                onChange={(e) => updateRow(i, 'focus', e.target.value)}
+              />
+            </td>
+            <td style="padding: 8px 12px;">
+              <textarea
+                rows={2}
+                style={`${inputStyle}; min-height: 60px; padding: 10px 12px; resize: vertical; ${isHighlighted(i, 'languageTarget') ? highlightedInputStyle : ''}`}
+                placeholder={ph.assessmentEvidence}
+                value={(rows[i] && rows[i].languageTarget) ?? ''}
+                onChange={(e) => updateRow(i, 'languageTarget', e.target.value)}
+              />
+            </td>
+            <td style="padding: 8px 12px;">
+              <textarea
+                rows={2}
+                style={`${inputStyle}; min-height: 60px; padding: 10px 12px; resize: vertical; ${isHighlighted(i, 'assessment') ? highlightedInputStyle : ''}`}
+                placeholder={ph.unitOverviewTable}
+                value={(rows[i] && rows[i].assessment) ?? ''}
+                onChange={(e) => updateRow(i, 'assessment', e.target.value)}
+              />
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <label style="font-weight: 600; font-size: 13px; color: #374151; margin-bottom: 6px; display: block;">Notes</label>
+    <textarea
+      rows={2}
+      style={`${inputStyle}; min-height: 60px; padding: 10px 14px;`}
+      placeholder={ph.notes}
+      value={d.notes ?? ''}
+      onChange={(e) => onChange({ ...d, notes: e.target.value })}
+    />
+  </div>
+</div>
